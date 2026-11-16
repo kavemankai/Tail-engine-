@@ -96,6 +96,7 @@ func bark(id: StringName) -> bool:
 	for cue in barks:
 		if cue != null and cue.id == id:
 			_barks_seen[id] = true
+			_director.trace_event(&"bark", {"cue": id, "speaker": cue.speaker})
 			bark_requested.emit(cue, _visit)
 			return true
 	return false
@@ -111,6 +112,8 @@ func cut(role: StringName) -> void:
 	else:
 		push_warning("CADStage: no camera '%s'." % role)
 		return
+	if _director != null:
+		_director.trace_event(&"camera", {"role": role})
 	if camera not in _used_cameras:
 		_used_cameras.append(camera)
 
@@ -121,12 +124,16 @@ func attach_prop(target_id: StringName, role: StringName, socket_path: NodePath)
 	var target_actor := actor(role)
 	var socket := target_actor.get_node_or_null(socket_path) as Node3D if is_instance_valid(target_actor) else null
 	var attached := prop_attachments.attach(target_registry.target(target_id), socket)
+	if attached and _director != null:
+		_director.trace_event(&"prop_attach", {"prop": target_id, "role": role})
 	if attached and _director != null and _director.context.prop_states.has(target_id):
 		_director.context.prop_states[target_id] = false
 	return attached
 
 func detach_prop(target_id: StringName) -> bool:
 	var detached := prop_attachments.detach(target_registry.target(target_id)) if is_instance_valid(target_registry) else false
+	if detached and _director != null:
+		_director.trace_event(&"prop_detach", {"prop": target_id})
 	if detached and _director != null and _director.context.prop_states.has(target_id):
 		_director.context.prop_states[target_id] = true
 	return detached

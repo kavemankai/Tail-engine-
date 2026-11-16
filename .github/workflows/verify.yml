@@ -41,7 +41,7 @@ jobs:
           curl --fail --location --retry 3 -o /tmp/templates.tpz "https://github.com/godotengine/godot-builds/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
           mkdir -p "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
           unzip -q -j /tmp/templates.tpz 'templates/windows_*' 'templates/version.txt' -d "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
-      - name: Import, test, validate, and package
+      - name: Import, test, validate, audit, and package
         run: |
           python -m unittest discover -s tools -p 'test_*.py'
           if [ "${{ github.event_name }}" = "pull_request" ]; then

@@ -237,3 +237,23 @@ Regenerate the example with `python tools/build_cinematic_examples.py`. Run
 actual skeletal TimeScale playback, voice ownership/pause, all adaptive routes,
 Dialogue Manager handoff, JSON save/resume, rewind and cancellation during dialogue.
 The lab uses greyboxes and no production voice/contact kit.
+
+### Audit and diagnose a new encounter
+
+1. Create a sequence/compound and put it in a `TEEpisode` with its cast and stage.
+2. Run `godot --headless --path . res://tools/authoring.tscn -- res://path/episode.tres`.
+   Fix reported errors and review reachability/possible ungated-cycle warnings.
+   The JSON report lists beat/gate counts and handler families. Intentional gated
+   retries remain allowed; warnings do not infer the effects of animation methods.
+3. In a debug build, use F3 to inspect the active beat, momentum/intent, actor/prop
+   context, time/progress and controller owner. Export the bounded trace to
+   `user://cad_trace.json`; indices and dropped counts identify buffer truncation.
+4. Run the full verifier, then perform the Windows/controller and production-rig
+   acceptance checks. Numeric root continuity and synthetic inputs remain separate
+   from visual contact/retargeting, audible mix and physical-driver verification.
+
+`python tools/verify.py` now audits all lab episodes after regression/episode
+validation. Engine errors and ObjectDB leaks are still failures. The test harness
+also rejects a non-instantiable suite immediately instead of waiting for the outer
+timeout. New stories can reuse the examples and templates without changing QTE
+runtime; live simultaneous Dialogue Manager balloons remain a deferred extension.

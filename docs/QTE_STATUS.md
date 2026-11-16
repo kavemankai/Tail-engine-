@@ -1,7 +1,8 @@
 # QTE v2 implementation status
 
-This milestone implements the **software portion of Phases 0–7**, preserving the
-original Episode 0 encounters. It does not implement the full 30-mechanic target.
+This milestone implements the **software portion of Phases 0–8**, preserving the
+original Episode 0 encounters. The selected mechanics have reusable software paths and examples. Production
+acceptance still requires the real humanoid/voice kit and a Windows physical pad.
 
 ## Completed work and evidence
 
@@ -101,6 +102,20 @@ packaged main/lab startup passed. A rendered 1920×1080 action-choice/subtitle c
 confirmed separate, readable panels. Real Windows/controller, audible voice and
 production humanoid contact/retargeting acceptance remain open.
 
+Phase 8 adds bounded scalar diagnostics, mapped input/result/pause/camera/bark/prop
+trace events, a current-context F3 view/export and a headless authoring report.
+The audit combines stage/resource validation with conservative graph reachability
+and ungated-cycle warnings. Verification runs it for all 21 lab resources. Graph
+warnings preserve compatibility for intentional retry/animation-driven flows;
+engine/script errors and ObjectDB leaks remain failures. Diagnostic data is kept
+out of story saves, and test-suite load failures now terminate immediately.
+
+Final software verification: **919 Godot checks across 21 suites**, three Python
+runner tests, fresh-profile import, original episode validation, the authoring audit
+for all 21 lab resources, Windows x86_64 export and isolated packaged main/lab
+startup passed. Rendered 1920×1080 checks cover action-choice/subtitle separation
+and the debug context/trace view. Hardware/production-asset acceptance remains open.
+
 ## Selected mechanics
 
 | ID | Mechanic | Current implementation |
@@ -138,7 +153,8 @@ production humanoid contact/retargeting acceptance remain open.
 
 ## Next phases and open acceptance gates
 
-Continue with Phase 8 authoring/trace/1080p quality gates. Extensions must reuse the shared runner and validation, without scene-local input
+Software implementation through Phase 8 is integrated. Final production/hardware
+acceptance remains open: Extensions must reuse the shared runner and validation, without scene-local input
 scripts or a second story graph. All eight planned handler families are present.
 
 - Real Windows controller tests have **not** been performed. Synthetic key/pad

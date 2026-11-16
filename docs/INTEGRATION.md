@@ -409,3 +409,31 @@ this extension remain valid; present history is validated for schema, identities
 finite numeric bounds, grades/intents and context types. No actor nodes, animation
 positions or in-flight QTE clocks are saved. Existing checkpoints capture completed
 records; rewind restores the earlier snapshot and removes later consequences.
+
+### Bounded diagnostics and authoring audit
+
+`director.trace` is an opt-in `CADTrace`. Flow enables it in debug builds; direct
+hosts set `trace.enabled = true` before `begin()`. Capacity defaults to 256 and is
+clamped to 1–1024; oldest events are evicted with a dropped count. Restart clears
+the buffer and changes run identity. Events include beat/gate lifecycle, mapped
+input actions/device, grade/timing/progress/route/intent, pause/resume, camera cuts,
+barks, prop markers and finish. Timestamps are monotonic diagnostic wall time,
+separate from active-time interaction deadlines. No trace call advances input time.
+
+`trace_event(kind, fields)` adds current beat/visit IDs. Fields are limited to 32
+finite scalars with short keys; strings are capped at 256 characters. Node/resource
+references are rejected with `last_error`. `snapshot()` returns an isolated schema-1
+dictionary; `write_json("user://cad_trace.json")` reports file errors explicitly.
+Trace data is never part of Story/save snapshots. Flow retains only the last bounded
+trace in `latest_trace`. The F3 debug panel shows current context, gate/controller
+state and recent events, with an export button for current/last trace.
+
+`CADAuthoringReport.inspect(sequence, stage)` combines existing validation with
+counts/families and conservative reachability/ungated-cycle warnings. Warnings do
+not reject intentional retries or assume timeline side effects cannot change flags.
+Run `godot --headless --path . res://tools/authoring.tscn -- res://path/episode.tres`
+for a headless report. No arguments audits all lab examples, including their host
+episode/stage bindings. Explicit standalone sequences get structural checks; embed
+them in an episode to validate cast/stage/assets. Errors return a nonzero exit;
+JSON is written to `build/logs/authoring.json`. The standard Python verifier now
+runs this audit and retains strict engine/script/leak/completion checks.

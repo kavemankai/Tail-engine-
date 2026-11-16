@@ -33,12 +33,13 @@ are a later milestone, with selection and licensing decided before integration.
 - Opposed Pressure and a directional/pressure/release grapple template, with
   sustained alternate input and resource-authored lab examples. Scoped playback, action barks/timed replies, semantic intent, momentum, typed
   adaptive context and safe-boundary consequence history now have an integrated
-  example. Trace/authoring tools and physical production quality gates remain.
+  example. Bounded traces, the F3 context view/export and a headless authoring audit are
+  integrated. Real Windows/controller and production asset quality gates remain.
 
 ## Before sharing the demo
 
 1. Run `python tools/verify.py --export-windows` on the final revision. Confirm
-   clean import, all twenty suites, episode validation and Windows packaging.
+   clean import, all twenty-one suites, episode validation and Windows packaging.
 2. Complete [the Windows smoke test](WINDOWS_SMOKE_TEST.md) on a real PC and
    physical controller. Record the build commit and device details. This includes
    all four routes, relaunch/Continue, rewind, focus loss, device switching and

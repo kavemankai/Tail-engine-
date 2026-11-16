@@ -40,6 +40,8 @@ var trail: Array[StringName] = []
 var results: Dictionary[StringName, StringName] = {}
 ## Additive typed detail; never changes the legacy results or save-file shape.
 var detailed_results: Dictionary[StringName, CADResult] = {}
+var trace := CADTrace.new()
+var _trace_paused := false
 var context := CADEncounterContext.new()
 var _resolved_visits: Dictionary = {}
 var interaction_runner: CADInteractionRunner
@@ -140,12 +142,15 @@ func begin(sequence: CADSequence, stage: CADStage = null,
 			context.prop_states[id] = context.prop_states[id] and stage.target_registry.available(id, flags)
 	interaction_runner = null
 	_run_id += 1
+	trace.reset(_run_id)
+	_trace_paused = false
 	_suspended = false
 	_goto = &""
 	_active = true
 	last_outcome = &""
 	if _stage != null:
 		_stage.acquire(self)
+	trace_event(&"begin", {"entry": sequence.entry})
 	_enter(sequence.entry)
 	return true
 
@@ -185,6 +190,13 @@ func suspend(suspended: bool) -> void:
 	if _active and _stage != null:
 		_stage.pause(suspended)
 
+func trace_event(kind: StringName, fields: Dictionary = {}) -> void:
+	if trace.enabled:
+		var data := fields.duplicate()
+		data["visit_id"] = _visit
+		data["beat_id"] = _beat.id if _beat != null else &""
+		trace.record(kind, data)
+
 func record() -> Dictionary:
 	var records := {}
 	for id in detailed_results:
@@ -210,6 +222,7 @@ func _input(event: InputEvent) -> void:
 	CADInputDevice.observe(event)
 	if not _active or _suspended or _beat == null or _beat.gate == null:
 		return
+	_trace_input(event)
 	if _beat.gate.interaction != null:
 		if _gate == Gate.OPEN and interaction_runner != null:
 			if interaction_runner.router.relevant(event):
@@ -296,6 +309,7 @@ func _enter(id: StringName) -> void:
 	if _stage != null:
 		_stage.set_playback_scale(_beat.playback_scale)
 	var visit := _visit
+	trace_event(&"beat", {"timeline": _beat.timeline, "playback_scale": _beat.playback_scale, "momentum": context.momentum, "intent": context.intent})
 	beat_started.emit(_beat, visit)
 	if not _active or visit != _visit:
 		return
@@ -325,6 +339,7 @@ func _open_gate() -> void:
 	for option in gate.options:
 		if flag_holds(option.requires):
 			_options.append(option)
+	trace_event(&"gate_open", {"offered": _options.size(), "window": gate.window_seconds * window_scale, "family": _family_name(gate.interaction)})
 	if _options.is_empty():
 		_resolve(TIMEOUT, gate.timeout_next)
 		return
@@ -352,6 +367,7 @@ func _open_gate() -> void:
 func _resolve(result: StringName, next: StringName) -> void:
 	if not _active or _gate != Gate.OPEN:
 		return
+	trace_event(&"route", {"option": result, "next": next})
 	_gate = Gate.RESOLVED
 	_pending_next = next
 	results[_beat.id] = result
@@ -377,6 +393,7 @@ func _check_complete() -> void:
 		_goto = _pending_next
 
 func _finish(outcome: StringName, notify := true) -> void:
+	trace_event(&"finish", {"outcome": outcome, "momentum": context.momentum, "intent": context.intent})
 	last_outcome = outcome
 	_busy = true
 	var was_open := _gate == Gate.OPEN
@@ -414,12 +431,16 @@ func _on_interaction_resolved(result: CADResult) -> void:
 		return
 	_resolved_visits[result.visit_id] = true
 	context.apply(result)
+	trace_event(&"result", {"grade": result.grade, "option": result.option_id, "route": result.route_id, "intent": result.intent_id, "target": result.target_id, "momentum": context.momentum, "progress": result.progress, "timing_error_ms": result.timing_error_ms, "direction": result.direction})
 	detailed_results[result.beat_id] = result
 	interaction_resolved.emit(result)
 	if _active and result.run_id == _run_id and result.visit_id == _visit:
 		_resolve(result.option_id if result.option_id != &"" else TIMEOUT, result.route_id)
 
 func _pause_interaction_clocks(paused: bool) -> void:
+	if paused != _trace_paused:
+		_trace_paused = paused
+		trace_event(&"pause" if paused else &"resume")
 	if _beat_clock != null:
 		_beat_clock.set_paused(paused)
 	if interaction_runner != null:
@@ -455,3 +476,21 @@ func _interaction_context() -> Dictionary:
 	if camera_2d != null:
 		context.camera_forward = Vector2.UP.rotated(camera_2d.global_rotation)
 	return context
+
+func _trace_input(event: InputEvent) -> void:
+	if not trace.enabled:
+		return
+	var actions: Array[StringName] = []
+	if _beat.gate.interaction != null:
+		actions = _beat.gate.interaction.input_actions(_options)
+	else:
+		for option in _beat.gate.options:
+			if option != null: actions.append(option.action)
+	var matching := PackedStringArray()
+	for action in actions:
+		if event.is_action(action): matching.append(String(action))
+	if not matching.is_empty():
+		trace_event(&"input", {"actions": ",".join(matching), "pressed": event.is_pressed(), "device": event.device if event is InputEventJoypadButton or event is InputEventJoypadMotion else -1, "open": _gate == Gate.OPEN})
+
+func _family_name(spec: CADInteractionSpec) -> String:
+	return "legacy" if spec == null else (String(CADInteractionSpec.Family.keys()[spec.family]) if spec.family >= 0 and spec.family < CADInteractionSpec.Family.size() else "invalid")

@@ -15,6 +15,11 @@ func _ready() -> void:
 	_panel.position = Vector2(20, 70)
 	_panel.add_child(_box)
 	_box.add_child(_info)
+	var export_button := Button.new()
+	export_button.text = "Export QTE trace"
+	export_button.focus_mode = Control.FOCUS_NONE
+	export_button.pressed.connect(_export_trace)
+	_box.add_child(export_button)
 	_box.add_child(_buttons)
 	add_child(_panel)
 	_panel.hide()
@@ -32,6 +37,17 @@ func _process(_delta: float) -> void:
 		lines.append("%s = %s" % [key, Story.vars[key]])
 	for key: StringName in Story.choices:
 		lines.append("chose %s: %s" % [key, Story.choices[key]])
+	var director := Flow.active_director()
+	if director != null:
+		lines.append("QTE run %s / visit %s: %s" % [director._run_id, director._visit, director._beat.id if director._beat != null else &"-"])
+		lines.append("Momentum %s/%s | Intent %s" % [director.context.momentum, director.context.limit, director.context.intent])
+		lines.append("Actors: " + str(director.context.to_dict().actors).left(100))
+		lines.append("Props: " + str(director.context.to_dict().props).left(100))
+		if director.interaction_runner != null and director.interaction_runner.active:
+			var runner := director.interaction_runner
+			lines.append("Input %.2fs left | %.0f%% | controller %s" % [runner.remaining(), runner.progress() * 100, runner.router.controller])
+		for event: Dictionary in director.trace.snapshot().events.slice(-5):
+			lines.append("%.2f %s %s" % [event.seconds, event.event, event.data.get("beat_id", "")])
 	_info.text = "\n".join(lines)
 	if Flow.step == _shown_step:
 		return
@@ -51,3 +67,12 @@ func _add(text: String, action: Callable) -> void:
 	button.focus_mode = Control.FOCUS_NONE
 	button.pressed.connect(action)
 	_buttons.add_child(button)
+
+func _export_trace() -> void:
+	var director := Flow.active_director()
+	var data := director.trace.snapshot() if director != null else Flow.latest_trace
+	if data.is_empty():
+		Screen.notice("No QTE trace recorded yet.")
+		return
+	var error := CADTrace.save_snapshot(data, "user://cad_trace.json")
+	Screen.notice("Saved user://cad_trace.json" if error == OK else "Trace export failed: " + error_string(error))

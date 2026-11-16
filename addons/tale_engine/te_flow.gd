@@ -27,6 +27,8 @@ var _generation := 0
 var _step_token := 0
 var _location_path := ""
 var _props: Array[Node] = []
+## Bounded diagnostic snapshot, separate from saved narrative consequences.
+var latest_trace: Dictionary = {}
 var _hub: TEHub
 
 func _ready() -> void:
@@ -192,6 +194,7 @@ func _encounter(current: TEStep) -> StringName:
 		if actors.has(current.roles[role]):
 			stage.bind(role, actors[current.roles[role]])
 	var director := CADDirector.new()
+	director.trace.enabled = OS.is_debug_build()
 	director.flags = Story.vars
 	director.window_scale = Settings.qte_window_scale
 	add_child(director)
@@ -207,6 +210,7 @@ func _encounter(current: TEStep) -> StringName:
 	if director.begin(sequence, stage):
 		director_started.emit(director)
 		outcome = await director.finished if director.active() else director.last_outcome
+		latest_trace = director.trace.snapshot()
 		if outcome != &"cancelled":
 			Story.results[current.id] = director.results.duplicate()
 			if outcome in sequence.outcomes and not director.detailed_results.is_empty():
@@ -314,3 +318,9 @@ func _free_location() -> void:
 		location.queue_free()
 	location = null
 	_location_path = ""
+
+func active_director() -> CADDirector:
+	for prop in _props:
+		if is_instance_valid(prop) and prop is CADDirector and prop.active():
+			return prop
+	return null
