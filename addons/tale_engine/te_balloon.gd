@@ -28,6 +28,8 @@ var _name := Label.new()
 var _text := Label.new()
 var _choices := VBoxContainer.new()
 var _timer := ProgressBar.new()
+var _cancelled := false
+var _finished := false
 
 func _ready() -> void:
 	layer = 40
@@ -55,23 +57,45 @@ func _ready() -> void:
 	_timer.show_percentage = false
 	_timer.hide()
 	add_child(_timer)
+	InputDevice.changed.connect(_refresh_choices)
 
 ## Called from dialogue files: the conversation's result for the episode graph.
 func exit(exit_name: String) -> void:
 	_exit = StringName(exit_name)
 
 func start(resource: DialogueResource, cue: String) -> void:
+	if _finished:
+		return
 	var line: DialogueLine = await resource.get_next_dialogue_line(cue, [self])
-	while line != null:
+	while line != null and not _cancelled:
 		_show(line)
+		if _cancelled:
+			break
 		var next_id := line.next_id
 		_responses = line.responses.filter(func(response: DialogueResponse) -> bool: return response.is_allowed)
 		if _responses.is_empty():
 			await _hold(line)
 		else:
-			next_id = (await _choose(line)).next_id
+			var response: DialogueResponse = await _choose(line)
+			if response == null:
+				break
+			next_id = response.next_id
+		if _cancelled:
+			break
 		line = await resource.get_next_dialogue_line(next_id, [self])
-	finished.emit(_exit)
+	_finish(_exit)
+
+func cancel() -> void:
+	_cancelled = true
+	_responses = []
+	Audio.stop_voice()
+	_finish(&"cancelled")
+
+func _finish(exit_name: StringName) -> void:
+	if not _finished:
+		_finished = true
+		_exit = exit_name
+		finished.emit(exit_name)
 
 ## Pick a response by index, as a button press would.
 func pick(index: int) -> void:
@@ -102,30 +126,34 @@ func _hold(line: DialogueLine) -> void:
 	if stream != null:
 		seconds = Audio.voice(stream)
 	_advance = false
-	while seconds > 0.0 and not _advance:
+	while seconds > 0.0 and not _advance and not _cancelled:
 		await get_tree().process_frame
-		seconds -= get_process_delta_time()
-	if stream != null:
+		if not get_tree().paused:
+			seconds -= get_process_delta_time()
+	if stream != null and not _cancelled:
 		Audio.stop_voice()
 
 func _choose(line: DialogueLine) -> DialogueResponse:
 	for i in _responses.size():
 		var button := Button.new()
-		var key := CADPrompt.glyph(CHOICE_ACTIONS[i], false) if i < CHOICE_ACTIONS.size() else ""
-		button.text = "[%s]  %s" % [key, _responses[i].text]
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		button.focus_mode = Control.FOCUS_NONE
 		button.add_theme_font_size_override(&"font_size", 22)
 		button.pressed.connect(pick.bind(i))
 		_choices.add_child(button)
+	_refresh_choices()
 	var window := line.get_tag_value("timed").to_float() * Settings.choice_time_scale
 	var left := window
 	_timer.visible = window > 0.0
 	_timer.max_value = maxf(window, 0.001)
 	_picked = -1
 	choices_shown.emit(line, _responses)
-	while _picked < 0:
+	while _picked < 0 and not _cancelled:
 		await get_tree().process_frame
+		if _cancelled:
+			return null
+		if get_tree().paused:
+			continue
 		if window > 0.0:
 			left -= get_process_delta_time()
 			_timer.value = left
@@ -134,6 +162,8 @@ func _choose(line: DialogueLine) -> DialogueResponse:
 				for i in _responses.size():
 					if _responses[i].has_tag("silence"):
 						_picked = i
+	if _cancelled:
+		return null
 	var chosen: DialogueResponse = _responses[_picked]
 	_responses = []
 	_timer.hide()
@@ -141,7 +171,14 @@ func _choose(line: DialogueLine) -> DialogueResponse:
 		button.queue_free()
 	return chosen
 
+func _refresh_choices(_using_pad: bool = false) -> void:
+	for i in mini(_choices.get_child_count(), _responses.size()):
+		var key := CADPrompt.glyph(CHOICE_ACTIONS[i], CADInputDevice.using_pad) if i < CHOICE_ACTIONS.size() else ""
+		_choices.get_child(i).text = "[%s]  %s" % [key, _responses[i].text]
+
 func _input(event: InputEvent) -> void:
+	if _cancelled:
+		return
 	if choosing():
 		for i in mini(_responses.size(), CHOICE_ACTIONS.size()):
 			if event.is_action_pressed(CHOICE_ACTIONS[i]):

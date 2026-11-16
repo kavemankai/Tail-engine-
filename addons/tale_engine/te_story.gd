@@ -80,7 +80,8 @@ func to_dict() -> Dictionary:
 
 func from_dict(data: Dictionary) -> void:
 	for field: String in ["vars", "choices", "outcomes", "results", "seen"]:
-		var restored: Dictionary = {}
+		# A later episode revision may add variables absent in an older save.
+		var restored: Dictionary = vars.duplicate(true) if field == "vars" else {}
 		var saved: Dictionary = data.get(field, {})
 		for key in saved:
 			restored[StringName(key)] = saved[key]

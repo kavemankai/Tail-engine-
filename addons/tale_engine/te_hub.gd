@@ -41,7 +41,19 @@ func deactivate() -> void:
 	current = null
 	for node: Node in [_controller, _camera]:
 		if is_instance_valid(node):
+			if node is TEPlayerController:
+				node.enabled = false
+				node.set_physics_process(false)
 			node.queue_free()
+	_controller = null
+	_camera = null
+	_busy = false
+
+func cancel() -> void:
+	var active := is_processing()
+	deactivate()
+	if active:
+		exited.emit(&"cancelled")
 
 func hotspots() -> Array[TEHotspot]:
 	var found: Array[TEHotspot] = []
@@ -94,7 +106,7 @@ func _process(_delta: float) -> void:
 		if distance <= hotspot.radius and distance < best and available(hotspot):
 			best = distance
 			current = hotspot
-	Screen.hint("[%s]  %s" % [CADPrompt.glyph(&"te_interact", false), current.label] if current != null else "")
+	Screen.hint("[%s]  %s" % [CADPrompt.glyph(&"te_interact", CADInputDevice.using_pad), current.label] if current != null else "")
 
 func _unhandled_input(event: InputEvent) -> void:
 	if current != null and event.is_action_pressed(&"te_interact"):

@@ -10,12 +10,15 @@ config_version=5
 
 [application]
 
+; Keep the original application ID so existing user:// saves remain available.
+; The window and exported executable use Tale Engine - Last Call.
 config/name="Cinematic Action Director"
 run/main_scene="res://content/main.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 
 [autoload]
 
+InputDevice="*res://addons/cinematic_action_director/cad_input_device.gd"
 Settings="*res://addons/tale_engine/te_settings.gd"
 Story="*res://addons/tale_engine/te_story.gd"
 Audio="*res://addons/tale_engine/te_audio.gd"

@@ -11,6 +11,7 @@ signal gate_progress(remaining: float, hold: float)
 signal gate_closed
 signal gate_resolved(beat: CADBeat, result: StringName)
 signal finished(outcome: StringName)
+signal input_device_changed
 
 enum Gate { NONE, PENDING, OPEN, RESOLVED }
 
@@ -24,7 +25,13 @@ var flags: Dictionary = {}
 ## Accessibility: multiplies every gate window.
 var window_scale := 1.0
 ## True when the last real input came from a gamepad.
-var using_pad := false
+var using_pad: bool:
+	get:
+		return CADInputDevice.using_pad
+	set(value):
+		CADInputDevice.set_device(value)
+## Retains synchronous terminal results, including cancellation in begin hooks.
+var last_outcome: StringName
 ## Beat IDs entered during the current or last run, in order.
 var trail: Array[StringName] = []
 ## Gate result per beat ID for the current or last run.
@@ -50,6 +57,7 @@ var _held: Dictionary[StringName, float] = {}
 var _buffered: Dictionary[StringName, float] = {}
 var _pending_next: StringName
 var _goto: StringName
+var _display_pad := false
 
 static func validation_errors(sequence: CADSequence, stage: CADStage = null) -> PackedStringArray:
 	var errors := sequence.validation_errors()
@@ -101,6 +109,7 @@ func begin(sequence: CADSequence, stage: CADStage = null,
 	_suspended = false
 	_goto = &""
 	_active = true
+	last_outcome = &""
 	if _stage != null:
 		_stage.acquire(self)
 	_enter(sequence.entry)
@@ -151,10 +160,7 @@ func flag_holds(name: StringName) -> bool:
 	return true if flags.get(name, false) else false
 
 func _input(event: InputEvent) -> void:
-	if event is InputEventJoypadButton or (event is InputEventJoypadMotion and absf(event.axis_value) > 0.5):
-		using_pad = true
-	elif event is InputEventKey or event is InputEventMouseButton:
-		using_pad = false
+	CADInputDevice.observe(event)
 	if not _active or _suspended or _beat == null or _beat.gate == null:
 		return
 	if _gate == Gate.PENDING:
@@ -169,6 +175,9 @@ func _input(event: InputEvent) -> void:
 				return
 
 func _process(delta: float) -> void:
+	if _display_pad != using_pad:
+		_display_pad = using_pad
+		input_device_changed.emit()
 	if not _active or _suspended:
 		return
 	if _goto == &"":
@@ -287,6 +296,7 @@ func _check_complete() -> void:
 		_goto = _pending_next
 
 func _finish(outcome: StringName, notify := true) -> void:
+	last_outcome = outcome
 	_busy = true
 	var was_open := _gate == Gate.OPEN
 	_active = false

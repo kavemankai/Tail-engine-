@@ -6,6 +6,7 @@ const EPISODE := preload("res://content/episode_0/episode.tres")
 var _box := VBoxContainer.new()
 
 func _ready() -> void:
+	DisplayServer.window_set_title("Tale Engine - Last Call")
 	_box.position = Vector2(90, 120)
 	add_child(_box)
 	Flow.episode_finished.connect(func(_exit: StringName) -> void: _rebuild())
@@ -31,6 +32,7 @@ func _rebuild() -> void:
 		var list: Array = save["checkpoints"]
 		for i in list.size() - 1:
 			_add("Rewind to: %s" % list[i]["title"], _rewind.bind(i))
+	_add("Settings", Screen.open_settings)
 	_add("Quit", get_tree().quit)
 	_box.get_child(1).grab_focus.call_deferred()
 

@@ -6,7 +6,8 @@ var _voice := AudioStreamPlayer.new()
 var _active := 0
 
 func _ready() -> void:
-	process_mode = Node.PROCESS_MODE_ALWAYS
+	# Pause dialogue audio with the scene tree and its subtitle clock.
+	process_mode = Node.PROCESS_MODE_PAUSABLE
 	for i in 2:
 		var player := AudioStreamPlayer.new()
 		add_child(player)

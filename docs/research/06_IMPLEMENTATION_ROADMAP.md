@@ -1,4 +1,8 @@
-# 06 · Implementation roadmap
+# 06 · Historical implementation roadmap
+
+This is the original research-stage proposal. The episode runtime and encounter
+seam described below have since been implemented. Use [the current roadmap](../ROADMAP.md)
+for demo priorities, completed reliability work and Windows release gates.
 
 Estimates assume working existing Godot actors, a populated bar scene and access to the game's current project. They express developer effort, not a fixed schedule. Runtime code and animation authoring have different bottlenecks.
 
@@ -43,6 +47,6 @@ Estimates assume working existing Godot actors, a populated bar scene and access
 | Pause, camera or save releases twice | Test session transition idempotency and reload at the last safe checkpoint. |
 | Too many bespoke clips undermine productivity | Use one encounter anchor, one short attack, two reactions and one prop. Expand only after contact and handback are readable. |
 
-## Next coding assignment
+## Original coding assignment (historical)
 
 Build Phase 0 and Phase 1 in an isolated production checkout. Start with `docs/INTEGRATION.md` in the Conversation Characters package when accessible. Deliver one authored `.tres` beat and one `.tscn` shot setup, a named Dialogue Manager cue before and two after, both outcomes as signals and one checkpoint record. Use the existing humanoid rigs and animation libraries, and put any newly sourced pair into the same retargeting pipeline. Include a Windows 4.6.x controller pass and brief recordings of both routes, plus the known limits. Leave the main branch untouched until this seam is accepted.
