@@ -4,6 +4,8 @@ extends Resource
 ## several make a choice. The result is the chosen option's ID or &"timeout".
 
 @export var options: Array[CADOption] = []
+## Opt-in v2 evaluator. Null preserves the original press/hold/buffer semantics.
+@export var interaction: CADInteractionSpec
 @export_range(0.05, 60.0, 0.01) var window_seconds := 1.2
 ## A beat ID or a terminal outcome.
 @export var timeout_next: StringName

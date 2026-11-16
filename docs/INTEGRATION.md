@@ -85,3 +85,45 @@ A press made up to `buffer_seconds` before a gate opens still counts.
 ## Driving beats without a stage
 
 Leave `timeline` empty and send markers yourself. `beat_started(beat, visit)` gives a visit number; pass it back with `director.marker(id, visit)`. A marker with an old number is rejected, so a delayed callback from an earlier beat or run cannot affect the current one.
+
+## Optional v2 interactions
+
+Set `CADGate.interaction` to a `CADInteractionSpec` to opt into the shared runner.
+Leave it null to retain the original press/hold, buffer and frozen-hold-window
+behaviour. Episode 0's existing encounter resources remain unchanged.
+
+The first supported families are `GESTURE` (press/hold) and `CHOICE`. Gesture
+specs name a stable `id`, one `actions` entry and an `option_id` referencing a gate
+option. Choice specs use the gate's offered options. `monitored_actions` declares
+additional wrong-input actions; `wrong_input` either ignores them or resolves
+`miss`. Unrelated controls are ignored. `routes` optionally maps a result grade to
+a destination in the **same** CADSequence; otherwise the selected option's `next`
+or the gate's `timeout_next` is used. Specs are copied at acquisition.
+
+`CADInteractionRunner` owns one evaluator, `CADInputRouter` and `CADClock` per
+gate. Its `resolved(CADResult)` fires once. `CADDirector.interaction_resolved`
+exposes the typed result; `detailed_results[beat_id]` retains the latest detail.
+`result.to_dict()` contains scalar IDs, grade, route, progress and timing error.
+Legacy `director.results` and `Story.results` keep option/timeout strings. Typed
+details are currently encounter-local; no save migration or mid-QTE save exists.
+
+New gates use monotonic **real active seconds**, independent of Engine.time_scale.
+The deadline is exclusive: input at or after it times out, including after a frame
+hitch. Holds must complete inside the window; unlike legacy holds, they do not
+extend it. Accessibility `window_scale` scales the window. Scene pause and explicit
+`suspend` exclude wall time. Resuming requires fresh input for incomplete holds.
+Early input buffering remains a legacy-only feature in this milestone.
+
+`CADInputRouter` reads current InputMap bindings, ignores echoes/repeated edges,
+and blocks actions held on acquisition until released. The first matching pad
+owns that gate unless `controller_device` is configured; other pads cannot release
+or finish its inputs. Keyboard switching remains available. Losing the owning pad
+cancels the active typed encounter. `Flow` prevents a concurrent dialogue balloon
+from acquiring action input; concurrent dialogue is a later integration phase.
+
+For deterministic tests, pass a seconds callable to `CADInteractionRunner.new`
+or set `director.clock_source` before begin. Keep run/visit IDs when feeding a
+runner directly; stale tokens are rejected. New evaluators extend
+`CADInteractionHandler` and return pending `{}` or one small result dictionary.
+Register each family in the runner and validator; do not put choreography or Story
+writes in a handler.

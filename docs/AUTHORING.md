@@ -104,6 +104,13 @@ Built with the action layer; [INTEGRATION.md](INTEGRATION.md) is the full refere
 
 ## Testing a route
 
+For an opt-in interaction example, open `content/qte_lab/lab.tscn`. Its
+`reaction.tres` uses the new press evaluator with the existing bar stage's windup,
+dodge and hit timelines. `episode.tres` binds the normal cast through Flow. No
+QTE behaviour lives in the lab script. It disables saves and leaves Episode 0's
+original encounters and narrative branches intact. See the v2 section in
+[INTEGRATION.md](INTEGRATION.md) for spec fields and clock/input policies.
+
 `tests/autoplay.gd` plays an episode from a policy: which `opt` names to pick, which hotspots to visit, which button to press at which beat. `tests/test_flow.gd` shows four routes with assertions on the steps taken and the story state at the end. Add one per ending you care about.
 
 In a debug build, F3 opens a panel with the current step and variables, and buttons to force any exit or jump to any step.

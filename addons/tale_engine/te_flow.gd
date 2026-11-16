@@ -74,6 +74,9 @@ func stop() -> void:
 
 ## Run one conversation over the current location. Returns its exit name.
 func converse(resource: DialogueResource, cue: String, first_shot: StringName = &"") -> StringName:
+	if get_viewport().has_meta(CADDirector.VIEWPORT_OWNER):
+		push_warning("Flow: CAD owns action input. Concurrent conversations require a focus coordinator.")
+		return &"cancelled"
 	var balloon := TEBalloon.new()
 	balloon.cast = episode.cast if episode != null else null
 	balloon.line_shown.connect(_on_line_shown)

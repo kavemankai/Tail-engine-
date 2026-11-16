@@ -39,6 +39,11 @@ func validation_errors() -> PackedStringArray:
 					exits.append(branch.next)
 		else:
 			exits.append(beat.gate.timeout_next)
+			if beat.gate.interaction != null:
+				for problem in beat.gate.interaction.validation_errors(beat.gate.options, beat.gate.window_seconds):
+					errors.append("Beat %s: %s" % [beat.id, problem])
+				for destination in beat.gate.interaction.routes.values():
+					exits.append(destination)
 			var option_ids: Dictionary = {}
 			for option in beat.gate.options:
 				if option == null or option.id == &"" or option.id == &"timeout" \
