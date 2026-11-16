@@ -14,6 +14,8 @@ const END := &"END"
 const PLACEHOLDER := preload("res://addons/tale_engine/placeholder_actor.tscn")
 
 var episode: TEEpisode
+## The season being played, or null for a standalone episode.
+var season: TESeason
 var step: TEStep
 var location: TELocation
 var actors: Dictionary[StringName, TEActor] = {}
@@ -36,10 +38,41 @@ func _ready() -> void:
 		add_child(TEDebug.new())
 
 func new_game(new_episode: TEEpisode) -> void:
+	_begin(new_episode, null)
+
+## Start a season at one of its episodes (the first by default).
+func start_season(new_season: TESeason, index := 0) -> void:
+	if new_season == null or index < 0 or index >= new_season.episodes.size():
+		push_error("Flow: season has no episode %d." % index)
+		return
+	_begin(new_season.episodes[index], new_season)
+
+## True when the season has an episode after the current one.
+func has_next_episode() -> bool:
+	return season != null and episode != null and season.next_after(episode) != null
+
+## Move to the next episode of the season, carrying choices and variables.
+## Call after episode_finished. False if there is none.
+func next_episode() -> bool:
+	if not has_next_episode():
+		return false
+	var carried := {}
+	for key: StringName in season.carry_variables:
+		if Story.vars.has(key):
+			carried[key] = Story.vars[key]
+	var history: Dictionary = Story.history.duplicate(true)
+	history[episode.id] = Story.choices.duplicate()
+	_begin(season.next_after(episode), season, carried, history)
+	return true
+
+func _begin(new_episode: TEEpisode, new_season: TESeason, carried := {}, history := {}) -> void:
 	stop()
 	episode = new_episode
+	season = new_season
 	checkpoints = []
 	Story.reset(episode.manifest)
+	if not carried.is_empty() or not history.is_empty():
+		Story.apply_carry(carried, history)
 	_play(episode.entry)
 
 ## Continue from the newest checkpoint in the save slot. False if there is none.
@@ -49,6 +82,7 @@ func resume() -> bool:
 		return false
 	stop()
 	episode = load(data["episode"])
+	season = load(data["season"]["path"]) if data.has("season") else null
 	checkpoints = data["checkpoints"]
 	rewind(checkpoints.size() - 1)
 	return true
@@ -242,7 +276,8 @@ func _checkpoint() -> void:
 	else:
 		checkpoints.append(entry)
 	if save_slot >= 0:
-		if not TESave.write(save_slot, episode.resource_path, checkpoints):
+		var season_info := {} if season == null else {"path": season.resource_path, "index": season.index_of(episode)}
+		if not TESave.write(save_slot, episode.resource_path, checkpoints, season_info):
 			push_warning(TESave.last_error)
 			Screen.notice("Could not save your progress. Check available disk space and permissions.")
 

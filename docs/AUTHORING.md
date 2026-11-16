@@ -257,3 +257,20 @@ validation. Engine errors and ObjectDB leaks are still failures. The test harnes
 also rejects a non-instantiable suite immediately instead of waiting for the outer
 timeout. New stories can reuse the examples and templates without changing QTE
 runtime; live simultaneous Dialogue Manager balloons remain a deferred extension.
+
+## Seasons
+
+A season (`TESeason`) is an ordered list of episodes plus the variables that carry forward:
+
+```
+season.tres
+  episodes         [episode_1.tres, episode_2.tres, ...]
+  carry_variables  [&"trusted", ...]
+```
+
+Point the title menu at it (`season = ...` on a `TETitleMenu`) or call `Flow.start_season(season)`. When an episode finishes, `Flow.next_episode()` starts the next one (the menu shows **Next episode**).
+
+- Variables in `carry_variables` copy into the next episode if its manifest declares them too.
+- Major choices of earlier episodes are readable with `Story.prior("episode_1", "gift")`, which returns the option id or an empty string. Use it in dialogue conditions: `if Story.prior("episode_1", "gift") == "keep"`.
+- The next episode's recap starts fresh.
+- Saves record the season, so Continue and rewind return to the right episode with carried state intact. The title menu cycles `slot_count` save slots.

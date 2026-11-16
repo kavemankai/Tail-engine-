@@ -12,9 +12,12 @@ static func path(slot: int) -> String:
 static func exists(slot: int) -> bool:
 	return FileAccess.file_exists(path(slot))
 
-static func write(slot: int, episode_path: String, checkpoints: Array) -> bool:
+## `season_info` is optional: { "path": season resource path, "index": episode index }.
+static func write(slot: int, episode_path: String, checkpoints: Array, season_info: Dictionary = {}) -> bool:
 	last_error = ""
 	var data := {"version": VERSION, "episode": episode_path, "checkpoints": checkpoints}
+	if not season_info.is_empty():
+		data["season"] = season_info
 	if slot < 0 or not _usable(data):
 		last_error = "Invalid save data."
 		return false
@@ -60,6 +63,8 @@ static func _usable(data: Variant) -> bool:
 	if episode_path is not String or not episode_path.begins_with("res://") \
 			or checkpoints is not Array or checkpoints.is_empty() or not ResourceLoader.exists(episode_path):
 		return false
+	if data.has("season") and not _season(data["season"]):
+		return false
 	var episode := load(episode_path) as TEEpisode
 	if episode == null or episode.manifest == null or episode.cast == null:
 		return false
@@ -80,6 +85,11 @@ static func _usable(data: Variant) -> bool:
 			if not episode.manifest.has_option(StringName(key), StringName(checkpoint["story"]["choices"][key])):
 				return false
 	return true
+
+static func _season(info: Variant) -> bool:
+	if info is not Dictionary or info.get("path") is not String or info.get("index") is not int:
+		return false
+	return info["path"].begins_with("res://") and ResourceLoader.exists(info["path"]) 		and load(info["path"]) is TESeason and info["index"] >= 0
 
 static func _text(value: Variant) -> bool:
 	return value is String or value is StringName

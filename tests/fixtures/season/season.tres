@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="TESeason" format=3]
+
+[ext_resource type="Script" path="res://addons/tale_engine/te_episode.gd" id="1_ucygd"]
+[ext_resource type="Resource" path="res://tests/fixtures/season/episode_one.tres" id="2_emhie"]
+[ext_resource type="Resource" path="res://tests/fixtures/season/episode_two.tres" id="3_ywy6n"]
+[ext_resource type="Script" path="res://addons/tale_engine/te_season.gd" id="4_84upm"]
+
+[resource]
+script = ExtResource("4_84upm")
+id = &"s1"
+episodes = Array[ExtResource("1_ucygd")]([ExtResource("2_emhie"), ExtResource("3_ywy6n")])
+carry_variables = Array[StringName]([&"trusted", &"scratch"])

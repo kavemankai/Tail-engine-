@@ -20,8 +20,12 @@ var results: Dictionary = {}
 var seen: Dictionary = {}
 ## Optional versioned scalar QTE history, committed only after completed encounters.
 var interactions: Dictionary = {}
+## Earlier episodes of a season: episode id -> { choice id -> option id }.
+var history: Dictionary = {}
 
-func reset(new_manifest: TEStoryManifest = null) -> void:
+func reset(new_manifest: TEStoryManifest = null, keep_history := false) -> void:
+	if not keep_history:
+		history = {}
 	if new_manifest != null:
 		manifest = new_manifest
 	vars = {}
@@ -63,6 +67,17 @@ func choose(choice_id: StringName, option_id: StringName, notice: String = "") -
 	if notice != "":
 		remembered.emit(notice)
 
+## What the player chose in an earlier episode of this season, or "".
+func prior(episode_id: StringName, choice_id: StringName) -> String:
+	return String(history.get(episode_id, {}).get(choice_id, ""))
+
+## Copy carried variables into the new episode and remember its predecessor.
+func apply_carry(carried_vars: Dictionary, new_history: Dictionary) -> void:
+	for key: StringName in carried_vars:
+		if manifest == null or manifest.has_variable(key):
+			vars[key] = carried_vars[key]
+	history = new_history.duplicate(true)
+
 func outcome(step_id: StringName) -> String:
 	return String(outcomes.get(step_id, ""))
 
@@ -82,6 +97,8 @@ func to_dict() -> Dictionary:
 		"results": results.duplicate(true), "seen": seen.duplicate()}
 	if not interactions.is_empty():
 		data["interactions"] = interactions.duplicate(true)
+	if not history.is_empty():
+		data["history"] = history.duplicate(true)
 	return data
 
 func from_dict(data: Dictionary) -> void:
@@ -92,6 +109,11 @@ func from_dict(data: Dictionary) -> void:
 		for key in saved:
 			restored[StringName(key)] = saved[key]
 		set(field, restored)
+	history = {}
+	for episode_id in data.get("history", {}):
+		history[StringName(episode_id)] = {}
+		for choice_id in data["history"][episode_id]:
+			history[StringName(episode_id)][StringName(choice_id)] = data["history"][episode_id][choice_id]
 
 func interaction(step_id: StringName, beat_id: StringName) -> Dictionary:
 	return interactions.get(step_id, {}).get("results", {}).get(String(beat_id), {}).duplicate(true)
