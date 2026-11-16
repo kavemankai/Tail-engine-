@@ -12,19 +12,24 @@ const PAD := {
 }
 
 static func bind(director: CADDirector, label: Label, progress: Range, backdrop: Control = null) -> void:
-	var state := {"options": []}
+	var state := {"options": [], "gate": null}
 	var refresh := func() -> void:
 		var lines := PackedStringArray()
+		if state.gate != null and state.gate.interaction != null:
+			label.text = interaction_text(state.gate, state.options, director.using_pad)
+			return
 		for option: CADOption in state.options:
 			lines.append(text_for(option, director.using_pad))
 		label.text = "\n".join(lines)
 	var hide_prompt := func() -> void:
 		state.options = []
+		state.gate = null
 		for control: Control in [label, progress, backdrop]:
 			if is_instance_valid(control):
 				control.hide()
 	director.gate_opened.connect(func(_beat: CADBeat, options: Array[CADOption], window: float) -> void:
 		state.options = options
+		state.gate = _beat.gate
 		refresh.call()
 		progress.max_value = window
 		progress.value = window
@@ -37,6 +42,27 @@ static func bind(director: CADDirector, label: Label, progress: Range, backdrop:
 	director.finished.connect(func(_outcome: StringName) -> void: hide_prompt.call())
 	director.input_device_changed.connect(refresh)
 	hide_prompt.call()
+
+static func interaction_text(gate: CADGate, options: Array, pad: bool) -> String:
+	var spec := gate.interaction
+	if spec.family == CADInteractionSpec.Family.CHOICE:
+		return "\n".join(options.map(func(option: CADOption) -> String: return text_for(option, pad)))
+	var title := String(spec.id)
+	for option: CADOption in options:
+		if option.id == spec.option_id:
+			title = option.label
+	var verb := ""
+	if spec.family == CADInteractionSpec.Family.PASSIVE:
+		verb = "Do not press "
+	elif spec.family == CADInteractionSpec.Family.GESTURE:
+		if spec.gesture == CADInteractionSpec.Gesture.HOLD:
+			verb = "Hold "
+		elif spec.gesture == CADInteractionSpec.Gesture.TIMED_RELEASE:
+			verb = "Hold, then release "
+	var keys := PackedStringArray()
+	for action in spec.actions:
+		keys.append(glyph(action, pad))
+	return "%s   [%s%s]" % [title, verb, " + ".join(keys)]
 
 static func text_for(option: CADOption, pad: bool) -> String:
 	var verb := "Hold " if option.hold_seconds > 0.0 else ""

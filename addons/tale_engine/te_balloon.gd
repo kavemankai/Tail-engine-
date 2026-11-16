@@ -177,7 +177,7 @@ func _refresh_choices(_using_pad: bool = false) -> void:
 		_choices.get_child(i).text = "[%s]  %s" % [key, _responses[i].text]
 
 func _input(event: InputEvent) -> void:
-	if _cancelled:
+	if _cancelled or get_viewport().has_meta(CADDirector.VIEWPORT_OWNER):
 		return
 	if choosing():
 		for i in mini(_responses.size(), CHOICE_ACTIONS.size()):

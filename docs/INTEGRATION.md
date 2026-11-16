@@ -85,3 +85,75 @@ A press made up to `buffer_seconds` before a gate opens still counts.
 ## Driving beats without a stage
 
 Leave `timeline` empty and send markers yourself. `beat_started(beat, visit)` gives a visit number; pass it back with `director.marker(id, visit)`. A marker with an old number is rejected, so a delayed callback from an earlier beat or run cannot affect the current one.
+
+## Optional v2 interactions
+
+Set `CADGate.interaction` to a `CADInteractionSpec` to opt into the shared runner.
+Leave it null to retain the original press/hold, buffer and frozen-hold-window
+behaviour. Episode 0's existing encounter resources remain unchanged.
+
+Supported families are `GESTURE` (press/hold/timed-release/chord), `CHOICE`, `TIMING`
+and `PASSIVE`. Gesture specs name a stable `id`, `actions` and an `option_id` referencing a gate
+option. Choice specs use the gate's offered options. `monitored_actions` declares
+additional wrong-input actions; `wrong_input` either ignores them or resolves
+`miss`. Unrelated controls are ignored. `routes` optionally maps a result grade to
+a destination in the **same** CADSequence; otherwise the selected option's `next`
+or the gate's `timeout_next` is used. Specs are copied at acquisition.
+
+`CADInteractionRunner` owns one evaluator, `CADInputRouter` and `CADClock` per
+gate. Its `resolved(CADResult)` fires once. `CADDirector.interaction_resolved`
+exposes the typed result; `detailed_results[beat_id]` retains the latest detail.
+`result.to_dict()` contains scalar IDs, grade, route, progress and timing error.
+Legacy `director.results` and `Story.results` keep option/timeout strings. Typed
+details are currently encounter-local; no save migration or mid-QTE save exists.
+
+New gates use monotonic **real active seconds**, independent of Engine.time_scale.
+The deadline is exclusive: input at or after it times out, including after a frame
+hitch. Holds must complete inside the window; unlike legacy holds, they do not
+extend it. Accessibility `window_scale` scales the window. Scene pause and explicit
+`suspend` exclude wall time. Resuming requires fresh input for incomplete holds.
+Early input buffering remains a legacy-only feature in this milestone.
+
+`CADInputRouter` reads current InputMap bindings, ignores echoes/repeated edges,
+and blocks actions held on acquisition until released. The first matching pad
+owns that gate unless `controller_device` is configured; other pads cannot release
+or finish its inputs. Keyboard switching remains available. Losing the owning pad
+cancels the active typed encounter. `Flow` prevents a concurrent dialogue balloon
+from acquiring action input; concurrent dialogue is a later integration phase.
+
+For deterministic tests, pass a seconds callable to `CADInteractionRunner.new`
+or set `director.clock_source` before begin. Keep run/visit IDs when feeding a
+runner directly; stale tokens are rejected. New evaluators extend
+`CADInteractionHandler` and return pending `{}` or one small result dictionary.
+Register each family in the runner and validator; do not put choreography or Story
+writes in a handler.
+
+### Timing, release, chords and restraint
+
+| Spec field | Meaning |
+|---|---|
+| `gesture = TIMED_RELEASE` | One fresh press arms the challenge; the matching source's release is graded. A held button from before acquisition cannot arm it. |
+| `gesture = CHORD` | `actions` contains 2–4 unique actions. They must overlap within `chord_seconds`; repeated presses do not count as another button. |
+| `family = TIMING` | One press is graded around `ideal_seconds`. Parry is an authored use of this evaluator, not a separate combat system. |
+| `perfect_seconds / success_seconds / partial_seconds` | Ordered, inclusive absolute-error bounds; anything later/outside them is `miss`. Input before the earliest partial bound follows `wrong_input`. |
+| `timing_marker` | Optional, one-shot timing anchor after gate opening. `ideal_seconds` is then an offset from that marker; before the marker, input follows the early policy. Empty uses gate opening. |
+| `family = PASSIVE` | `actions` is the forbidden set. A forbidden press or a forbidden action already held on acquisition yields `miss`; completing `passive_seconds` yields `restrained`. |
+
+Timed release uses the same accuracy bounds as Timing. Too-early release with
+IGNORE disarms the gesture and permits a fresh attempt; FAIL resolves `miss`.
+For a failed chord with IGNORE, release its buttons and try again. With FAIL,
+exceeding the chord tolerance resolves `miss` immediately. A different device
+cannot release an action latched by the original physical source.
+
+`window_scale` widens accuracy/chord tolerances as well as the overall deadline.
+It does **not** shift the ideal/contact instant, lengthen hold/neutral durations,
+or slow animations. A continuous hold completed before a frame hitch retains its
+success. Neutral completion at the deadline is an explicit Passive success; an
+input edge at that deadline is late. Choreography markers must fit after gate
+opening and inside the authored window; the stage validator checks their names
+and chronology. Host-driven markers still require the current visit token.
+
+For graded follow-through, use `routes = {&"perfect": &"strong_reaction",
+&"partial": &"glancing_reaction", &"miss": &"recovery"}` with those destinations
+declared as ordinary beats/outcomes. The input handler never invokes actor or NPC
+clips. The selected beat's timeline calls `CADStage.act` and `cut` as before.

@@ -1,0 +1,70 @@
+[gd_resource type="Resource" script_class="CADSequence" format=3]
+
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_sequence.gd" id="seq"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_beat.gd" id="beat"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_gate.gd" id="gate"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_option.gd" id="opt"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_interaction_spec.gd" id="interaction"]
+
+[sub_resource type="Resource" id="dodge"]
+script = ExtResource("opt")
+id = &"dodge"
+action = &"cad_dodge"
+label = "Parry at contact"
+next = &"evade"
+
+[sub_resource type="Resource" id="spec"]
+script = ExtResource("interaction")
+id = &"lab_parry"
+family = 2
+ideal_seconds = 0.35
+perfect_seconds = 0.06
+success_seconds = 0.13
+partial_seconds = 0.25
+routes = Dictionary[StringName, StringName]({&"perfect": &"perfect_reaction", &"partial": &"partial_reaction"})
+option_id = &"dodge"
+actions = Array[StringName]([&"cad_dodge"])
+
+[sub_resource type="Resource" id="gate"]
+script = ExtResource("gate")
+options = Array[ExtResource("opt")]([SubResource("dodge")])
+interaction = SubResource("spec")
+window_seconds = 1.2
+timeout_next = &"hit"
+open_marker = &"gate"
+
+[sub_resource type="Resource" id="windup"]
+script = ExtResource("beat")
+id = &"windup"
+timeline = &"windup"
+gate = SubResource("gate")
+
+[sub_resource type="Resource" id="evade"]
+script = ExtResource("beat")
+id = &"evade"
+timeline = &"evade"
+next = &"success"
+
+[sub_resource type="Resource" id="hit"]
+script = ExtResource("beat")
+id = &"hit"
+timeline = &"hit"
+next = &"missed"
+
+[sub_resource type="Resource" id="perfect_reaction"]
+script = ExtResource("beat")
+id = &"perfect_reaction"
+timeline = &"evade"
+next = &"perfect"
+
+[sub_resource type="Resource" id="partial_reaction"]
+script = ExtResource("beat")
+id = &"partial_reaction"
+timeline = &"hit"
+next = &"partial"
+
+[resource]
+script = ExtResource("seq")
+entry = &"windup"
+beats = Array[ExtResource("beat")]([SubResource("windup"), SubResource("evade"), SubResource("hit"), SubResource("perfect_reaction"), SubResource("partial_reaction")])
+outcomes = Array[StringName]([&"success", &"missed", &"perfect", &"partial"])

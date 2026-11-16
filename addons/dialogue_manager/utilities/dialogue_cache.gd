@@ -16,6 +16,8 @@ static var _update_dependency_paths: PackedStringArray = []
 
 static var _files_marked_for_reimport: PackedStringArray = []
 static var _is_reimport_scheduled: bool = false
+static var _reimport_timer: Timer
+static var _importing := false
 
 ## Keep track of used static IDs
 ## {
@@ -28,9 +30,16 @@ static var known_static_ids: Dictionary = {}
 
 ## Build the initial cache for dialogue files
 static func prepare() -> void:
+	var file_system: Object = Engine.get_singleton("EditorInterface").get_resource_filesystem()
+	file_system.resources_reimporting.connect(_on_resources_reimporting)
+	file_system.resources_reimported.connect(_on_resources_reimported)
 	_update_dependency_timer = Timer.new()
 	_update_dependency_timer.timeout.connect(_on_dependency_timer_timeout)
 	(Engine.get_main_loop() as SceneTree).root.add_child(_update_dependency_timer)
+	_reimport_timer = Timer.new()
+	_reimport_timer.one_shot = true
+	_reimport_timer.timeout.connect(_poll_reimport)
+	(Engine.get_main_loop() as SceneTree).root.add_child(_reimport_timer)
 
 	var current_files: PackedStringArray = _get_dialogue_files_in_filesystem()
 	for file: String in current_files:
@@ -79,11 +88,34 @@ static func reimport_files(and_files: PackedStringArray = []) -> void:
 # Wait for the file system to finish whatever it is doing and then reimport.
 static func _reimport_when_file_system_is_free() -> void:
 	_is_reimport_scheduled = true
-	while _is_file_system_busy():
-		await Engine.get_main_loop().create_timer(0.1).timeout
+	_reimport_timer.start(0.1)
+
+
+static func _poll_reimport() -> void:
+	if _is_file_system_busy():
+		_reimport_timer.start(0.1)
+		return
 	_is_reimport_scheduled = false
 
 	_reimport_marked_files()
+
+
+## Cancel editor work before the plugin/import process goes away. Node timers
+## have explicit ownership; SceneTreeTimer awaits can outlive --import shutdown.
+static func dispose() -> void:
+	var file_system: Object = Engine.get_singleton("EditorInterface").get_resource_filesystem()
+	file_system.resources_reimporting.disconnect(_on_resources_reimporting)
+	file_system.resources_reimported.disconnect(_on_resources_reimported)
+	for timer: Timer in [_update_dependency_timer, _reimport_timer]:
+		if is_instance_valid(timer):
+			timer.stop()
+			timer.free()
+	_update_dependency_timer = null
+	_reimport_timer = null
+	_is_reimport_scheduled = false
+	_importing = false
+	_update_dependency_paths.clear()
+	_files_marked_for_reimport.clear()
 
 
 # Hand any marked files over to the editor's import system.
@@ -101,7 +133,15 @@ static func _reimport_marked_files() -> void:
 # Check if the file system is mid-scan or mid-import.
 static func _is_file_system_busy() -> bool:
 	var file_system: Object = Engine.get_singleton("EditorInterface").get_resource_filesystem()
-	return file_system.is_scanning() or file_system.is_importing()
+	return file_system.is_scanning() or _importing
+
+
+static func _on_resources_reimporting(_paths: PackedStringArray) -> void:
+	_importing = true
+
+
+static func _on_resources_reimported(_paths: PackedStringArray) -> void:
+	_importing = false
 
 
 ## Add a dialogue file to the cache.

@@ -70,6 +70,7 @@ func _enter_tree() -> void:
 
 
 func _exit_tree() -> void:
+	DMCache.dispose()
 	remove_import_plugin(import_plugin)
 	import_plugin = null
 

@@ -105,6 +105,14 @@ func validation_errors(sequence: CADSequence) -> PackedStringArray:
 		var calls := _method_calls(animation)
 		if gate != null and gate.open_marker != &"" and [&"marker", gate.open_marker] not in calls:
 			errors.append("Beat %s: timeline '%s' has no '%s' marker." % [beat.id, beat.timeline, gate.open_marker])
+		if gate != null and gate.interaction != null and gate.interaction.timing_marker != &"" \
+				and [&"marker", gate.interaction.timing_marker] not in calls:
+			errors.append("Beat %s: missing interaction timing marker '%s'." % [beat.id, gate.interaction.timing_marker])
+		elif gate != null and gate.interaction != null and gate.interaction.timing_marker != &"":
+			var opened := _marker_time(animation, gate.open_marker) if gate.open_marker != &"" else 0.0
+			var anchored := _marker_time(animation, gate.interaction.timing_marker)
+			if anchored <= opened or anchored - opened + gate.interaction.ideal_seconds >= gate.window_seconds:
+				errors.append("Beat %s: timing marker/ideal must follow opening and fit inside the gate window." % beat.id)
 		for entry in calls:
 			if entry[0] in [&"act", &"cut"] and actor(entry[1]) == null:
 				errors.append("Beat %s: timeline '%s' uses missing role '%s'." % [beat.id, beat.timeline, entry[1]])
@@ -214,3 +222,14 @@ func _method_calls(animation: Animation) -> Array:
 			calls.append([animation.method_track_get_name(track, key),
 				StringName(params[0]) if not params.is_empty() else &""])
 	return calls
+
+func _marker_time(animation: Animation, marker_id: StringName) -> float:
+	for track in animation.get_track_count():
+		if animation.track_get_type(track) != Animation.TYPE_METHOD:
+			continue
+		for key in animation.track_get_key_count(track):
+			if animation.method_track_get_name(track, key) == &"marker":
+				var params := animation.method_track_get_params(track, key)
+				if not params.is_empty() and params[0] == marker_id:
+					return animation.track_get_key_time(track, key)
+	return -1.0

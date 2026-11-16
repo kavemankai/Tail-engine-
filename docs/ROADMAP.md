@@ -18,11 +18,16 @@ are a later milestone, with selection and licensing decided before integration.
 - Shared device-aware prompts and title/pause settings for subtitles, volume,
   reading speed and timing assistance, with persistent configuration.
 - Windows x86_64 export preset and GitHub Actions verification/artifact workflow.
+- QTE v2 optional interaction seam, monotonic pausable input clock, typed results,
+  remapping/rearm and exclusive action input. Legacy Episode 0 gates are preserved.
+- Shared Gesture, Choice, Timing and Passive evaluators, six resource-authored lab
+  encounters and a skeletal AnimationTree adapter fixture. See [QTE_STATUS.md](QTE_STATUS.md)
+  for the implemented subset and later phases; this is not all 30 mechanics.
 
 ## Before sharing the demo
 
 1. Run `python tools/verify.py --export-windows` on the final revision. Confirm
-   clean import, all nine suites, episode validation and Windows packaging.
+   clean import, all eleven suites, episode validation and Windows packaging.
 2. Complete [the Windows smoke test](WINDOWS_SMOKE_TEST.md) on a real PC and
    physical controller. Record the build commit and device details. This includes
    all four routes, relaunch/Continue, rewind, focus loss, device switching and

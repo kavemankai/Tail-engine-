@@ -33,12 +33,17 @@ func _rebuild() -> void:
 		for i in list.size() - 1:
 			_add("Rewind to: %s" % list[i]["title"], _rewind.bind(i))
 	_add("Settings", Screen.open_settings)
+	_add("Interaction lab", _open_lab)
 	_add("Quit", get_tree().quit)
 	_box.get_child(1).grab_focus.call_deferred()
 
 func _rewind(index: int) -> void:
 	if Flow.resume():
 		Flow.rewind(index)
+
+func _open_lab() -> void:
+	if get_tree().change_scene_to_file("res://content/qte_lab/lab.tscn") != OK:
+		Screen.notice("Could not open the interaction lab.")
 
 func _add(text: String, action: Callable) -> void:
 	var button := Button.new()
