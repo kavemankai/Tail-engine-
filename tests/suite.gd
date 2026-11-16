@@ -3,11 +3,13 @@ extends Node3D
 ## Base for test suites: assertions and input injection.
 
 var failures := 0
+var checks := 0
 
 func run() -> void:
 	pass
 
 func expect(condition: bool, message: String) -> void:
+	checks += 1
 	if not condition:
 		failures += 1
 	print("PASS " if condition else "FAIL ", message)

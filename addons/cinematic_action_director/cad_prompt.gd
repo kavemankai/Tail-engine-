@@ -8,18 +8,24 @@ const PAD := {
 	JOY_BUTTON_LEFT_SHOULDER: "LB", JOY_BUTTON_RIGHT_SHOULDER: "RB",
 	JOY_BUTTON_DPAD_UP: "D-pad Up", JOY_BUTTON_DPAD_DOWN: "D-pad Down",
 	JOY_BUTTON_DPAD_LEFT: "D-pad Left", JOY_BUTTON_DPAD_RIGHT: "D-pad Right",
+	JOY_BUTTON_START: "Start",
 }
 
 static func bind(director: CADDirector, label: Label, progress: Range, backdrop: Control = null) -> void:
+	var state := {"options": []}
+	var refresh := func() -> void:
+		var lines := PackedStringArray()
+		for option: CADOption in state.options:
+			lines.append(text_for(option, director.using_pad))
+		label.text = "\n".join(lines)
 	var hide_prompt := func() -> void:
+		state.options = []
 		for control: Control in [label, progress, backdrop]:
 			if is_instance_valid(control):
 				control.hide()
 	director.gate_opened.connect(func(_beat: CADBeat, options: Array[CADOption], window: float) -> void:
-		var lines := PackedStringArray()
-		for option in options:
-			lines.append(text_for(option, director.using_pad))
-		label.text = "\n".join(lines)
+		state.options = options
+		refresh.call()
 		progress.max_value = window
 		progress.value = window
 		for control: Control in [label, progress, backdrop]:
@@ -29,6 +35,7 @@ static func bind(director: CADDirector, label: Label, progress: Range, backdrop:
 		progress.value = hold * progress.max_value if hold > 0.0 else remaining)
 	director.gate_closed.connect(hide_prompt)
 	director.finished.connect(func(_outcome: StringName) -> void: hide_prompt.call())
+	director.input_device_changed.connect(refresh)
 	hide_prompt.call()
 
 static func text_for(option: CADOption, pad: bool) -> String:

@@ -6,7 +6,7 @@ Everything on screen is a greybox placeholder. Characters are capsules, sets are
 
 ## Run it
 
-Open `project.godot` in Godot 4.6 and run. Choose New game.
+Open `project.godot` in standard Godot **4.6.3** and run. Choose New game.
 
 | Where | Keyboard | Gamepad |
 |---|---|---|
@@ -16,6 +16,11 @@ Open `project.godot` in Godot 4.6 and run. Choose New game.
 | Any time | Escape pause, F3 debug panel | Start |
 
 Episode 0 is about three minutes: a bar, a stranger, a fight that changes with what you said and noticed, and an alley chase if it goes badly.
+
+Title and pause menus offer Settings: subtitle size, reading time, master volume,
+extended action prompts and untimed dialogue choices. Menus support arrows/Enter
+or D-pad/A. Prompts follow the last-used input device. Losing focus pauses the
+game; use Escape/Start or Resume to continue.
 
 ## What is here
 
@@ -31,12 +36,39 @@ Episode 0 is about three minutes: a bar, a stranger, a fight that changes with w
 ## Check it
 
 ```bash
+python tools/verify.py                               # import, nine suites, episode validation
+python tools/verify.py --suites lifecycle save        # a focused regression run
+```
+
+The wrapper requires Python 3 and Godot 4.6.3 on PATH (or `--godot /path/to/godot`).
+It fails on engine/script errors and leaks even if Godot exits zero, checks that
+the suites completed, and saves logs in `build/logs/`. CI runs it on fresh checkouts.
+Each suite has a 90-second watchdog; the wrapper also bounds each process.
+
+The underlying scenes remain available:
+
+```bash
 godot --headless --editor --path . --import
-godot --headless --path . res://tests/run.tscn          # 99 checks, 7 suites
+godot --headless --path . res://tests/run.tscn
 godot --headless --path . res://tests/validate.tscn     # problems in the episode data
 ```
 
 `run.tscn` takes suite names after `--` to run a subset: `-- flow save`. Two warnings about invalid sequences in the `cad` suite are expected.
+
+## Windows demo
+
+Install the matching Godot 4.6.3 export templates, then run:
+
+```bash
+python tools/verify.py --export-windows
+```
+
+The output is `build/LastCall-windows-greybox.zip`. Pushes and manual GitHub
+Actions runs produce the same artifact; pull requests run checks only.
+[Windows controls and the release smoke test](docs/WINDOWS_SMOKE_TEST.md) must be
+checked on a Windows PC with a physical controller before distributing a build.
+The runtime keeps its original application ID, `Cinematic Action Director`, so
+existing saves remain in the same user-data directory.
 
 To record a playthrough, with a display:
 
@@ -47,6 +79,7 @@ godot --path . --write-movie out.avi --fixed-fps 30 res://tests/record.tscn
 ## Writing content
 
 [docs/AUTHORING.md](docs/AUTHORING.md) covers the episode graph, dialogue files, story variables, hubs and encounters. [docs/INTEGRATION.md](docs/INTEGRATION.md) is the action layer's reference.
+[docs/ROADMAP.md](docs/ROADMAP.md) tracks current work and the remaining release gates.
 
 ## Limits
 

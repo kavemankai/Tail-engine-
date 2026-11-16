@@ -64,10 +64,12 @@ func rewind(index: int) -> void:
 func stop() -> void:
 	_generation += 1
 	_step_token += 1
+	_step_done.emit(&"cancelled")
 	running = false
 	step = null
 	_clear_props()
 	_free_location()
+	Audio.stop_voice()
 	Screen.clear()
 
 ## Run one conversation over the current location. Returns its exit name.
@@ -79,8 +81,11 @@ func converse(resource: DialogueResource, cue: String, first_shot: StringName = 
 	_props.append(balloon)
 	_cut(first_shot)
 	balloon_opened.emit(balloon)
-	balloon.start(resource, cue)
-	var exit_name: StringName = await balloon.finished
+	if not balloon._finished:
+		balloon.start(resource, cue)
+	if not balloon._finished:
+		await balloon.finished
+	var exit_name := balloon._exit
 	for actor: TEActor in actors.values():
 		actor.speak(false)
 	_props.erase(balloon)
@@ -92,6 +97,7 @@ func force_exit(exit_name: StringName) -> void:
 	if running and step != null:
 		_step_token += 1
 		_clear_props()
+		Screen.clear()
 		_step_done.emit(exit_name)
 
 ## Debug: abandon the current step and start another.
@@ -99,7 +105,9 @@ func jump(step_id: StringName) -> void:
 	if episode != null and episode.find(step_id) != null:
 		_generation += 1
 		_step_token += 1
+		_step_done.emit(&"cancelled")
 		_clear_props()
+		Screen.clear()
 		_play(step_id)
 
 func _play(step_id: StringName) -> void:
@@ -185,8 +193,9 @@ func _encounter(current: TEStep) -> StringName:
 	var outcome := &"error"
 	if director.begin(current.sequence, stage):
 		director_started.emit(director)
-		outcome = await director.finished
-		Story.results[current.id] = director.results.duplicate()
+		outcome = await director.finished if director.active() else director.last_outcome
+		if outcome != &"cancelled":
+			Story.results[current.id] = director.results.duplicate()
 	for role: StringName in current.roles:
 		stage.unbind(role)
 	_props.erase(director)
@@ -201,9 +210,10 @@ func _explore(current: TEStep) -> StringName:
 	hub.activate(actors[episode.player], location.zones(), current.id)
 	_hub = hub
 	hub_entered.emit(hub)
-	var exit_name: StringName = await hub.exited
+	var exit_name: StringName = await hub.exited if hub.is_processing() else &"cancelled"
 	hub.deactivate()
-	_hub = null
+	if _hub == hub:
+		_hub = null
 	return exit_name
 
 func _checkpoint() -> void:
@@ -213,7 +223,9 @@ func _checkpoint() -> void:
 	else:
 		checkpoints.append(entry)
 	if save_slot >= 0:
-		TESave.write(save_slot, episode.resource_path, checkpoints)
+		if not TESave.write(save_slot, episode.resource_path, checkpoints):
+			push_warning(TESave.last_error)
+			Screen.notice("Could not save your progress. Check available disk space and permissions.")
 
 ## Returns true when a different location was loaded.
 func _enter_location(path: String, generation: int) -> bool:
@@ -263,15 +275,22 @@ func _cut(shot: StringName) -> void:
 		push_warning("Flow: location has no shot '%s'." % shot)
 
 func _clear_props() -> void:
-	for node in _props:
+	# Cancelling resumes awaiting functions synchronously; detach first so they
+	# cannot mutate this iteration or accidentally remove a new session's props.
+	var props := _props.duplicate()
+	_props.clear()
+	var hub := _hub
+	_hub = null
+	if is_instance_valid(hub):
+		hub.cancel()
+	for node in props:
 		if is_instance_valid(node):
 			if node is CADDirector:
 				node.cancel()
-			node.queue_free()
-	_props.clear()
-	if is_instance_valid(_hub):
-		_hub.deactivate()
-	_hub = null
+			elif node is TEBalloon:
+				node.cancel()
+			if is_instance_valid(node) and not node.is_queued_for_deletion():
+				node.queue_free()
 
 func _free_location() -> void:
 	actors.clear()

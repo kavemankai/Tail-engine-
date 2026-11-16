@@ -1,4 +1,8 @@
 .godot/
 *.import
+!addons/dialogue_manager/**/*.svg.import
+build/
+__pycache__/
+*.pyc
 demo.mp4
 episode_0.mp4
