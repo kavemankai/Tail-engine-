@@ -47,6 +47,8 @@ func begin(gate: CADGate, offered: Array[CADOption], scale: float, run: int, vis
 	_spec.success_seconds *= scale
 	_spec.partial_seconds *= scale
 	_spec.chord_seconds *= scale
+	for i in _spec.pattern_deadlines.size():
+		_spec.pattern_deadlines[i] *= scale
 	_options.clear()
 	for option in offered:
 		_options.append(option.duplicate(true))
@@ -63,6 +65,7 @@ func begin(gate: CADGate, offered: Array[CADOption], scale: float, run: int, vis
 	match _spec.family:
 		CADInteractionSpec.Family.GESTURE: _handler = CADGestureHandler.new()
 		CADInteractionSpec.Family.CHOICE: _handler = CADChoiceHandler.new()
+		CADInteractionSpec.Family.PATTERN: _handler = CADPatternHandler.new()
 		CADInteractionSpec.Family.TIMING: _handler = CADTimingHandler.new()
 		CADInteractionSpec.Family.PASSIVE: _handler = CADPassiveHandler.new()
 		CADInteractionSpec.Family.DIRECTION:
@@ -120,6 +123,7 @@ func suspend(value: bool) -> void:
 	if value:
 		_handler.reset_input()
 	else:
+		_handler.resume_input(clock.elapsed)
 		router.configure(_spec.input_actions(_options), router.controller)
 		if _spec.family == CADInteractionSpec.Family.DIRECTION:
 			router.configure_direction(_spec, _input_snapshot)
@@ -130,6 +134,9 @@ func cancel() -> void:
 
 func remaining() -> float:
 	return maxf(0.0, _window - clock.elapsed)
+
+func completed_steps() -> int:
+	return _handler.index if _handler is CADPatternHandler else 0
 
 func progress() -> float:
 	return _handler.progress if _handler != null else 0.0

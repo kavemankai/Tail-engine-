@@ -17,7 +17,7 @@ static func bind(director: CADDirector, label: Label, progress: Range, backdrop:
 		var lines := PackedStringArray()
 		if state.gate != null and state.gate.interaction != null:
 			var forward := director.interaction_runner.direction_forward if director.interaction_runner != null else Vector2.UP
-			label.text = interaction_text(state.gate, state.options, director.using_pad, forward)
+			label.text = interaction_text(state.gate, state.options, director.using_pad, forward, director.interaction_runner.completed_steps() if director.interaction_runner != null else 0)
 			return
 		for option: CADOption in state.options:
 			lines.append(text_for(option, director.using_pad))
@@ -38,13 +38,15 @@ static func bind(director: CADDirector, label: Label, progress: Range, backdrop:
 			if control != null:
 				control.show())
 	director.gate_progress.connect(func(remaining: float, hold: float) -> void:
-		progress.value = hold * progress.max_value if hold > 0.0 else remaining)
+		progress.value = hold * progress.max_value if hold > 0.0 else remaining
+		if state.gate != null and state.gate.interaction != null and state.gate.interaction.family == CADInteractionSpec.Family.PATTERN:
+			refresh.call())
 	director.gate_closed.connect(hide_prompt)
 	director.finished.connect(func(_outcome: StringName) -> void: hide_prompt.call())
 	director.input_device_changed.connect(refresh)
 	hide_prompt.call()
 
-static func interaction_text(gate: CADGate, options: Array, pad: bool, forward := Vector2.UP) -> String:
+static func interaction_text(gate: CADGate, options: Array, pad: bool, forward := Vector2.UP, completed := 0) -> String:
 	var spec := gate.interaction
 	if spec.family == CADInteractionSpec.Family.DIRECTION:
 		return direction_text(spec, options, pad, forward)
@@ -54,6 +56,11 @@ static func interaction_text(gate: CADGate, options: Array, pad: bool, forward :
 	for option: CADOption in options:
 		if option.id == spec.option_id:
 			title = option.label
+	if spec.family == CADInteractionSpec.Family.PATTERN:
+		var steps := PackedStringArray()
+		for i in spec.pattern_steps.size():
+			steps.append(("✓ " if i < completed else "") + glyph(spec.pattern_steps[i], pad))
+		return "%s\n[%s]" % [title, " → ".join(steps)]
 	var verb := ""
 	if spec.family == CADInteractionSpec.Family.PASSIVE:
 		verb = "Do not press "

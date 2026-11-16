@@ -1,6 +1,6 @@
 # QTE v2 implementation status
 
-This milestone implements the **software portion of Phases 0–3**, preserving the
+This milestone implements the **software portion of Phases 0–4**, preserving the
 original Episode 0 encounters. It does not implement the full 30-mechanic target.
 
 ## Completed work and evidence
@@ -41,6 +41,19 @@ revision. Logs are in `build/logs/`; all leak/script/engine error checks remain 
 The Windows package includes the Interaction lab menu and is pack-startup tested
 outside the source checkout. Windows execution and real-pad QA remain separate.
 
+Phase 4 adds one Pattern evaluator for ordered/repeated/alternating inputs with
+relative step deadlines and ignore/reset/fail policies. Paused incomplete patterns
+restart with fresh input inside the remaining gate budget. `CADChainTemplate` and
+`CADThreePunchTemplate` compile ordinary sequences with per-input action/recovery
+beats. Four native lab examples demonstrate patterns, individual punches and mixed
+attack/defence. Automated checks cover interruption at each punch, paired skeletal
+clip dispatch, three distinct fixture punch poses, native resource roundtrips and
+both-role root continuity. Real humanoid contact remains an open acceptance gate.
+
+Phase 4 local verification: **661 Godot checks across 15 suites**, three Python
+runner tests, clean episode validation, Windows export and isolated packaged
+main/lab startup passed on Godot 4.6.3.
+
 ## Selected mechanics
 
 | ID | Mechanic | Current implementation |
@@ -48,9 +61,9 @@ outside the source checkout. Windows execution and real-pad QA remain separate.
 | 1 | Single press | Gesture; legacy preserved |
 | 3 | Hold | Gesture; legacy frozen-window hold preserved separately |
 | 4 | Timed release | Gesture, source-owned release, graded outcomes |
-| 7 | Alternating buttons | Outstanding Pattern phase |
+| 7 | Alternating buttons | Pattern with explicit deadlines and error policy |
 | 8 | Simultaneous buttons | Gesture chord with overlap/tolerance and retry/fail policy |
-| 9 | Button sequence | Outstanding Pattern phase |
+| 9 | Button sequence | Pattern with explicit deadlines and error policy |
 | 15 | No-input | Passive; explicit forbidden set and restrained completion |
 | 16 | Reaction window | Legacy and opt-in real-time press window |
 | 17 | Perfect timing | Timing and timed release with signed error and graded routes |
@@ -61,8 +74,8 @@ outside the source checkout. Windows execution and real-pad QA remain separate.
 | 38 | Directional selection | Analogue, D-pad and keyboard sectors mapped to offered option IDs; opt-in chase fork |
 | 42 | Target selection | Outstanding Target registry/evaluator |
 | 43 | Moving target | Outstanding tracking/lock evaluator |
-| 53 | Three-punch combo | Existing graph composition only; reusable template/paired clips outstanding |
-| 56 | Attack/defence chain | Existing graph composition only; reusable template outstanding |
+| 53 | Three-punch combo | Three-punch template, independent gates and paired fixture clip dispatch; humanoid acceptance open |
+| 56 | Attack/defence chain | Shared chain template; mixed attack and directional-block example |
 | 62 | Tug of war | Outstanding Pressure evaluator and accessibility substitute |
 | 69 | Grapple escape | Hold is available; compound/opposition/release choreography outstanding |
 | 72 | Object grab | Existing flag-conditioned stool choice; generic target/socket ownership outstanding |
@@ -78,7 +91,7 @@ outside the source checkout. Windows execution and real-pad QA remain separate.
 
 ## Next phases and open acceptance gates
 
-Continue in the committed order: Pattern and combos; Target/attachments; Pressure/struggle; cinematic/narrative layers;
+Continue in the committed order: Target/attachments; Pressure/struggle; cinematic/narrative layers;
 authoring/trace/1080p quality gate. New families must register in the shared
 runner and validation, not add scene-local input scripts or a second story graph.
 
@@ -87,8 +100,8 @@ runner and validation, not add scene-local input scripts or a second story graph
 - The humanoid kit and paired contact clips are unavailable. The minimal rig
   proves interface/playback only; alignment, snapping, foot contact, impacts and
   variant proportions require real assets and visual review.
-- Counterattack is the first compound template. Combo/grapple/grab templates, target
-  UI, sockets, resistance, local slowdown, barks/live dialogue coordination, momentum
+- Counterattack, combo and chain templates are available. Grapple/grab templates,
+  target UI, sockets, resistance, local slowdown, barks/live dialogue coordination, momentum
   and semantic-intent authoring remain outstanding.
 - New interactions deliberately reject pre-held input and do not consume legacy
   early buffers. Paused incomplete gestures require fresh input on resume.

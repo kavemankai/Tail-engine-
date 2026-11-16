@@ -1,0 +1,123 @@
+[gd_resource type="AnimationLibrary" format=3]
+
+[sub_resource type="Animation" id="ready"]
+resource_name = "ready"
+length = 0.6
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/path = NodePath("Player:position")
+tracks/0/keys = {"times": PackedFloat32Array(0, 0.3, 0.6), "transitions": PackedFloat32Array(1, 1, 1), "update": 0, "values": [Vector3(-0.5, 0, 0), Vector3(-0.5, 0, 0), Vector3(-0.5, 0, 0)]}
+tracks/1/type = "value"
+tracks/1/path = NodePath("Aggressor:position")
+tracks/1/keys = {"times": PackedFloat32Array(0, 0.3, 0.6), "transitions": PackedFloat32Array(1, 1, 1), "update": 0, "values": [Vector3(1.2, 0, 0), Vector3(1.2, 0, 0), Vector3(1.2, 0, 0)]}
+tracks/2/type = "method"
+tracks/2/path = NodePath(".")
+tracks/2/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "values": [{"method": &"cut", "args": [&"Wide"]}]}
+tracks/3/type = "method"
+tracks/3/path = NodePath(".")
+tracks/3/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "values": [{"method": &"act", "args": [&"Player", &"guard"]}]}
+
+[sub_resource type="Animation" id="jab"]
+resource_name = "jab"
+length = 0.65
+tracks/0/type = "value"
+tracks/0/path = NodePath("Player:position")
+tracks/0/keys = {"times": PackedFloat32Array(0, 0.325, 0.65), "transitions": PackedFloat32Array(1, 1, 1), "update": 0, "values": [Vector3(-0.5, 0, 0), Vector3(-0.3, 0, 0), Vector3(-0.5, 0, 0)]}
+tracks/1/type = "value"
+tracks/1/path = NodePath("Aggressor:position")
+tracks/1/keys = {"times": PackedFloat32Array(0, 0.325, 0.65), "transitions": PackedFloat32Array(1, 1, 1), "update": 0, "values": [Vector3(1.2, 0, 0), Vector3(1.3, 0, 0), Vector3(1.2, 0, 0)]}
+tracks/2/type = "method"
+tracks/2/path = NodePath(".")
+tracks/2/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "values": [{"method": &"cut", "args": [&"Close"]}]}
+tracks/3/type = "method"
+tracks/3/path = NodePath(".")
+tracks/3/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "values": [{"method": &"act", "args": [&"Player", &"punch_jab"]}]}
+tracks/4/type = "method"
+tracks/4/path = NodePath(".")
+tracks/4/keys = {"times": PackedFloat32Array(0.325), "transitions": PackedFloat32Array(1), "values": [{"method": &"act", "args": [&"Aggressor", &"recoil_jab"]}]}
+
+[sub_resource type="Animation" id="cross"]
+resource_name = "cross"
+length = 0.65
+tracks/0/type = "value"
+tracks/0/path = NodePath("Player:position")
+tracks/0/keys = {"times": PackedFloat32Array(0, 0.325, 0.65), "transitions": PackedFloat32Array(1, 1, 1), "update": 0, "values": [Vector3(-0.5, 0, 0), Vector3(-0.2, 0, 0), Vector3(-0.5, 0, 0)]}
+tracks/1/type = "value"
+tracks/1/path = NodePath("Aggressor:position")
+tracks/1/keys = {"times": PackedFloat32Array(0, 0.325, 0.65), "transitions": PackedFloat32Array(1, 1, 1), "update": 0, "values": [Vector3(1.2, 0, 0), Vector3(1.3499999999999999, 0, 0), Vector3(1.2, 0, 0)]}
+tracks/2/type = "method"
+tracks/2/path = NodePath(".")
+tracks/2/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "values": [{"method": &"cut", "args": [&"Close"]}]}
+tracks/3/type = "method"
+tracks/3/path = NodePath(".")
+tracks/3/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "values": [{"method": &"act", "args": [&"Player", &"punch_cross"]}]}
+tracks/4/type = "method"
+tracks/4/path = NodePath(".")
+tracks/4/keys = {"times": PackedFloat32Array(0.325), "transitions": PackedFloat32Array(1), "values": [{"method": &"act", "args": [&"Aggressor", &"recoil_cross"]}]}
+
+[sub_resource type="Animation" id="hook"]
+resource_name = "hook"
+length = 0.8
+tracks/0/type = "value"
+tracks/0/path = NodePath("Player:position")
+tracks/0/keys = {"times": PackedFloat32Array(0, 0.4, 0.8), "transitions": PackedFloat32Array(1, 1, 1), "update": 0, "values": [Vector3(-0.5, 0, 0), Vector3(-0.25, 0, 0), Vector3(-0.5, 0, 0)]}
+tracks/1/type = "value"
+tracks/1/path = NodePath("Aggressor:position")
+tracks/1/keys = {"times": PackedFloat32Array(0, 0.4, 0.8), "transitions": PackedFloat32Array(1, 1, 1), "update": 0, "values": [Vector3(1.2, 0, 0), Vector3(1.325, 0, 0), Vector3(1.2, 0, 0)]}
+tracks/2/type = "method"
+tracks/2/path = NodePath(".")
+tracks/2/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "values": [{"method": &"cut", "args": [&"Close"]}]}
+tracks/3/type = "method"
+tracks/3/path = NodePath(".")
+tracks/3/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "values": [{"method": &"act", "args": [&"Player", &"punch_hook"]}]}
+tracks/4/type = "method"
+tracks/4/path = NodePath(".")
+tracks/4/keys = {"times": PackedFloat32Array(0.4), "transitions": PackedFloat32Array(1), "values": [{"method": &"act", "args": [&"Aggressor", &"recoil_hook"]}]}
+
+[sub_resource type="Animation" id="block"]
+resource_name = "block"
+length = 0.65
+tracks/0/type = "value"
+tracks/0/path = NodePath("Player:position")
+tracks/0/keys = {"times": PackedFloat32Array(0, 0.325, 0.65), "transitions": PackedFloat32Array(1, 1, 1), "update": 0, "values": [Vector3(-0.5, 0, 0), Vector3(-0.5, 0, 0), Vector3(-0.5, 0, 0)]}
+tracks/1/type = "value"
+tracks/1/path = NodePath("Aggressor:position")
+tracks/1/keys = {"times": PackedFloat32Array(0, 0.325, 0.65), "transitions": PackedFloat32Array(1, 1, 1), "update": 0, "values": [Vector3(1.2, 0, 0), Vector3(1.2, 0, 0), Vector3(1.2, 0, 0)]}
+tracks/2/type = "method"
+tracks/2/path = NodePath(".")
+tracks/2/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "values": [{"method": &"cut", "args": [&"Close"]}]}
+tracks/3/type = "method"
+tracks/3/path = NodePath(".")
+tracks/3/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "values": [{"method": &"act", "args": [&"Player", &"guard"]}]}
+tracks/4/type = "method"
+tracks/4/path = NodePath(".")
+tracks/4/keys = {"times": PackedFloat32Array(0.325), "transitions": PackedFloat32Array(1), "values": [{"method": &"act", "args": [&"Aggressor", &"windup"]}]}
+
+[sub_resource type="Animation" id="recover"]
+resource_name = "recover"
+length = 0.65
+tracks/0/type = "value"
+tracks/0/path = NodePath("Player:position")
+tracks/0/keys = {"times": PackedFloat32Array(0, 0.325, 0.65), "transitions": PackedFloat32Array(1, 1, 1), "update": 0, "values": [Vector3(-0.5, 0, 0), Vector3(-0.5, 0, 0), Vector3(-0.5, 0, 0)]}
+tracks/1/type = "value"
+tracks/1/path = NodePath("Aggressor:position")
+tracks/1/keys = {"times": PackedFloat32Array(0, 0.325, 0.65), "transitions": PackedFloat32Array(1, 1, 1), "update": 0, "values": [Vector3(1.2, 0, 0), Vector3(1.2, 0, 0), Vector3(1.2, 0, 0)]}
+tracks/2/type = "method"
+tracks/2/path = NodePath(".")
+tracks/2/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "values": [{"method": &"cut", "args": [&"Wide"]}]}
+tracks/3/type = "method"
+tracks/3/path = NodePath(".")
+tracks/3/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "values": [{"method": &"act", "args": [&"Player", &"guard"]}]}
+tracks/4/type = "method"
+tracks/4/path = NodePath(".")
+tracks/4/keys = {"times": PackedFloat32Array(0.325), "transitions": PackedFloat32Array(1), "values": [{"method": &"act", "args": [&"Aggressor", &"guard"]}]}
+
+[resource]
+_data = {
+&"ready": SubResource("ready"),
+&"jab": SubResource("jab"),
+&"cross": SubResource("cross"),
+&"hook": SubResource("hook"),
+&"block": SubResource("block"),
+&"recover": SubResource("recover")
+}

@@ -140,3 +140,28 @@ original graphs, flag-conditioned stool/bartender consequences and outcomes are
 preserved. `content/qte_lab/direction/episode_0_directional.tres` exercises them
 through the full story graph without changing the default episode. Run validation
 and the `compounds` suite after editing these resources.
+
+### Patterns and multi-action compounds
+
+The lab adds alternating and ordered Pattern resources plus `pattern/combo.tres`
+and `pattern/chain.tres`. Open their `_episode.tres` entries from the Interaction
+lab. Use `pattern_steps`, relative `pattern_deadlines`, `pattern_min_seconds`, and
+`pattern_error` to author input sequences. Do not put repeated steps in `actions`.
+A reset retries inside the original gate budget; it cannot extend that budget.
+
+Use `TEStep.compound` with `CADThreePunchTemplate` for three separately triggered
+strikes, or `CADChainTemplate` for a mixture of attack and defence gates. Assign
+one input, paired action and recovery timeline per gate. Each accepted input
+plays its action timeline once before the next gate; a missed input plays the
+matching recovery. Leave gate option destinations empty for the compiler to wire.
+The standard beat IDs are `input_1`, `action_1`, `recover_1`, etc.; grade routes can
+only select that component's action or recovery. Use a plain sequence for other
+graph shapes.
+
+`python tools/build_pattern_examples.py` rebuilds the native examples and their
+AnimationLibrary; it contains authoring data, never input evaluation. The three
+punches cue distinct logical clips (`punch_jab`, `punch_cross`, `punch_hook`) and
+paired `recoil_jab`, `recoil_cross`, `recoil_hook` NPC clips. Map these in your cast.
+Run `qte_pattern chains` and the full verifier after edits. The fixture proves
+three distinct skeletal poses and continuous timeline roots, not real humanoid
+contact or production animation quality.

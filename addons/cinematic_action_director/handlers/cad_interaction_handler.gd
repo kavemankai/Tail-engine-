@@ -20,6 +20,9 @@ func tick(_elapsed: float, _delta: float) -> Dictionary:
 func reset_input() -> void:
 	pass
 
+func resume_input(_elapsed: float) -> void:
+	pass
+
 func marker(_id: StringName, _at: float) -> bool:
 	return false
 

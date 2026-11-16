@@ -225,3 +225,46 @@ The timelines own shots, root motion and paired `act()` cues. The directional la
 stage uses separate method tracks for simultaneous player/NPC/camera calls and
 has tested root continuity at all template branch boundaries. Real skeletal pose
 blends and physical contact remain an asset-level acceptance task.
+
+### Ordered and alternating inputs
+
+`CADInteractionSpec.Family.PATTERN` uses `pattern_steps` (1–64 action IDs;
+repetitions allowed), one relative `pattern_deadlines` duration per step, and
+`pattern_min_seconds` between opening/accepted input and the next accepted input.
+Keep ordinary `actions` empty. Alternation is authored as e.g.
+`[cad_a, cad_b, cad_a, cad_b]`; it needs no special evaluator. Deadlines begin at
+gate opening or the previous accepted step. Both the per-step and overall gate
+deadlines win exact ties; simultaneous samples cannot advance multiple steps.
+
+`pattern_error` is IGNORE, RESET or FAIL for wrong/early edges. RESET discards
+all accepted steps and starts the first deadline at that edge, without extending
+the gate window. FAIL returns `miss`; existing `routes[miss]` supplies branching.
+Timeout retains bounded progress. Only fresh pressed edges advance; held input,
+keyboard repeat and source-mismatched releases use the shared router policies.
+Pause discards incomplete patterns; resume starts a fresh first-step deadline
+within the remaining active gate budget. Timing assistance widens each relative
+deadline, while the minimum interval remains explicit. The prompt displays the
+ordered, remapped controls and completed steps; `runner.completed_steps()` exposes
+the read-only count for custom UI.
+
+### Combo and attack/defence chains
+
+`CADChainTemplate` compiles `gates`, `input_timelines`, `action_timelines` and
+`recovery_timelines` (equally sized arrays, 1–32 components) into a `CADSequence`.
+Each component enters `input_N`, successful input plays `action_N`, and failure
+plays `recover_N` then exits with `interrupted_outcome`. A successful action
+finishes its authored timeline before opening the next input. All components
+completed yields `completed_outcome`. Results remain per-component legacy strings
+plus encounter-local typed detail. Gates are deep copied for each build.
+
+Grade overrides may choose only that component's `action_N` or `recover_N`; this
+prevents loops and skipped paired reactions. Arbitrary graphs remain available
+through `CADSequence`. `CADThreePunchTemplate` uses the same compiler and requires
+exactly three gates and three distinct action timelines. It does not infer contact
+frames or create animations. Author both actor cues, positions and camera cuts in
+each timeline. Blend duration defaults to 0.08 seconds. Supply explicit recovery
+timelines with compatible entry poses, including after the final input.
+
+`CADInteractionHandler.resume_input(elapsed)` is an optional extension hook called
+when active-time input resumes, after `reset_input()` on suspension. It must not
+resolve an interaction or advance Story; runners still own completion and routing.

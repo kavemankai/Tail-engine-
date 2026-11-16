@@ -3,9 +3,10 @@ extends Resource
 ## Optional CADGate extension. Missing interaction keeps the legacy evaluator.
 ## Routes override named grade destinations in the existing CADSequence graph.
 
-enum Family { GESTURE, CHOICE, TIMING, PASSIVE, DIRECTION }
+enum Family { GESTURE, CHOICE, TIMING, PASSIVE, DIRECTION, PATTERN }
 enum Gesture { PRESS, HOLD, TIMED_RELEASE, CHORD }
 enum WrongInput { IGNORE, FAIL }
+enum PatternError { IGNORE, RESET, FAIL }
 enum DirectionMode { FLICK, HOLD, SELECT }
 enum DirectionSpace { INPUT, CAMERA }
 enum Sector { UP, UP_RIGHT, RIGHT, DOWN_RIGHT, DOWN, DOWN_LEFT, LEFT, UP_LEFT }
@@ -44,13 +45,21 @@ enum Sector { UP, UP_RIGHT, RIGHT, DOWN_RIGHT, DOWN, DOWN_LEFT, LEFT, UP_LEFT }
 ## SELECT maps sectors to existing gate option IDs (not display labels).
 @export var direction_options: Dictionary[int, StringName] = {}
 
+## Repeated actions belong here, not in actions. Alternation is ordinary data.
+@export var pattern_steps: Array[StringName] = []
+## Duration from opening/previous accepted step. Timeout wins exact ties.
+@export var pattern_deadlines: Array[float] = []
+## Minimum interval for every step, including the first. Early edges use policy.
+@export_range(0.0, 5.0) var pattern_min_seconds := 0.0
+@export var pattern_error: PatternError = PatternError.IGNORE
+
 func validation_errors(options: Array[CADOption], window: float) -> PackedStringArray:
 	var errors := PackedStringArray()
 	if id == &"":
 		errors.append("Interaction needs a stable id.")
 	if not is_finite(window) or window <= 0.0:
 		errors.append("Interaction window must be finite and positive.")
-	if family not in [Family.GESTURE, Family.CHOICE, Family.TIMING, Family.PASSIVE, Family.DIRECTION]:
+	if family not in [Family.GESTURE, Family.CHOICE, Family.TIMING, Family.PASSIVE, Family.DIRECTION, Family.PATTERN]:
 		errors.append("Unsupported interaction family.")
 	if controller_device < -1 or wrong_input not in [WrongInput.IGNORE, WrongInput.FAIL]:
 		errors.append("Invalid interaction input policy.")
@@ -101,6 +110,19 @@ func validation_errors(options: Array[CADOption], window: float) -> PackedString
 					errors.append("Invalid direction selection sector/option: %s." % sector)
 		elif not valid_sector(direction_sector):
 			errors.append("Direction sector must be enabled by the four/eight-way policy.")
+	if family == Family.PATTERN:
+		if pattern_steps.is_empty() or pattern_steps.size() > 64 or not actions.is_empty():
+			errors.append("Pattern needs 1–64 steps and empty actions; repetitions go in pattern_steps.")
+		if pattern_deadlines.size() != pattern_steps.size():
+			errors.append("Pattern needs one relative deadline per step.")
+		if not is_finite(pattern_min_seconds) or pattern_min_seconds < 0.0 \
+				or pattern_error not in [PatternError.IGNORE, PatternError.RESET, PatternError.FAIL]:
+			errors.append("Invalid Pattern minimum interval or error policy.")
+		for deadline in pattern_deadlines:
+			if not is_finite(deadline) or deadline <= pattern_min_seconds or deadline > window:
+				errors.append("Pattern deadlines must exceed the minimum interval and fit in the gate window.")
+		if pattern_min_seconds * pattern_steps.size() >= window:
+			errors.append("Pattern minimum intervals cannot fit in the gate window.")
 	var unique: Dictionary = {}
 	for action in actions:
 		if unique.has(action):
@@ -118,7 +140,7 @@ func validation_errors(options: Array[CADOption], window: float) -> PackedString
 
 func input_actions(options: Array[CADOption]) -> Array[StringName]:
 	var found: Array[StringName] = []
-	for action in actions + monitored_actions:
+	for action in actions + monitored_actions + (pattern_steps if family == Family.PATTERN else []):
 		if action not in found:
 			found.append(action)
 	if family == Family.DIRECTION:

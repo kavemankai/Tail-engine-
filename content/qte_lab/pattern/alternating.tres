@@ -1,0 +1,55 @@
+[gd_resource type="Resource" script_class="CADSequence" format=3]
+
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_sequence.gd" id="seq"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_beat.gd" id="beat"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_gate.gd" id="gate"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_option.gd" id="option"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_interaction_spec.gd" id="spec"]
+
+[sub_resource type="Resource" id="option"]
+script = ExtResource("option")
+id = &"go"
+action = &"cad_a"
+label = "Alternate buttons"
+next = &"action"
+
+[sub_resource type="Resource" id="spec"]
+script = ExtResource("spec")
+id = &"alternating"
+family = 5
+option_id = &"go"
+pattern_steps = Array[StringName]([&"cad_a", &"cad_b", &"cad_a", &"cad_b"])
+pattern_deadlines = Array[float]([1.0, 1.0, 1.0, 1.0])
+pattern_min_seconds = 0.08
+pattern_error = 1
+
+[sub_resource type="Resource" id="gate"]
+script = ExtResource("gate")
+options = Array[ExtResource("option")]([SubResource("option")])
+interaction = SubResource("spec")
+window_seconds = 5.0
+timeout_next = &"recover"
+
+[sub_resource type="Resource" id="input"]
+script = ExtResource("beat")
+id = &"input"
+timeline = &"ready"
+gate = SubResource("gate")
+
+[sub_resource type="Resource" id="action"]
+script = ExtResource("beat")
+id = &"action"
+timeline = &"jab"
+next = &"completed"
+
+[sub_resource type="Resource" id="recover"]
+script = ExtResource("beat")
+id = &"recover"
+timeline = &"recover"
+next = &"interrupted"
+
+[resource]
+script = ExtResource("seq")
+entry = &"input"
+beats = Array[ExtResource("beat")]([SubResource("input"), SubResource("action"), SubResource("recover")])
+outcomes = Array[StringName]([&"completed", &"interrupted"])
