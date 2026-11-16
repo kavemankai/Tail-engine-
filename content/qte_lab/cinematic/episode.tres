@@ -1,0 +1,64 @@
+[gd_resource type="Resource" script_class="TEEpisode" format=3]
+
+[ext_resource type="Script" path="res://addons/tale_engine/te_episode.gd" id="ep"]
+[ext_resource type="Script" path="res://addons/tale_engine/te_step.gd" id="step"]
+[ext_resource type="Script" path="res://addons/tale_engine/te_exit.gd" id="exit"]
+[ext_resource type="Resource" path="res://content/qte_lab/cinematic/manifest.tres" id="manifest"]
+[ext_resource type="Resource" path="res://content/qte_lab/target/cast.tres" id="cast"]
+[ext_resource type="Resource" path="res://content/qte_lab/cinematic/encounter.tres" id="sequence"]
+
+[ext_resource type="DialogueResource" path="res://content/qte_lab/cinematic/aftermath.dialogue" id="dialogue"]
+
+[sub_resource type="Resource" id="exit"]
+script = ExtResource("exit")
+on = &"*"
+next = &"aftermath"
+
+[sub_resource type="Resource" id="encounter"]
+script = ExtResource("step")
+id = &"lab"
+kind = 2
+checkpoint = true
+location = "res://content/qte_lab/cinematic/arena.tscn"
+sequence = ExtResource("sequence")
+stage = &"CinematicStage"
+cast = {&"player": "face_player", &"bartender": "behind_bar", &"stranger": "face_stranger"}
+roles = {&"Player": &"player", &"Aggressor": &"stranger", &"Bartender": &"bartender"}
+exits = Array[ExtResource("exit")]([SubResource("exit")])
+
+[sub_resource type="Resource" id="after_exit"]
+script = ExtResource("exit")
+on = &"*"
+next = &"checkpoint"
+
+[sub_resource type="Resource" id="after"]
+script = ExtResource("step")
+id = &"aftermath"
+kind = 1
+dialogue = ExtResource("dialogue")
+cue = "aftermath"
+exits = Array[ExtResource("exit")]([SubResource("after_exit")])
+
+[sub_resource type="Resource" id="end_exit"]
+script = ExtResource("exit")
+on = &"*"
+next = &"END"
+
+[sub_resource type="Resource" id="checkpoint"]
+script = ExtResource("step")
+id = &"checkpoint"
+kind = 3
+checkpoint = true
+heading = "Consequence recorded"
+body = "Resume here to keep the decision, or rewind to replay the encounter."
+exits = Array[ExtResource("exit")]([SubResource("end_exit")])
+
+[resource]
+script = ExtResource("ep")
+id = &"qte_lab"
+title = "QTE interaction lab"
+manifest = ExtResource("manifest")
+cast = ExtResource("cast")
+player = &"player"
+entry = &"lab"
+steps = Array[ExtResource("step")]([SubResource("encounter"),SubResource("after"),SubResource("checkpoint")])

@@ -22,6 +22,7 @@ const EXAMPLES := {
 	"Select and grab a prop": "res://content/qte_lab/target/grab_episode.tres",
 	"Opposed pressure": "res://content/qte_lab/pressure/pressure_episode.tres",
 	"Grapple escape": "res://content/qte_lab/pressure/grapple_episode.tres",
+	"Last chance — cinematic intent": "res://content/qte_lab/cinematic/episode.tres",
 	"Episode 0 — directional variants": "res://content/qte_lab/direction/episode_0_directional.tres",
 }
 var _box := VBoxContainer.new()
@@ -62,7 +63,7 @@ func _ready() -> void:
 	Flow.episode_finished.connect(_on_finished)
 	Flow.director_started.connect(func(director: CADDirector) -> void:
 		director.interaction_resolved.connect(func(result: CADResult) -> void:
-			_last_detail = "Grade: %s" % result.grade))
+			_last_detail = "Grade: %s%s" % [result.grade, "   Intent: " + String(result.intent_id) if result.intent_id != &"" else ""]))
 
 func _process(_delta: float) -> void:
 	var show_menu := not Flow.running

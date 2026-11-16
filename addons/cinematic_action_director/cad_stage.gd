@@ -7,6 +7,9 @@ extends Node
 
 @export var timelines: AnimationPlayer
 @export var target_registry: CADTargetRegistry
+@export var barks: Array[CADBark] = []
+signal bark_requested(cue: CADBark, visit: int)
+var _barks_seen: Dictionary = {}
 
 var playback := CADPlaybackScope.new()
 var _base_timeline_speed := 1.0
@@ -86,6 +89,17 @@ func act(role: StringName, clip: StringName) -> void:
 			# An empty slot ignores clips, so a stage can run without its cast.
 			push_warning("CADStage: role '%s' cannot play '%s'." % [role, clip])
 
+## One bark ID per visit, even when a waiting timeline loops.
+func bark(id: StringName) -> bool:
+	if _director == null or not _director.active() or _barks_seen.has(id):
+		return false
+	for cue in barks:
+		if cue != null and cue.id == id:
+			_barks_seen[id] = true
+			bark_requested.emit(cue, _visit)
+			return true
+	return false
+
 ## Cut to a camera slot.
 func cut(role: StringName) -> void:
 	var camera := slot(role)
@@ -135,6 +149,15 @@ func _selected_target(result_beat: StringName) -> StringName:
 
 func validation_errors(sequence: CADSequence) -> PackedStringArray:
 	var errors := PackedStringArray()
+	var bark_ids: Dictionary = {}
+	for cue in barks:
+		if cue == null:
+			errors.append("Stage contains an empty bark.")
+			continue
+		errors.append_array(cue.validation_errors())
+		if bark_ids.has(cue.id) or actor(cue.speaker) == null:
+			errors.append("Bark %s has a duplicate ID or missing speaker role." % cue.id)
+		bark_ids[cue.id] = true
 	if target_registry != null:
 		errors.append_array(target_registry.validation_errors(target_registry.targets.keys()))
 	for role in sequence.actor_statuses:
@@ -185,6 +208,8 @@ func validation_errors(sequence: CADSequence) -> PackedStringArray:
 			if anchored <= opened or anchored - opened + gate.interaction.ideal_seconds >= gate.window_seconds:
 				errors.append("Beat %s: timing marker/ideal must follow opening and fit inside the gate window." % beat.id)
 		for entry in calls:
+			if entry[0] == &"bark" and not bark_ids.has(entry[1]):
+				errors.append("Beat %s references missing bark %s." % [beat.id, entry[1]])
 			if entry[0] in [&"act", &"cut"] and actor(entry[1]) == null:
 				errors.append("Beat %s: timeline '%s' uses missing role '%s'." % [beat.id, beat.timeline, entry[1]])
 	return errors
@@ -217,6 +242,7 @@ func play(timeline: StringName, blend: float, visit: int) -> bool:
 	if timelines == null or not timelines.has_animation(timeline):
 		return false
 	_visit = visit
+	_barks_seen.clear()
 	if _current == timeline:
 		timelines.stop(true)
 	# Godot drops method keys at time zero when it blends in from another

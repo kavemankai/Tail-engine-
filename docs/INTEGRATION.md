@@ -378,3 +378,34 @@ The runner snapshots these policies and emits `CADResult.intent_id` and
 `momentum_delta`. The director applies each visit's effects once, before emitting
 the public result signal. Legacy option strings and routes retain their shape.
 `context.to_dict()` returns isolated scalar snapshots for safe host integration.
+
+### Action dialogue and safe-boundary consequences
+
+`CADStage.barks` contains `CADBark` resources (stable ID, stage speaker role,
+1–160 characters, 0.05–60 active seconds, optional voice, priority 0–90). Native
+method tracks call `bark(id)`. Each cue is emitted once per visit, including looped
+waiting animations. Validation checks cue IDs, durations and speaker roles.
+`TEActionDialogue` in Flow renders a compact subtitle and drives the speaker's
+`speak()` hook. It reads no controls: use the existing Choice interaction for a
+timed reply. Its clock and owned voice pause with the encounter/tree and close on
+finish/cancel/unload. Priority arbitration prevents action barks from replacing a
+legacy Dialogue Manager voice (priority 100); cleanup stops only its owned voice.
+Equal/higher-priority action cues replace the active line; there is no unbounded
+queue. Voice duration may extend a caption, bounded to 60 seconds. Voice pitch is
+unaffected by cinematic slowdown.
+
+This implements barks and CAD-owned timed dialogue choices during action. A live
+Dialogue Manager balloon is still rejected while CAD owns input; the example
+hands back to a regular conversation after the encounter. Actors require matched
+speaking/contact animations and real voice assets for production acceptance.
+
+On an authored terminal outcome, Flow commits typed history to the optional
+`Story.interactions[step_id]` extension. `Story.interaction(step, beat)` and
+`Story.encounter_context(step)` return isolated snapshots; `Story.intent(step)` is
+a convenience reader for dialogue conditions. Records contain schema 1, scalar
+CADResult dictionaries and the final encounter context. Cancellation/error writes
+no typed history. Legacy option results keep their shape. Version-1 saves without
+this extension remain valid; present history is validated for schema, identities,
+finite numeric bounds, grades/intents and context types. No actor nodes, animation
+positions or in-flight QTE clocks are saved. Existing checkpoints capture completed
+records; rewind restores the earlier snapshot and removes later consequences.

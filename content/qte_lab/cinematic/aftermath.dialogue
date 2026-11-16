@@ -1,0 +1,7 @@
+~ aftermath
+if Story.intent("lab") == "escape"
+	stranger: Go. This ends here.
+else
+	stranger: Fine. No more fighting.
+do exit("end")
+=> END

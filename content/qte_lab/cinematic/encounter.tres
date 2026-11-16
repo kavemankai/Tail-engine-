@@ -1,0 +1,189 @@
+[gd_resource type="Resource" script_class="CADSequence" format=3]
+
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_sequence.gd" id="seq"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_beat.gd" id="beat"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_gate.gd" id="gate"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_option.gd" id="option"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_interaction_spec.gd" id="spec"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_branch.gd" id="branch"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_context_predicate.gd" id="predicate"]
+
+[sub_resource type="Resource" id="parry"]
+script = ExtResource("option")
+id = &"parry"
+action = &"cad_a"
+label = "Parry"
+next = &"block"
+
+[sub_resource type="Resource" id="restrain"]
+script = ExtResource("option")
+id = &"restrain"
+action = &"cad_a"
+label = "Restrain"
+next = &"follow"
+
+[sub_resource type="Resource" id="leave"]
+script = ExtResource("option")
+id = &"leave"
+action = &"cad_b"
+label = "Escape"
+next = &"follow"
+
+[sub_resource type="Resource" id="parry_spec"]
+script = ExtResource("spec")
+id = &"opening_parry"
+family = 2
+option_id = &"parry"
+actions = Array[StringName]([&"cad_a"])
+ideal_seconds = 0.4
+routes = Dictionary[StringName,StringName]({&"partial": &"hit", &"miss": &"hit"})
+momentum_changes = Dictionary[StringName,int]({&"perfect": 2, &"success": 1, &"miss": -1})
+
+[sub_resource type="Resource" id="parry_gate"]
+script = ExtResource("gate")
+options = Array[ExtResource("option")]([SubResource("parry")])
+interaction = SubResource("parry_spec")
+window_seconds = 1.5
+open_marker = &"gate"
+timeout_next = &"hit"
+
+[sub_resource type="Resource" id="decision_spec"]
+script = ExtResource("spec")
+id = &"last_chance"
+family = 1
+option_intents = Dictionary[StringName,StringName]({&"restrain": &"restrain", &"leave": &"escape"})
+
+[sub_resource type="Resource" id="decision_gate"]
+script = ExtResource("gate")
+options = Array[ExtResource("option")]([SubResource("restrain"),SubResource("leave")])
+interaction = SubResource("decision_spec")
+window_seconds = 3.0
+open_marker = &"gate"
+timeout_next = &"soft"
+
+[sub_resource type="Resource" id="predicate_intent"]
+script = ExtResource("predicate")
+kind = 1
+value = &"escape"
+
+[sub_resource type="Resource" id="branch_intent"]
+script = ExtResource("branch")
+predicate = SubResource("predicate_intent")
+next = &"escape"
+requires = &""
+
+[sub_resource type="Resource" id="predicate_momentum"]
+script = ExtResource("predicate")
+kind = 0
+minimum = 2
+
+[sub_resource type="Resource" id="branch_momentum"]
+script = ExtResource("branch")
+predicate = SubResource("predicate_momentum")
+next = &"condition"
+requires = &""
+
+[sub_resource type="Resource" id="predicate_actor"]
+script = ExtResource("predicate")
+kind = 2
+subject = &"Player"
+value = &"ready"
+
+[sub_resource type="Resource" id="branch_actor"]
+script = ExtResource("branch")
+predicate = SubResource("predicate_actor")
+next = &"prop_check"
+requires = &""
+
+[sub_resource type="Resource" id="predicate_prop"]
+script = ExtResource("predicate")
+kind = 3
+subject = &"bottle"
+expected = true
+
+[sub_resource type="Resource" id="branch_prop"]
+script = ExtResource("branch")
+predicate = SubResource("predicate_prop")
+next = &"strong"
+requires = &"stool_noticed"
+
+[sub_resource type="Resource" id="opening"]
+script = ExtResource("beat")
+id = &"opening"
+timeline = &"threat"
+gate = SubResource("parry_gate")
+playback_scale = 0.5
+
+[sub_resource type="Resource" id="block"]
+script = ExtResource("beat")
+id = &"block"
+timeline = &"block"
+next = &"decision"
+
+[sub_resource type="Resource" id="hit"]
+script = ExtResource("beat")
+id = &"hit"
+timeline = &"hit"
+next = &"decision"
+actor_changes = Dictionary[StringName,StringName]({&"Player": &"injured"})
+
+[sub_resource type="Resource" id="decision"]
+script = ExtResource("beat")
+id = &"decision"
+timeline = &"question"
+gate = SubResource("decision_gate")
+playback_scale = 0.25
+
+[sub_resource type="Resource" id="follow"]
+script = ExtResource("beat")
+id = &"follow"
+timeline = &"assess"
+next = &"strength"
+branches = Array[ExtResource("branch")]([SubResource("branch_intent")])
+
+[sub_resource type="Resource" id="strength"]
+script = ExtResource("beat")
+id = &"strength"
+timeline = &"assess"
+next = &"soft"
+branches = Array[ExtResource("branch")]([SubResource("branch_momentum")])
+
+[sub_resource type="Resource" id="condition"]
+script = ExtResource("beat")
+id = &"condition"
+timeline = &"assess"
+next = &"soft"
+branches = Array[ExtResource("branch")]([SubResource("branch_actor")])
+
+[sub_resource type="Resource" id="prop_check"]
+script = ExtResource("beat")
+id = &"prop_check"
+timeline = &"assess"
+next = &"soft"
+branches = Array[ExtResource("branch")]([SubResource("branch_prop")])
+
+[sub_resource type="Resource" id="strong"]
+script = ExtResource("beat")
+id = &"strong"
+timeline = &"strong"
+next = &"restrained"
+
+[sub_resource type="Resource" id="soft"]
+script = ExtResource("beat")
+id = &"soft"
+timeline = &"soft"
+next = &"yielded"
+
+[sub_resource type="Resource" id="escape"]
+script = ExtResource("beat")
+id = &"escape"
+timeline = &"escape"
+next = &"escaped"
+
+[resource]
+script = ExtResource("seq")
+entry = &"opening"
+beats = Array[ExtResource("beat")]([SubResource("opening"),SubResource("block"),SubResource("hit"),SubResource("decision"),SubResource("follow"),SubResource("strength"),SubResource("condition"),SubResource("prop_check"),SubResource("strong"),SubResource("soft"),SubResource("escape")])
+outcomes = Array[StringName]([&"restrained",&"yielded",&"escaped"])
+actor_statuses = Dictionary[StringName,StringName]({&"Player": &"ready", &"Aggressor": &"ready"})
+prop_states = Dictionary[StringName,bool]({&"bottle": true})

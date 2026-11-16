@@ -103,6 +103,12 @@ static func _story(story: Variant) -> bool:
 		for key: Variant in result:
 			if not _text(key) or not _text(result[key]):
 				return false
+	if story.has("interactions"):
+		if story.interactions is not Dictionary:
+			return false
+		for key in story.interactions:
+			if not _text(key) or not CADEncounterRecord.valid(story.interactions[key]):
+				return false
 	for value: Variant in story["seen"].values():
 		if value is not bool:
 			return false

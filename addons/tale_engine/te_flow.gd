@@ -196,6 +196,10 @@ func _encounter(current: TEStep) -> StringName:
 	director.window_scale = Settings.qte_window_scale
 	add_child(director)
 	_props.append(director)
+	var action_dialogue := TEActionDialogue.new()
+	action_dialogue.director = director
+	action_dialogue.stage = stage
+	director.add_child(action_dialogue)
 	CADPrompt.bind(director, Screen.prompt_label, Screen.prompt_bar, Screen.prompt_backdrop)
 	director.gate_opened.connect(func(beat: CADBeat, options: Array[CADOption], _window: float) -> void:
 		Screen.layout_prompt(maxi(2, Screen.prompt_label.text.count("\n") + 1)))
@@ -205,6 +209,8 @@ func _encounter(current: TEStep) -> StringName:
 		outcome = await director.finished if director.active() else director.last_outcome
 		if outcome != &"cancelled":
 			Story.results[current.id] = director.results.duplicate()
+			if outcome in sequence.outcomes and not director.detailed_results.is_empty():
+				Story.interactions[current.id] = director.record()
 	for role: StringName in current.roles:
 		stage.unbind(role)
 	_props.erase(director)

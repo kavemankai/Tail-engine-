@@ -207,3 +207,33 @@ logical `grapple_struggle`, `grapple_escape`, `grapple_stagger` and
 `grapple_release` clips through TEActor. These are adapter/greybox demonstrations;
 real paired humanoid contact remains an acceptance gate. Rebuild native resources
 with `python tools/build_pressure_examples.py`; run `qte_pressure` and verification.
+
+### Cinematic decisions and adaptive follow-through
+
+The lab's **Last chance — cinematic intent** episode combines a half-speed parry,
+a quarter-speed action conversation, semantic choices and preauthored follow-through.
+A perfect defence earns two momentum; restraining with sufficient momentum, a
+ready player and an observed available prop selects the strong timeline. Escape
+selects a separate route. Mistakes and missing props take compatible recovery.
+The lab manifest supplies prior observation flags; production episodes should earn
+these in exploration/dialogue. All choreography is native AnimationPlayer data.
+
+Use `playback_scale` per beat and provide the three TEActor playback hooks for
+AnimationTree rigs (see ASSET_SWAP). Input seconds remain real active seconds.
+Set `option_intents` and per-grade `momentum_changes` in interaction specs. Declare
+role/status and prop IDs on the sequence before using `actor_changes`,
+`prop_changes`, or `CADContextPredicate` on a branch. Keep a compatible fallback;
+the engine selects authored clips and does not synthesize contact alignment.
+
+Author short `CADBark` resources on the stage and call `bark(id)` from timelines.
+Use Choice gates for replies; let the action director own input until the encounter
+ends. Afterwards regular dialogue can read `Story.intent("lab")`, as the example's
+`aftermath.dialogue` demonstrates. Completed grades, targets, momentum and intent
+are available through Story's history readers without changing old option strings.
+Place checkpoints at safe boundaries; resume never reconstructs a live grapple.
+
+Regenerate the example with `python tools/build_cinematic_examples.py`. Run
+`qte_cinematic action_dialogue qte_narrative`, then the full verifier. Tests exercise
+actual skeletal TimeScale playback, voice ownership/pause, all adaptive routes,
+Dialogue Manager handoff, JSON save/resume, rewind and cancellation during dialogue.
+The lab uses greyboxes and no production voice/contact kit.

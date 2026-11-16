@@ -13,6 +13,7 @@ signal gate_resolved(beat: CADBeat, result: StringName)
 signal finished(outcome: StringName)
 signal input_device_changed
 signal interaction_resolved(result: CADResult)
+signal suspension_changed(paused: bool)
 
 enum Gate { NONE, PENDING, OPEN, RESOLVED }
 
@@ -184,6 +185,15 @@ func suspend(suspended: bool) -> void:
 	if _active and _stage != null:
 		_stage.pause(suspended)
 
+func record() -> Dictionary:
+	var records := {}
+	for id in detailed_results:
+		records[String(id)] = detailed_results[id].to_dict()
+	return {"schema": 1, "results": records, "context": context.to_dict()}
+
+func input_suspended() -> bool:
+	return _suspended or get_tree().paused
+
 func active() -> bool:
 	return _active
 
@@ -353,6 +363,9 @@ func _resolve(result: StringName, next: StringName) -> void:
 		_check_complete()
 
 func _check_complete() -> void:
+	if is_instance_valid(_stage) and is_instance_valid(_stage.target_registry):
+		for id in context.prop_states:
+			context.prop_states[id] = context.prop_states[id] and _stage.target_registry.available(id, flags)
 	if _beat.gate == null:
 		if _timeline_done:
 			_goto = _beat.next
@@ -411,6 +424,7 @@ func _pause_interaction_clocks(paused: bool) -> void:
 		_beat_clock.set_paused(paused)
 	if interaction_runner != null:
 		interaction_runner.suspend(paused)
+	suspension_changed.emit(paused)
 
 func _on_joy_connection_changed(device: int, connected: bool) -> void:
 	if not connected and _active and interaction_runner != null and interaction_runner.active \

@@ -1,6 +1,6 @@
 # QTE v2 implementation status
 
-This milestone implements the **software portion of Phases 0–6**, preserving the
+This milestone implements the **software portion of Phases 0–7**, preserving the
 original Episode 0 encounters. It does not implement the full 30-mechanic target.
 
 ## Completed work and evidence
@@ -82,9 +82,24 @@ restart/unload, full Flow escape and failure. Physical/humanoid acceptance is op
 Phase 6 final local verification: **795 Godot checks across 17 suites**, three
 Python runner tests, clean episode validation, Windows x86_64 export and isolated
 packaged main/lab startup all passed. Post-review regression checks also verify
-cycling and confirming targets with identical screen positions. Phases 7–8 are not implemented by this
-milestone: local slowdown, action dialogue/focus, momentum, typed adaptive context,
-semantic intent, trace tooling and final hardware/production-animation QA remain.
+cycling and confirming targets with identical screen positions. This was the Phase 6 boundary; the following milestone extends its narrative
+and cinematic integration.
+
+Phase 7 adds scoped per-beat timeline/actor playback, including a tested skeletal
+AnimationTree TimeScale adapter, without slowing the input clock or voice. Bounded
+encounter momentum and typed actor/prop/intent predicates select prevalidated
+branches. Native action barks and CAD Choice gates share one input owner; voice
+arbitration and owned cleanup protect Dialogue Manager. Completed scalar history
+is an optional version-1 save extension. The Last chance episode demonstrates
+strong/soft/escape choreography, deleted-prop fallback, dialogue handoff, checkpoint
+resume/rewind and cancellation without provisional consequences. Live concurrent
+Dialogue Manager balloons remain deferred; action dialogue uses barks/timed replies.
+
+Phase 7 verification: **896 Godot checks across 20 suites**, three Python runner
+tests, fresh-profile import, clean episode validation, Windows export and isolated
+packaged main/lab startup passed. A rendered 1920×1080 action-choice/subtitle check
+confirmed separate, readable panels. Real Windows/controller, audible voice and
+production humanoid contact/retargeting acceptance remain open.
 
 ## Selected mechanics
 
@@ -112,19 +127,18 @@ semantic intent, trace tooling and final hardware/production-animation QA remain
 | 69 | Grapple escape | Shared grapple template: direction, opposed pressure and timed release; humanoid acceptance open |
 | 72 | Object grab | Target-backed grab template and authored sockets with cancellation restoration; humanoid contact acceptance open |
 | 79 | Timed choice | Legacy and shared Choice; explicit option vs missed decision |
-| 84 | Conversation during action | Outstanding focus coordination; concurrent Flow dialogue is currently rejected |
+| 84 | Conversation during action | CAD-owned barks/timed replies with voice priority, pause and cleanup; live concurrent DM balloons deferred |
 | 89 | Camera perspective | Existing stage timeline cuts/restoration preserved |
-| 90 | Slow-motion decision | Independent input clock ready; scoped cinematic slowdown outstanding |
+| 90 | Slow-motion decision | Scoped timeline/actor playback with restored speeds; independent input/voice clocks |
 | 94 | Conditional follow-through | Existing validated flag branches preserved |
-| 97 | Momentum | Outstanding encounter-local score/context |
+| 97 | Momentum | Bounded per-run score, per-grade effects, typed predicates and completed scalar history |
 | 98 | Observation memory | Existing Story flags and stool unlock preserved |
-| 101 | Adaptive choreography | Existing flag routes only; typed actor/prop/momentum context outstanding |
-| 107 | Intent | Result field reserved; authored semantic choice mapping outstanding |
+| 101 | Adaptive choreography | Validated authored branches on flags, intent, momentum, actor status and physical prop availability |
+| 107 | Intent | Validated option-to-intent mappings, typed results, adaptive routes and safe-boundary Story history |
 
 ## Next phases and open acceptance gates
 
-Continue in the committed order: cinematic/narrative layers;
-authoring/trace/1080p quality gate. Extensions must reuse the shared runner and validation, without scene-local input
+Continue with Phase 8 authoring/trace/1080p quality gates. Extensions must reuse the shared runner and validation, without scene-local input
 scripts or a second story graph. All eight planned handler families are present.
 
 - Real Windows controller tests have **not** been performed. Synthetic key/pad
@@ -132,13 +146,14 @@ scripts or a second story graph. All eight planned handler families are present.
 - The humanoid kit and paired contact clips are unavailable. The minimal rig
   proves interface/playback only; alignment, snapping, foot contact, impacts and
   variant proportions require real assets and visual review.
-- Counterattack, combo, chain, grab and grapple templates are available. Local
-  slowdown, barks/live dialogue coordination, momentum and semantic-intent authoring
-  remain outstanding.
+- Counterattack, combo, chain, grab and grapple templates are available. Scoped
+  slowdown and action barks/timed replies are integrated. Live simultaneous Dialogue
+  Manager balloons are deferred; the tested handoff occurs after action releases input.
 - New interactions deliberately reject pre-held input and do not consume legacy
   early buffers. Paused incomplete gestures require fresh input on resume.
-- Detailed grades are not persisted into Story yet. Legacy strings/checkpoints
-  remain compatible; no mid-contact pose serialisation or save migration exists.
+- Completed grades, intent, targets and context are optional scalar Story history.
+  Legacy strings/checkpoints remain compatible. No mid-contact poses or active QTE
+  clocks are serialised; resume/rewind still uses safe checkpoints.
 
 
 ## Running the Phase 3 content

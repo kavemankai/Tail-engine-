@@ -55,3 +55,27 @@ A stage scene's slots are plain markers; the cast is bound to them at run time. 
 ## Screen text and prompts
 
 The conversation box is `addons/tale_engine/te_balloon.gd` and the rest of the overlay is `te_screen.gd`. Both build plain controls in code. Restyle them there, or replace their node construction with your own scenes while keeping the public methods.
+
+## Scoped cinematic playback on an AnimationTree
+
+For scenes using `CADBeat.playback_scale`, the actor adapter must expose:
+
+```gdscript
+func cad_supports_playback_scale() -> bool:
+    return true
+
+func cad_playback_speed() -> float:
+    return float(tree.get("parameters/CinematicSpeed/scale"))
+
+func cad_set_playback_speed(speed: float) -> void:
+    tree.set("parameters/CinematicSpeed/scale", speed)
+```
+
+Insert a TimeScale node at the appropriate point in your existing tree. The fixture
+places it after its OneShot, retaining the humanoid adapter contract. CAD captures
+the existing speed, applies a local multiplier and restores it on unbind, terminal
+exit, cancellation and unloading. AnimationPlayer-only actors use TEActor's default
+hooks. A bound AnimationTree actor without these hooks is rejected for slowdown.
+Root displacement stays in the stage timeline; skeletal clips remain in place.
+Voice playback is intentionally independent. Validate the actual rig's node paths,
+blends, paired timing and contact; the two-bone fixture is interface evidence only.
