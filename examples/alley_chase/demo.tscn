@@ -1,0 +1,11 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://examples/demo_host.gd" id="1"]
+[ext_resource type="PackedScene" path="res://examples/alley_chase/stage.tscn" id="2"]
+[ext_resource type="Resource" path="res://examples/alley_chase/encounter.tres" id="3"]
+
+[node name="Demo" type="Node"]
+script = ExtResource("1")
+sequence = ExtResource("3")
+
+[node name="Stage" parent="." instance=ExtResource("2")]

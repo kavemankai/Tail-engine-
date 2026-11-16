@@ -1,0 +1,85 @@
+{
+  "id": "bar_first_exchange",
+  "revision": 1,
+  "entry_cue": "bar_hostile",
+  "recover_cue": "bar_after_interruption",
+  "entry_beat": "windup",
+  "roles": ["player", "aggressor", "bartender"],
+  "targets": ["stool"],
+  "bindings": {
+    "required_anchors": ["exchange_origin", "recover_player", "recover_aggressor"],
+    "required_shots": ["two_shot", "dodge_close", "prop_insert"]
+  },
+  "beats": {
+    "windup": {
+      "timeline": "bar/windup",
+      "start_pose": "face_off",
+      "end_pose": "swing_apex",
+      "markers": ["open_dodge", "choose_reaction"],
+      "gate": {
+        "id": "first_dodge",
+        "kind": "direction",
+        "action": "cad_dodge_left",
+        "open_marker": "open_dodge",
+        "decision_marker": "choose_reaction",
+        "window_ms": 1150,
+        "assist_policy": "safe_anticipation_loop",
+        "success": "evade",
+        "timeout": "glancing_hit"
+      }
+    },
+    "evade": {
+      "timeline": "bar/evade",
+      "start_pose": "swing_apex",
+      "end_pose": "at_counter",
+      "next": "counter",
+      "stage": {"first_exchange": "dodged"}
+    },
+    "glancing_hit": {
+      "timeline": "bar/glancing_hit",
+      "start_pose": "swing_apex",
+      "end_pose": "at_counter",
+      "next": "counter",
+      "stage": {"first_exchange": "hit"}
+    },
+    "counter": {
+      "timeline": "bar/counter",
+      "start_pose": "at_counter",
+      "end_pose": "at_counter",
+      "markers": ["open_options", "choose_counter"],
+      "gate": {
+        "id": "counter_choice",
+        "kind": "choice",
+        "action": "cad_confirm",
+        "open_marker": "open_options",
+        "decision_marker": "choose_counter",
+        "window_ms": 2200,
+        "options": [
+          {"id": "block", "target": "stool", "when": "stool_available", "next": "stool_block"},
+          {"id": "back_off", "next": "back_off"}
+        ],
+        "timeout": "back_off"
+      }
+    },
+    "stool_block": {
+      "timeline": "bar/stool_block",
+      "start_pose": "at_counter",
+      "end_pose": "clear",
+      "exit": "recover",
+      "stage": {"stool_state": "displaced", "counter": "blocked"}
+    },
+    "back_off": {
+      "timeline": "bar/back_off",
+      "start_pose": "at_counter",
+      "end_pose": "clear",
+      "exit": "recover",
+      "stage": {"counter": "withdrew"}
+    }
+  },
+  "exits": {
+    "recover": {
+      "checkpoint": "bar_exchange_complete",
+      "resume_cues_by_first_exchange": {"dodged": "bar_after_dodge", "hit": "bar_after_hit"}
+    }
+  }
+}
