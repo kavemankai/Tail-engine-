@@ -193,6 +193,8 @@ func _encounter(current: TEStep) -> StringName:
 	add_child(director)
 	_props.append(director)
 	CADPrompt.bind(director, Screen.prompt_label, Screen.prompt_bar, Screen.prompt_backdrop)
+	director.gate_opened.connect(func(beat: CADBeat, options: Array[CADOption], _window: float) -> void:
+		Screen.layout_prompt(maxi(2, Screen.prompt_label.text.count("\n") + 1)))
 	var outcome := &"error"
 	if director.begin(current.sequence, stage):
 		director_started.emit(director)

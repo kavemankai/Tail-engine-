@@ -3,9 +3,12 @@ extends Resource
 ## Optional CADGate extension. Missing interaction keeps the legacy evaluator.
 ## Routes override named grade destinations in the existing CADSequence graph.
 
-enum Family { GESTURE, CHOICE, TIMING, PASSIVE }
+enum Family { GESTURE, CHOICE, TIMING, PASSIVE, DIRECTION }
 enum Gesture { PRESS, HOLD, TIMED_RELEASE, CHORD }
 enum WrongInput { IGNORE, FAIL }
+enum DirectionMode { FLICK, HOLD, SELECT }
+enum DirectionSpace { INPUT, CAMERA }
+enum Sector { UP, UP_RIGHT, RIGHT, DOWN_RIGHT, DOWN, DOWN_LEFT, LEFT, UP_LEFT }
 
 @export var id: StringName
 @export var family: Family = Family.GESTURE
@@ -28,6 +31,18 @@ enum WrongInput { IGNORE, FAIL }
 ## -1 acquires the first controller to send a matching press.
 @export var controller_device := -1
 @export var routes: Dictionary[StringName, StringName] = {}
+## Ordered left/right/up/down logical actions, each freely remappable.
+@export var direction_actions: Array[StringName] = [&"cad_dir_left", &"cad_dir_right", &"cad_dir_up", &"cad_dir_down"]
+@export var direction_mode: DirectionMode = DirectionMode.FLICK
+@export var direction_space: DirectionSpace = DirectionSpace.INPUT
+@export var direction_sector: Sector = Sector.LEFT
+@export var direction_eight_way := false
+@export_range(0.01, 1.0) var direction_activation := 0.65
+@export_range(0.0, 0.99) var direction_rearm := 0.25
+## Coalesce independently delivered axis/key events before deciding a sector.
+@export_range(0.0, 0.2) var direction_settle_seconds := 0.025
+## SELECT maps sectors to existing gate option IDs (not display labels).
+@export var direction_options: Dictionary[int, StringName] = {}
 
 func validation_errors(options: Array[CADOption], window: float) -> PackedStringArray:
 	var errors := PackedStringArray()
@@ -35,7 +50,7 @@ func validation_errors(options: Array[CADOption], window: float) -> PackedString
 		errors.append("Interaction needs a stable id.")
 	if not is_finite(window) or window <= 0.0:
 		errors.append("Interaction window must be finite and positive.")
-	if family not in [Family.GESTURE, Family.CHOICE, Family.TIMING, Family.PASSIVE]:
+	if family not in [Family.GESTURE, Family.CHOICE, Family.TIMING, Family.PASSIVE, Family.DIRECTION]:
 		errors.append("Unsupported interaction family.")
 	if controller_device < -1 or wrong_input not in [WrongInput.IGNORE, WrongInput.FAIL]:
 		errors.append("Invalid interaction input policy.")
@@ -49,7 +64,7 @@ func validation_errors(options: Array[CADOption], window: float) -> PackedString
 			errors.append("Chord needs 2–4 unique actions and a tolerance inside the window.")
 		if gesture == Gesture.HOLD and (not is_finite(hold_seconds) or hold_seconds <= 0.0 or hold_seconds >= window):
 			errors.append("Hold must fit inside the interaction window.")
-	if family in [Family.GESTURE, Family.TIMING, Family.PASSIVE]:
+	if uses_fixed_option():
 		if not options.any(func(option: CADOption) -> bool: return option != null and option.id == option_id):
 			errors.append("Interaction references a missing option '%s'." % option_id)
 	if family == Family.TIMING and actions.size() != 1:
@@ -64,6 +79,28 @@ func validation_errors(options: Array[CADOption], window: float) -> PackedString
 	if family == Family.PASSIVE and (actions.is_empty() or not is_finite(passive_seconds) \
 			or passive_seconds <= 0.0 or passive_seconds > window):
 		errors.append("Passive needs forbidden actions and a completion time inside the window.")
+	if family == Family.DIRECTION:
+		if direction_actions.size() != 4 or _has_duplicates(direction_actions) or not actions.is_empty():
+			errors.append("Direction needs four unique direction_actions (left/right/up/down); use monitored_actions for other controls.")
+		if direction_mode not in [DirectionMode.FLICK, DirectionMode.HOLD, DirectionMode.SELECT] \
+				or direction_space not in [DirectionSpace.INPUT, DirectionSpace.CAMERA]:
+			errors.append("Invalid direction mode or coordinate space.")
+		if not is_finite(direction_activation) or not is_finite(direction_rearm) \
+				or direction_activation <= 0.0 or direction_activation > 1.0 or direction_rearm < 0.0 or direction_rearm >= direction_activation:
+			errors.append("Direction needs 0 <= rearm < activation <= 1.")
+		if direction_mode == DirectionMode.HOLD and (not is_finite(hold_seconds) or hold_seconds <= 0.0 or hold_seconds >= window):
+			errors.append("Directional hold must fit inside the interaction window.")
+		if not is_finite(direction_settle_seconds) or direction_settle_seconds < 0.0 or direction_settle_seconds >= window \
+				or (direction_mode == DirectionMode.HOLD and hold_seconds + direction_settle_seconds >= window):
+			errors.append("Direction settling and hold duration must fit inside the window.")
+		if direction_mode == DirectionMode.SELECT:
+			if direction_options.is_empty():
+				errors.append("Directional selection needs sector-to-option mappings.")
+			for sector in direction_options:
+				if not valid_sector(sector) or not options.any(func(option: CADOption) -> bool: return option != null and option.id == direction_options[sector]):
+					errors.append("Invalid direction selection sector/option: %s." % sector)
+		elif not valid_sector(direction_sector):
+			errors.append("Direction sector must be enabled by the four/eight-way policy.")
 	var unique: Dictionary = {}
 	for action in actions:
 		if unique.has(action):
@@ -84,7 +121,25 @@ func input_actions(options: Array[CADOption]) -> Array[StringName]:
 	for action in actions + monitored_actions:
 		if action not in found:
 			found.append(action)
+	if family == Family.DIRECTION:
+		for action in direction_actions:
+			if action not in found:
+				found.append(action)
 	for option in options:
 		if option != null and option.action not in found:
 			found.append(option.action)
 	return found
+
+func uses_fixed_option() -> bool:
+	return family != Family.CHOICE and not (family == Family.DIRECTION and direction_mode == DirectionMode.SELECT)
+
+func valid_sector(value: int) -> bool:
+	return value >= 0 and value < 8 and (direction_eight_way or value % 2 == 0)
+
+func _has_duplicates(values: Array[StringName]) -> bool:
+	var seen: Dictionary = {}
+	for value in values:
+		if seen.has(value):
+			return true
+		seen[value] = true
+	return false

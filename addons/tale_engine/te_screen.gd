@@ -45,6 +45,8 @@ func _ready() -> void:
 	prompt_backdrop.offset_bottom = -170
 	add_child(prompt_backdrop)
 	prompt_label.position = Vector2(16, 8)
+	prompt_label.size = Vector2(358, 78)
+	prompt_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_style(prompt_label, 22)
 	prompt_backdrop.add_child(prompt_label)
 	prompt_bar.position = Vector2(16, 88)
@@ -200,6 +202,12 @@ func notice(text: String) -> void:
 
 func hint(text: String) -> void:
 	_hint.text = text
+
+func layout_prompt(lines: int) -> void:
+	var height := maxf(110.0, lines * 28.0 + 32.0)
+	prompt_backdrop.offset_top = prompt_backdrop.offset_bottom - height
+	prompt_label.size.y = height - 32.0
+	prompt_bar.position.y = height - 22.0
 
 func fade_out(seconds: float = 0.35) -> void:
 	await _fade_to(1.0, seconds)

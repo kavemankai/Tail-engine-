@@ -128,6 +128,42 @@ runner directly; stale tokens are rejected. New evaluators extend
 Register each family in the runner and validator; do not put choreography or Story
 writes in a handler.
 
+### Directional dodge, block and selection
+
+`family = DIRECTION` uses `direction_actions` in left/right/up/down order. The
+defaults are `cad_dir_left/right/up/down`, mapped to WASD, left stick and D-pad.
+All bindings remain in InputMap; the evaluator contains no fixed button or axis.
+`FLICK` accepts a fresh neutral-to-active deflection; `HOLD` maintains that sector
+for `hold_seconds`; `SELECT` maps `direction_options` sector IDs to offered gate
+option IDs. Fixed-direction modes use `direction_sector` and `option_id`.
+
+Sector IDs run clockwise: Up=0, UpRight=1, Right=2, DownRight=3, Down=4,
+DownLeft=5, Left=6, UpLeft=7. Four-way mode uses the even IDs; enable
+`direction_eight_way` for diagonals. Angular ties choose clockwise. The selected
+sector is available as `CADResult.direction` and in its scalar dump.
+
+Raw stick strength uses `direction_activation` (default 0.65) and
+`direction_rearm` (0.25). The helper bypasses InputMap's deadzone rescaling so those
+thresholds are literal. Pre-held directions, source switches and retries require
+neutral first; opposing held controls do not count as neutral. A 25 ms configurable
+`direction_settle_seconds` coalesces separately delivered axes/keys before judging
+a sector. This prevents diagonal gestures failing on their first cardinal event.
+Directional hold duration starts after settling; interrupted blocks reset and
+require neutral. Keyboard, each pad's buttons and each stick pair never mix vectors.
+
+`direction_space = INPUT` uses physical screen-relative controls. `CAMERA` rotates
+them into world XZ (+X right, -Z up), using a planar camera-forward snapshot at
+gate acquisition. Cuts during the gate cannot flip controls or prompts. The
+director supplies the active Camera3D yaw (or Camera2D rotation); a camera must be
+active before opening. Direct runners supply `context = {"camera_forward": Vector2}`
+to `begin`; missing/invalid camera context returns false with `last_error`.
+
+For deterministic held-input tests, pass an optional held-event snapshot callable
+to `CADInteractionRunner.new(clock_source, input_snapshot)`, or set the director's
+`input_snapshot`. Events are immediately normalised, never stored in results or
+saves. Normal runtime samples actual held keyboard/pad state. Physical-controller
+verification is still required separately from these synthetic-event tests.
+
 ### Timing, release, chords and restraint
 
 | Spec field | Meaning |

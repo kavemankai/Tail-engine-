@@ -12,6 +12,9 @@ var last_result: CADResult
 var run_id := 0
 var visit_id := 0
 var active := false
+var direction_forward := Vector2.UP
+var last_error := ""
+var _input_snapshot: Callable
 var _beat: StringName
 var _gate: CADGate
 var _spec: CADInteractionSpec
@@ -20,13 +23,22 @@ var _handler: CADInteractionHandler
 var _window := 0.0
 var _last_tick := 0.0
 
-func _init(time_source: Callable = Callable()) -> void:
+func _init(time_source: Callable = Callable(), input_snapshot: Callable = Callable()) -> void:
 	clock = CADClock.new(time_source)
+	_input_snapshot = input_snapshot
 
-func begin(gate: CADGate, offered: Array[CADOption], scale: float, run: int, visit: int, beat: StringName) -> bool:
+func begin(gate: CADGate, offered: Array[CADOption], scale: float, run: int, visit: int, beat: StringName, context: Dictionary = {}) -> bool:
+	last_error = "Invalid interaction spec or timing scale."
 	if active or gate == null or gate.interaction == null or not gate.interaction.validation_errors(gate.options, gate.window_seconds * scale).is_empty() \
 			or not is_finite(scale) or scale <= 0.0:
 		return false
+	direction_forward = Vector2.UP
+	if gate.interaction.family == CADInteractionSpec.Family.DIRECTION and gate.interaction.direction_space == CADInteractionSpec.DirectionSpace.CAMERA:
+		var forward: Variant = context.get("camera_forward")
+		if forward is not Vector2 or not forward.is_finite() or forward.is_zero_approx():
+			last_error = "Camera-relative Direction requires a finite planar camera_forward snapshot."
+			return false
+		direction_forward = forward.normalized()
 	_gate = gate.duplicate(true)
 	_spec = _gate.interaction
 	# Assistance widens accuracy/chord tolerances without moving authored contact
@@ -46,17 +58,24 @@ func begin(gate: CADGate, offered: Array[CADOption], scale: float, run: int, vis
 	last_result = null
 	clock.reset()
 	router.configure(_spec.input_actions(_options), _spec.controller_device)
+	if _spec.family == CADInteractionSpec.Family.DIRECTION:
+		router.configure_direction(_spec, _input_snapshot)
 	match _spec.family:
 		CADInteractionSpec.Family.GESTURE: _handler = CADGestureHandler.new()
 		CADInteractionSpec.Family.CHOICE: _handler = CADChoiceHandler.new()
 		CADInteractionSpec.Family.TIMING: _handler = CADTimingHandler.new()
 		CADInteractionSpec.Family.PASSIVE: _handler = CADPassiveHandler.new()
+		CADInteractionSpec.Family.DIRECTION:
+			var handler := CADDirectionHandler.new()
+			handler.forward = direction_forward
+			_handler = handler
 	_handler.configure(_spec, _options)
 	active = true
+	last_error = ""
 	if _spec.family == CADInteractionSpec.Family.PASSIVE and _spec.actions.any(
 		func(action: StringName) -> bool: return Input.is_action_pressed(action)):
 		_complete({"grade": &"miss"})
-	elif _options.is_empty() or (_spec.family != CADInteractionSpec.Family.CHOICE and not _options.any(
+	elif _options.is_empty() or (_spec.uses_fixed_option() and not _options.any(
 		func(option: CADOption) -> bool: return option.id == _spec.option_id)):
 		_complete({"grade": &"timeout"})
 	return true
@@ -102,6 +121,8 @@ func suspend(value: bool) -> void:
 		_handler.reset_input()
 	else:
 		router.configure(_spec.input_actions(_options), router.controller)
+		if _spec.family == CADInteractionSpec.Family.DIRECTION:
+			router.configure_direction(_spec, _input_snapshot)
 
 func cancel() -> void:
 	if active:
@@ -126,6 +147,7 @@ func _complete(data: Dictionary) -> void:
 	result.option_id = data.get("option_id", &"")
 	result.progress = clampf(data.get("progress", 0.0), 0.0, 1.0)
 	result.timing_error_ms = data.get("timing_error_ms", 0.0)
+	result.direction = data.get("direction", -1)
 	if result.grade != &"cancelled":
 		result.route_id = _spec.routes.get(result.grade, _gate.timeout_next)
 		if not _spec.routes.has(result.grade):
