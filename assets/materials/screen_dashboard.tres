@@ -1,0 +1,14 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://assets/shaders/screen.gdshader" id="1_5cf3m"]
+[ext_resource type="Texture2D" path="res://assets/textures/screen_dashboard.png" id="2_g00bo"]
+
+[resource]
+render_priority = 0
+shader = ExtResource("1_5cf3m")
+shader_parameter/content = ExtResource("2_g00bo")
+shader_parameter/scroll_speed = Vector2(0, 0)
+shader_parameter/energy = 1.5
+shader_parameter/scanline_strength = null
+shader_parameter/scanline_count = null
+shader_parameter/animated = null

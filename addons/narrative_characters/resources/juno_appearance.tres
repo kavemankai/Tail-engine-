@@ -1,0 +1,50 @@
+[gd_resource type="Resource" script_class="CharacterAppearance" format=3]
+
+[ext_resource type="Script" path="res://addons/narrative_characters/scripts/attachment_spec.gd" id="1_kg7l7"]
+[ext_resource type="Material" path="res://addons/narrative_characters/materials/juno_hair.tres" id="2_mfrbp"]
+[ext_resource type="ArrayMesh" path="res://addons/narrative_characters/meshes/juno_hair.res" id="3_rx6yq"]
+[ext_resource type="Material" path="res://addons/narrative_characters/materials/juno_band.tres" id="4_nvexn"]
+[ext_resource type="ArrayMesh" path="res://addons/narrative_characters/meshes/juno_body.res" id="5_g35k8"]
+[ext_resource type="Script" path="res://addons/narrative_characters/scripts/character_appearance.gd" id="6_oh8wd"]
+[ext_resource type="ArrayMesh" path="res://addons/narrative_characters/meshes/juno_shirt.res" id="7_jtudv"]
+[ext_resource type="ArrayMesh" path="res://addons/narrative_characters/meshes/juno_apron.res" id="8_fuf8s"]
+[ext_resource type="ArrayMesh" path="res://addons/narrative_characters/meshes/juno_pants.res" id="9_5fjac"]
+[ext_resource type="ArrayMesh" path="res://addons/narrative_characters/meshes/juno_boots.res" id="10_nkbrb"]
+
+[sub_resource type="Resource" id="Resource_tk5dn"]
+script = ExtResource("1_kg7l7")
+mesh = ExtResource("3_rx6yq")
+material = ExtResource("2_mfrbp")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.2086001e-12, -1.5496, 0.010899778)
+
+[sub_resource type="SphereMesh" id="SphereMesh_yn41v"]
+radius = 0.05
+height = 0.09
+
+[sub_resource type="Resource" id="Resource_nt1te"]
+script = ExtResource("1_kg7l7")
+mesh = SubResource("SphereMesh_yn41v")
+material = ExtResource("2_mfrbp")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.2086001e-12, 0.21879387, -0.052588347)
+
+[sub_resource type="TorusMesh" id="TorusMesh_2aylw"]
+inner_radius = 0.097
+outer_radius = 0.106
+
+[sub_resource type="Resource" id="Resource_otxaj"]
+script = ExtResource("1_kg7l7")
+mesh = SubResource("TorusMesh_2aylw")
+material = ExtResource("4_nvexn")
+transform = Transform3D(0.8621207, 0, 0, 0, 1.1643549, 0.2903063, 0, -0.25563106, 1.0252801, 1.2086001e-12, 0.16904378, -0.0075883493)
+
+[resource]
+script = ExtResource("6_oh8wd")
+body_mesh = ExtResource("5_g35k8")
+skinned_parts = Array[Mesh]([ExtResource("7_jtudv"), ExtResource("8_fuf8s"), ExtResource("9_5fjac"), ExtResource("10_nkbrb")])
+attachments = Array[ExtResource("1_kg7l7")]([SubResource("Resource_tk5dn"), SubResource("Resource_nt1te"), SubResource("Resource_otxaj")])
+hidden_nodes = PackedStringArray("Eyebrows")
+head_anchors = {
+"EyeFocus": Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.2086001e-12, 0.10644543, 0.10623288),
+"HeadCenter": Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.2086001e-12, 0.11904383, -0.0075883493),
+"HeadTop": Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.2086001e-12, 0.24704385, -0.0075883493)
+}

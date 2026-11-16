@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ConversationProfile" format=3]
+
+[ext_resource type="Script" path="res://addons/narrative_characters/scripts/conversation_profile.gd" id="1_wqmug"]
+
+[resource]
+script = ExtResource("1_wqmug")
+display_name = "Juno"
+talk_speed = 0.9
+arm_gesture_scale = 0.65
+speaking_gestures = PackedStringArray("beat", "explain_small", "nod_small", "beat")
+listening_gestures = PackedStringArray("nod_small", "tilt", "glance_away")
+seated_speaking_gestures = PackedStringArray("beat", "explain_small", "nod_small")
+allowed_gestures = PackedStringArray("nod", "nod_small", "shake", "shake_small", "tilt", "lean_in", "glance_away", "beat", "explain_small", "dismiss", "think", "shrug", "surprise", "point", "warn")

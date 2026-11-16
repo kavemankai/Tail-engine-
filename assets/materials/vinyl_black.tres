@@ -1,0 +1,16 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/textures/upholstery_albedo.png" id="1_d0kua"]
+[ext_resource type="Texture2D" path="res://assets/textures/upholstery_normal.png" id="2_dbwdd"]
+[ext_resource type="Texture2D" path="res://assets/textures/upholstery_rough.png" id="3_c8a3b"]
+
+[resource]
+albedo_color = Color(0.11, 0.11, 0.12, 1)
+albedo_texture = ExtResource("1_d0kua")
+roughness_texture = ExtResource("3_c8a3b")
+normal_enabled = true
+normal_texture = ExtResource("2_dbwdd")
+uv1_scale = Vector3(1.6, 1.6, 1.6)
+uv1_triplanar = true
+uv1_triplanar_sharpness = 4.0
+texture_filter = 5

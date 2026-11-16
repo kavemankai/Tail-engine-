@@ -1,0 +1,52 @@
+[gd_resource type="Resource" script_class="CharacterAppearance" format=3]
+
+[ext_resource type="Script" path="res://addons/narrative_characters/scripts/attachment_spec.gd" id="1_h4ore"]
+[ext_resource type="Material" path="res://addons/narrative_characters/materials/player_hair.tres" id="2_hmlwx"]
+[ext_resource type="ArrayMesh" path="res://addons/narrative_characters/meshes/player_hair.res" id="3_tnjem"]
+[ext_resource type="Material" path="res://addons/narrative_characters/materials/player_bag.tres" id="4_dokot"]
+[ext_resource type="Material" path="res://addons/narrative_characters/materials/accent_metal.tres" id="5_lkyh2"]
+[ext_resource type="ArrayMesh" path="res://addons/narrative_characters/meshes/player_body.res" id="6_mi0pm"]
+[ext_resource type="Script" path="res://addons/narrative_characters/scripts/character_appearance.gd" id="7_0od2g"]
+[ext_resource type="ArrayMesh" path="res://addons/narrative_characters/meshes/player_jacket.res" id="8_a4uw5"]
+[ext_resource type="ArrayMesh" path="res://addons/narrative_characters/meshes/player_collar.res" id="9_s822w"]
+[ext_resource type="ArrayMesh" path="res://addons/narrative_characters/meshes/player_pants.res" id="10_j1o4q"]
+[ext_resource type="ArrayMesh" path="res://addons/narrative_characters/meshes/player_boots.res" id="11_pgsaq"]
+
+[sub_resource type="Resource" id="Resource_htt37"]
+script = ExtResource("1_h4ore")
+mesh = ExtResource("3_tnjem")
+material = ExtResource("2_hmlwx")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.5998, 0.01740005)
+
+[sub_resource type="BoxMesh" id="BoxMesh_tofop"]
+size = Vector3(0.1, 0.2, 0.25)
+
+[sub_resource type="Resource" id="Resource_75vd5"]
+script = ExtResource("1_h4ore")
+bone_name = &"Hips"
+mesh = SubResource("BoxMesh_tofop")
+material = ExtResource("4_dokot")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.24, -0.06999999, 0.0129999835)
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_yw4ri"]
+radius = 0.008
+height = 0.028
+
+[sub_resource type="Resource" id="Resource_d25an"]
+script = ExtResource("1_h4ore")
+mesh = SubResource("CapsuleMesh_yw4ri")
+material = ExtResource("5_lkyh2")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.093916096, 0.086771965, -0.0010868981)
+
+[resource]
+script = ExtResource("7_0od2g")
+body_mesh = ExtResource("6_mi0pm")
+skinned_parts = Array[Mesh]([ExtResource("8_a4uw5"), ExtResource("9_s822w"), ExtResource("10_j1o4q"), ExtResource("11_pgsaq")])
+attachments = Array[ExtResource("1_h4ore")]([SubResource("Resource_htt37"), SubResource("Resource_75vd5"), SubResource("Resource_d25an")])
+hidden_nodes = PackedStringArray("Eyebrows")
+model_scale = Vector3(0.96, 0.985, 0.96)
+head_anchors = {
+"EyeFocus": Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.09877193, 0.11803797),
+"HeadCenter": Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.11227667, 0.0039131017),
+"HeadTop": Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2402767, 0.0039131017)
+}

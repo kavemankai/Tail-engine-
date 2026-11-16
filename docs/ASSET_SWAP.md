@@ -32,8 +32,8 @@ The player character gets a controller added for walk-around steps. It moves the
 fixture. Tests drive both player and NPC through `CADStage.act`, verify a mapped
 skeletal clip changes pose, and check skeletal playback does not double-apply the
 stage's root displacement. It is not a humanoid rig or a contact-quality test.
-No real humanoid/paired animation assets are present in this checkout. Before
-production use, validate the actual kit's locomotion lock, retargeting/rest poses,
+An optional humanoid kit is now staged in this prototype, but it does not prove
+production-quality paired contact. Before production use, validate locomotion lock, retargeting/rest poses,
 foot placement, contact frames, branch blends and socket attachments.
 
 ## Sets

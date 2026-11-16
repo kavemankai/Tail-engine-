@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="ConversationProfile" format=3]
+
+[ext_resource type="Script" path="res://addons/narrative_characters/scripts/conversation_profile.gd" id="1_lp5yc"]
+
+[resource]
+script = ExtResource("1_lp5yc")
+display_name = "Rook"
+idle_clip = &"Idle_FoldArms"
+listen_clip = &"Idle_FoldArms"
+talk_clip = &"Idle_FoldArms"
+talk_restrained_clip = &"Idle_FoldArms"
+gesture_scale = 0.85
+arm_gesture_scale = 0.9
+head_motion_scale = 0.55
+breathing_scale = 0.8
+arm_beats_while_speaking = false
+speaking_gestures = PackedStringArray("nod_small")
+listening_gestures = PackedStringArray("glance_away", "nod_small")
+seated_speaking_gestures = PackedStringArray("beat", "explain_small", "nod_small")
+allowed_gestures = PackedStringArray("nod_small", "shake_small", "tilt", "glance_away", "lean_in", "warn", "dismiss", "point")
+body_turn_speed = 3.6

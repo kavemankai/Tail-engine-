@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ConversationProfile" format=3]
+
+[ext_resource type="Script" path="res://addons/narrative_characters/scripts/conversation_profile.gd" id="1_p7xft"]
+
+[resource]
+script = ExtResource("1_p7xft")
+display_name = "Sable"
+talk_speed = 0.85
+gesture_scale = 0.75
+arm_gesture_scale = 0.7
+head_motion_scale = 0.8
+speaking_gestures = PackedStringArray("beat", "explain_small", "nod_small")
+listening_gestures = PackedStringArray("nod_small", "tilt", "glance_away")
+seated_speaking_gestures = PackedStringArray("beat", "explain_small", "nod_small")
+allowed_gestures = PackedStringArray("nod_small", "shake_small", "tilt", "glance_away", "lean_in", "beat", "explain_small", "think", "shrug", "surprise", "nod", "shake")

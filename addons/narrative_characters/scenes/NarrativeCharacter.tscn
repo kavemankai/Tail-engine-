@@ -1,0 +1,15 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="PackedScene" path="res://addons/humanoid_kit/scenes/Humanoid.tscn" id="1"]
+[ext_resource type="Script" path="res://addons/narrative_characters/scripts/narrative_character.gd" id="2"]
+[ext_resource type="Script" path="res://addons/narrative_characters/scripts/narrative_animator.gd" id="3"]
+[ext_resource type="Script" path="res://addons/narrative_characters/scripts/conversation_animation_controller.gd" id="4"]
+
+[node name="NarrativeCharacter" instance=ExtResource("1")]
+script = ExtResource("2")
+
+[node name="Visual" parent="." index="1"]
+script = ExtResource("3")
+
+[node name="ConversationController" type="Node" parent="." index="2"]
+script = ExtResource("4")

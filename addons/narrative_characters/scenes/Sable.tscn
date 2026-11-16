@@ -1,0 +1,12 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="PackedScene" path="res://addons/narrative_characters/scenes/NarrativeCharacter.tscn" id="1"]
+[ext_resource type="PackedScene" path="res://addons/humanoid_kit/source/Superhero_Female_FullBody.gltf" id="2"]
+[ext_resource type="Resource" path="res://addons/narrative_characters/resources/sable_profile.tres" id="3"]
+[ext_resource type="Resource" path="res://addons/narrative_characters/resources/sable_appearance.tres" id="4"]
+
+[node name="Sable" instance=ExtResource("1")]
+female_model = true
+model_scene = ExtResource("2")
+profile = ExtResource("3")
+appearance = ExtResource("4")

@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ConversationProfile" format=3]
+
+[ext_resource type="Script" path="res://addons/narrative_characters/scripts/conversation_profile.gd" id="1_k2hsc"]
+
+[resource]
+script = ExtResource("1_k2hsc")
+display_name = "Player"
+talk_speed = 0.95
+speaking_gestures = PackedStringArray("beat", "explain_small", "nod_small", "explain")
+listening_gestures = PackedStringArray("nod_small", "tilt", "glance_away")
+seated_speaking_gestures = PackedStringArray("beat", "explain_small", "nod_small")
+allowed_gestures = PackedStringArray()
