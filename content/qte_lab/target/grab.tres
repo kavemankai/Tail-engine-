@@ -1,0 +1,37 @@
+[gd_resource type="Resource" format=3]
+
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_sequence.gd" id="seq"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_beat.gd" id="beat"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_gate.gd" id="gate"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_option.gd" id="option"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_interaction_spec.gd" id="spec"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/compounds/cad_grab_template.gd" id="template"]
+
+[sub_resource type="Resource" id="bottle"]
+script = ExtResource("option")
+id = &"bottle"
+action = &"cad_a"
+label = "Bottle"
+next = &"selected"
+
+[sub_resource type="Resource" id="spec"]
+script = ExtResource("spec")
+id = &"grab"
+family = 6
+target_options = Dictionary[StringName, StringName]({&"bottle": &"bottle"})
+
+
+[sub_resource type="Resource" id="gate"]
+script = ExtResource("gate")
+options = Array[ExtResource("option")]([SubResource("bottle")])
+interaction = SubResource("spec")
+window_seconds = 6.0
+timeout_next = &"recover"
+open_marker = &"gate"
+
+[resource]
+script = ExtResource("template")
+gates = Array[ExtResource("gate")]([SubResource("gate")])
+input_timelines = Array[StringName]([&"ready"])
+action_timelines = Array[StringName]([&"grab"])
+recovery_timelines = Array[StringName]([&"recover"])

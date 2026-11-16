@@ -1,0 +1,65 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_stage.gd" id="stage"]
+[ext_resource type="AnimationLibrary" path="res://content/qte_lab/target/timelines.tres" id="lib"]
+
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_target_registry.gd" id="registry"]
+
+[sub_resource type="CylinderMesh" id="bottle"]
+top_radius = 0.06
+bottom_radius = 0.07
+height = 0.3
+
+[sub_resource type="BoxMesh" id="crate"]
+size = Vector3(0.3, 0.3, 0.3)
+
+[sub_resource type="SphereMesh" id="orb"]
+radius = 0.12
+height = 0.24
+
+[node name="TargetStage" type="Node3D" node_paths=PackedStringArray("timelines", "target_registry")]
+script = ExtResource("stage")
+timelines = NodePath("Timelines")
+target_registry = NodePath("Targets")
+
+[node name="Player" type="Marker3D" parent="."]
+position = Vector3(-0.5, 0, 0)
+rotation = Vector3(0, -1.5708, 0)
+
+[node name="Aggressor" type="Marker3D" parent="."]
+position = Vector3(1.2, 0, 0)
+rotation = Vector3(0, 1.5708, 0)
+
+[node name="Bartender" type="Marker3D" parent="."]
+position = Vector3(0, 0, -2.2)
+
+[node name="Wide" type="Camera3D" parent="."]
+position = Vector3(0, 1.7, 5.5)
+rotation = Vector3(-0.13, 0, 0)
+fov = 55
+
+[node name="Close" type="Camera3D" parent="."]
+position = Vector3(-0.1, 1.5, 3.2)
+rotation = Vector3(-0.12, 0, 0)
+fov = 45
+
+[node name="Timelines" type="AnimationPlayer" parent="."]
+libraries = {&"": ExtResource("lib")}
+
+[node name="Targets" type="Node" parent="."]
+script = ExtResource("registry")
+targets = Dictionary[StringName, NodePath]({&"bottle": NodePath("../Bottle"), &"crate": NodePath("../Crate"), &"moving": NodePath("../Moving")})
+labels = Dictionary[StringName, String]({&"bottle": "Bottle", &"crate": "Crate", &"moving": "Moving marker"})
+requires = Dictionary[StringName, StringName]({&"bottle": &"saw_bottle"})
+
+[node name="Bottle" type="MeshInstance3D" parent="."]
+position = Vector3(-0.15, 1, 0)
+mesh = SubResource("bottle")
+
+[node name="Crate" type="MeshInstance3D" parent="."]
+position = Vector3(0.8, 0.7, 0)
+mesh = SubResource("crate")
+
+[node name="Moving" type="MeshInstance3D" parent="."]
+position = Vector3(0, 1.7, 0)
+mesh = SubResource("orb")

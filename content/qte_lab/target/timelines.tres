@@ -1,0 +1,107 @@
+[gd_resource type="AnimationLibrary" format=3]
+
+[sub_resource type="Animation" id="ready"]
+resource_name = "ready"
+length = 0.6
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/path = NodePath("Player:position")
+tracks/0/keys = {"times": PackedFloat32Array(0, 0.09999999999999999, 0.3, 0.6), "transitions": PackedFloat32Array(1,1,1,1), "update": 0, "values": [Vector3(-0.5,0,0), Vector3(-0.5,0,0), Vector3(-0.5,0,0), Vector3(-0.5,0,0)]}
+tracks/1/type = "value"
+tracks/1/path = NodePath("Aggressor:position")
+tracks/1/keys = {"times": PackedFloat32Array(0, 0.09999999999999999, 0.3, 0.6), "transitions": PackedFloat32Array(1,1,1,1), "update": 0, "values": [Vector3(1.2,0,0), Vector3(1.2,0,0), Vector3(1.2,0,0), Vector3(1.2,0,0)]}
+tracks/2/type = "method"
+tracks/2/path = NodePath(".")
+tracks/2/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "values": [{"method": &"cut", "args": [&"Wide"]}]}
+tracks/3/type = "method"
+tracks/3/path = NodePath(".")
+tracks/3/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "values": [{"method": &"act", "args": [&"Player", &"guard"]}]}
+tracks/4/type = "method"
+tracks/4/path = NodePath(".")
+tracks/4/keys = {"times": PackedFloat32Array(0.15), "transitions": PackedFloat32Array(1), "values": [{"method": &"marker", "args": [&"gate"]}]}
+
+[sub_resource type="Animation" id="tracking"]
+resource_name = "tracking"
+length = 1.2
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/path = NodePath("Player:position")
+tracks/0/keys = {"times": PackedFloat32Array(0, 0.19999999999999998, 0.6, 1.2), "transitions": PackedFloat32Array(1,1,1,1), "update": 0, "values": [Vector3(-0.5,0,0), Vector3(-0.5,0,0), Vector3(-0.5,0,0), Vector3(-0.5,0,0)]}
+tracks/1/type = "value"
+tracks/1/path = NodePath("Aggressor:position")
+tracks/1/keys = {"times": PackedFloat32Array(0, 0.19999999999999998, 0.6, 1.2), "transitions": PackedFloat32Array(1,1,1,1), "update": 0, "values": [Vector3(1.2,0,0), Vector3(1.2,0,0), Vector3(1.2,0,0), Vector3(1.2,0,0)]}
+tracks/2/type = "value"
+tracks/2/path = NodePath("Moving:position")
+tracks/2/keys = {"times": PackedFloat32Array(0,0.6,1.2), "transitions": PackedFloat32Array(1,1,1), "update": 0, "values": [Vector3(0,1.7,0),Vector3(0.8,1.7,0),Vector3(0,1.7,0)]}
+tracks/3/type = "method"
+tracks/3/path = NodePath(".")
+tracks/3/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "values": [{"method": &"cut", "args": [&"Wide"]}]}
+tracks/4/type = "method"
+tracks/4/path = NodePath(".")
+tracks/4/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "values": [{"method": &"act", "args": [&"Player", &"guard"]}]}
+tracks/5/type = "method"
+tracks/5/path = NodePath(".")
+tracks/5/keys = {"times": PackedFloat32Array(0.15), "transitions": PackedFloat32Array(1), "values": [{"method": &"marker", "args": [&"gate"]}]}
+
+[sub_resource type="Animation" id="selected"]
+resource_name = "selected"
+length = 0.6
+tracks/0/type = "value"
+tracks/0/path = NodePath("Player:position")
+tracks/0/keys = {"times": PackedFloat32Array(0, 0.09999999999999999, 0.3, 0.6), "transitions": PackedFloat32Array(1,1,1,1), "update": 0, "values": [Vector3(-0.5,0,0), Vector3(-0.5,0,0), Vector3(-0.5,0,0), Vector3(-0.5,0,0)]}
+tracks/1/type = "value"
+tracks/1/path = NodePath("Aggressor:position")
+tracks/1/keys = {"times": PackedFloat32Array(0, 0.09999999999999999, 0.3, 0.6), "transitions": PackedFloat32Array(1,1,1,1), "update": 0, "values": [Vector3(1.2,0,0), Vector3(1.2,0,0), Vector3(1.2,0,0), Vector3(1.2,0,0)]}
+tracks/2/type = "method"
+tracks/2/path = NodePath(".")
+tracks/2/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "values": [{"method": &"cut", "args": [&"Wide"]}]}
+tracks/3/type = "method"
+tracks/3/path = NodePath(".")
+tracks/3/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "values": [{"method": &"act", "args": [&"Player", &"guard"]}]}
+
+[sub_resource type="Animation" id="recover"]
+resource_name = "recover"
+length = 0.6
+tracks/0/type = "value"
+tracks/0/path = NodePath("Player:position")
+tracks/0/keys = {"times": PackedFloat32Array(0, 0.09999999999999999, 0.3, 0.6), "transitions": PackedFloat32Array(1,1,1,1), "update": 0, "values": [Vector3(-0.5,0,0), Vector3(-0.5,0,0), Vector3(-0.5,0,0), Vector3(-0.5,0,0)]}
+tracks/1/type = "value"
+tracks/1/path = NodePath("Aggressor:position")
+tracks/1/keys = {"times": PackedFloat32Array(0, 0.09999999999999999, 0.3, 0.6), "transitions": PackedFloat32Array(1,1,1,1), "update": 0, "values": [Vector3(1.2,0,0), Vector3(1.2,0,0), Vector3(1.2,0,0), Vector3(1.2,0,0)]}
+tracks/2/type = "method"
+tracks/2/path = NodePath(".")
+tracks/2/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "values": [{"method": &"cut", "args": [&"Wide"]}]}
+tracks/3/type = "method"
+tracks/3/path = NodePath(".")
+tracks/3/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "values": [{"method": &"act", "args": [&"Player", &"guard"]}]}
+
+[sub_resource type="Animation" id="grab"]
+resource_name = "grab"
+length = 1.2
+tracks/0/type = "value"
+tracks/0/path = NodePath("Player:position")
+tracks/0/keys = {"times": PackedFloat32Array(0, 0.19999999999999998, 0.6, 1.2), "transitions": PackedFloat32Array(1,1,1,1), "update": 0, "values": [Vector3(-0.5,0,0), Vector3(-0.5,0,0), Vector3(-0.9,0,0), Vector3(-0.5,0,0)]}
+tracks/1/type = "value"
+tracks/1/path = NodePath("Aggressor:position")
+tracks/1/keys = {"times": PackedFloat32Array(0, 0.19999999999999998, 0.6, 1.2), "transitions": PackedFloat32Array(1,1,1,1), "update": 0, "values": [Vector3(1.2,0,0), Vector3(1.2,0,0), Vector3(1.2,0,0), Vector3(1.2,0,0)]}
+tracks/2/type = "method"
+tracks/2/path = NodePath(".")
+tracks/2/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "values": [{"method": &"cut", "args": [&"Wide"]}]}
+tracks/3/type = "method"
+tracks/3/path = NodePath(".")
+tracks/3/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "values": [{"method": &"act", "args": [&"Player", &"grab"]}]}
+tracks/4/type = "method"
+tracks/4/path = NodePath(".")
+tracks/4/keys = {"times": PackedFloat32Array(0.2), "transitions": PackedFloat32Array(1), "values": [{"method": &"attach_selected_prop", "args": [&"input_1", &"Player", NodePath("HandSocket")]}]}
+tracks/5/type = "method"
+tracks/5/path = NodePath(".")
+tracks/5/keys = {"times": PackedFloat32Array(0.8), "transitions": PackedFloat32Array(1), "values": [{"method": &"detach_selected_prop", "args": [&"input_1"]}]}
+
+[resource]
+_data = {
+&"ready": SubResource("ready"),
+&"tracking": SubResource("tracking"),
+&"selected": SubResource("selected"),
+&"recover": SubResource("recover"),
+&"grab": SubResource("grab")
+}

@@ -1,6 +1,6 @@
 # QTE v2 implementation status
 
-This milestone implements the **software portion of Phases 0–4**, preserving the
+This milestone implements the **software portion of Phases 0–5**, preserving the
 original Episode 0 encounters. It does not implement the full 30-mechanic target.
 
 ## Completed work and evidence
@@ -54,6 +54,23 @@ Phase 4 local verification: **661 Godot checks across 15 suites**, three Python
 runner tests, clean episode validation, Windows export and isolated packaged
 main/lab startup passed on Godot 4.6.3.
 
+Phase 5 adds a stage-side target registry, passive target overlay, shared selection/
+tracking evaluator, selected-result grab template and authored attachment markers.
+Registry eligibility reads narrative flags; timeout/no-target paths remain ordinary
+graph routes. Tests cover moving target loss/reacquisition, target changes during
+lock, deterministic cycling, native remaps/controller ownership, scene projection,
+rigid freeze state, BoneAttachment3D motion and cancellation after contact/drop.
+A placeholder label ownership leak exposed by validating custom cast scenes was
+fixed without filtering warnings. Greybox socket demos and skeletal adapter tests
+still do not establish real humanoid grab/contact quality or physical-pad QA.
+
+Phase 5 local verification: **738 Godot checks across 16 suites**, three Python
+runner tests, clean episode validation, Windows export and isolated pack startup
+passed. A 1920×1080 llvmpipe render exposed and verified the font-metric prompt
+layout fix. StringName ordering was reproduced as nonlexical and registry sorting
+now compares strings explicitly, with combined-suite regression coverage. The lab
+opens target windows after camera-cut markers so initial projection is stable.
+
 ## Selected mechanics
 
 | ID | Mechanic | Current implementation |
@@ -72,13 +89,13 @@ main/lab startup passed on Godot 4.6.3.
 | 29 | Directional dodge | Direction FLICK with neutral rearm; opt-in bar variant |
 | 30 | Directional block | Direction HOLD with sector interruption/recovery |
 | 38 | Directional selection | Analogue, D-pad and keyboard sectors mapped to offered option IDs; opt-in chase fork |
-| 42 | Target selection | Outstanding Target registry/evaluator |
-| 43 | Moving target | Outstanding tracking/lock evaluator |
+| 42 | Target selection | Shared registry, deterministic focus cycling and analogue/digital reticle |
+| 43 | Moving target | Sampled held lock; motion/loss interrupts; hitch credit rejected |
 | 53 | Three-punch combo | Three-punch template, independent gates and paired fixture clip dispatch; humanoid acceptance open |
 | 56 | Attack/defence chain | Shared chain template; mixed attack and directional-block example |
 | 62 | Tug of war | Outstanding Pressure evaluator and accessibility substitute |
 | 69 | Grapple escape | Hold is available; compound/opposition/release choreography outstanding |
-| 72 | Object grab | Existing flag-conditioned stool choice; generic target/socket ownership outstanding |
+| 72 | Object grab | Target-backed grab template and authored sockets with cancellation restoration; humanoid contact acceptance open |
 | 79 | Timed choice | Legacy and shared Choice; explicit option vs missed decision |
 | 84 | Conversation during action | Outstanding focus coordination; concurrent Flow dialogue is currently rejected |
 | 89 | Camera perspective | Existing stage timeline cuts/restoration preserved |
@@ -91,7 +108,7 @@ main/lab startup passed on Godot 4.6.3.
 
 ## Next phases and open acceptance gates
 
-Continue in the committed order: Target/attachments; Pressure/struggle; cinematic/narrative layers;
+Continue in the committed order: Pressure/struggle; cinematic/narrative layers;
 authoring/trace/1080p quality gate. New families must register in the shared
 runner and validation, not add scene-local input scripts or a second story graph.
 
@@ -100,8 +117,8 @@ runner and validation, not add scene-local input scripts or a second story graph
 - The humanoid kit and paired contact clips are unavailable. The minimal rig
   proves interface/playback only; alignment, snapping, foot contact, impacts and
   variant proportions require real assets and visual review.
-- Counterattack, combo and chain templates are available. Grapple/grab templates,
-  target UI, sockets, resistance, local slowdown, barks/live dialogue coordination, momentum
+- Counterattack, combo and chain templates are available. Grab/target/socket examples are available;
+  grapple templates, resistance, local slowdown, barks/live dialogue coordination, momentum
   and semantic-intent authoring remain outstanding.
 - New interactions deliberately reject pre-held input and do not consume legacy
   early buffers. Paused incomplete gestures require fresh input on resume.

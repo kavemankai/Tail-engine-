@@ -268,3 +268,54 @@ timelines with compatible entry poses, including after the final input.
 `CADInteractionHandler.resume_input(elapsed)` is an optional extension hook called
 when active-time input resumes, after `reset_input()` on suspension. It must not
 resolve an interaction or advance Story; runners still own completion and routing.
+
+### Targets, tracking and prop sockets
+
+`CADInteractionSpec.Family.TARGET` maps `target_options` (stage target ID → gate
+option ID). A stage exports `target_registry: CADTargetRegistry`; its `targets`
+map IDs to Node3D paths relative to the registry. Optional `labels` and `requires`
+(a flag or `!flag`) control presentation and eligibility. Missing bindings are
+validation errors. Hidden, behind-camera, off-screen and ineligible targets are
+excluded from snapshots. There is no occlusion raycast: author eligibility or
+hide blocked targets where that distinction matters.
+
+The director supplies an injectable `target_snapshot` Callable and `target_extent`
+to the runner. Snapshots contain only `{id, label, position}`; coordinates and
+`target_radius` use viewport-height units. The runner never retains world nodes.
+Focus uses nearest distance then stable ID; cycling follows sorted eligible IDs.
+Direction actions aim the reticle through the existing analogue/digital router.
+`target_confirm_action`, `target_next_action`, and `target_previous_action` are
+remappable and distinct. Acquisition starts at the first eligible target. Zero
+`target_lock_seconds` confirms instantly; a positive value requires held confirm
+and continuous focus. Focus changes, release and pause clear progress and require
+fresh confirm. A gap over 0.1 active seconds earns no unobserved tracking credit.
+The gate deadline still limits retries. A missing target produces no selection,
+then the authored timeout/recovery route. `runner.target_view()` provides an
+isolated presentation snapshot; `CADTargetOverlay` draws passive labels/reticle
+below the pause layer. It does not read input or grant Story state.
+
+`CADResult.target_id` identifies the selected target independently of its option.
+`CADGrabTemplate` compiles one Target gate through the shared chain compiler. Its
+successful action timeline calls:
+
+```gdscript
+attach_selected_prop(&"input_1", &"Player", ^"Rig/HandSocket")
+detach_selected_prop(&"input_1")
+```
+
+These stage markers read the runner's result. Direct `attach_prop(target_id,
+role, socket_path)` / `detach_prop(target_id)` are also available. The socket is
+an authored Node3D or BoneAttachment3D below the bound actor. Attach retains the
+current contact offset; it never snaps to an inferred hand pose. Place contact
+and prop/actor keys explicitly before this marker. Stage validation checks result
+beat references and, when actors are bound, socket existence before acquisition.
+The episode-only validator cannot verify an unavailable real rig's sockets.
+
+`CADPropAttachments` follows the socket with a RemoteTransform3D while the prop
+keeps its scene parent, so actor deletion does not destroy the prop. Rigid props
+freeze during ownership and regain their original freeze setting on detach.
+Cancellation/error restores the original acquisition transform, even after an
+authored drop; successful release preserves authored final placement and removes
+all remaining socket ownership. Stage unload also cleans up. These helpers return
+`false` on invalid/missing prop/socket arguments. They do not apply impulses,
+manage a physics inventory, or persist mid-contact poses.

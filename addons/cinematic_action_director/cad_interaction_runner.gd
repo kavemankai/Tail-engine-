@@ -39,6 +39,12 @@ func begin(gate: CADGate, offered: Array[CADOption], scale: float, run: int, vis
 			last_error = "Camera-relative Direction requires a finite planar camera_forward snapshot."
 			return false
 		direction_forward = forward.normalized()
+	if gate.interaction.family == CADInteractionSpec.Family.TARGET:
+		var provider: Variant = context.get("target_snapshot")
+		var extent: Variant = context.get("target_extent", Vector2(16.0 / 9.0, 1.0))
+		if provider is not Callable or not provider.is_valid() or extent is not Vector2 or not extent.is_finite() or extent.x <= 0.0 or extent.y <= 0.0:
+			last_error = "Target requires a valid target_snapshot provider and positive finite target_extent."
+			return false
 	_gate = gate.duplicate(true)
 	_spec = _gate.interaction
 	# Assistance widens accuracy/chord tolerances without moving authored contact
@@ -60,11 +66,16 @@ func begin(gate: CADGate, offered: Array[CADOption], scale: float, run: int, vis
 	last_result = null
 	clock.reset()
 	router.configure(_spec.input_actions(_options), _spec.controller_device)
-	if _spec.family == CADInteractionSpec.Family.DIRECTION:
+	if _spec.family in [CADInteractionSpec.Family.DIRECTION, CADInteractionSpec.Family.TARGET]:
 		router.configure_direction(_spec, _input_snapshot)
 	match _spec.family:
 		CADInteractionSpec.Family.GESTURE: _handler = CADGestureHandler.new()
 		CADInteractionSpec.Family.CHOICE: _handler = CADChoiceHandler.new()
+		CADInteractionSpec.Family.TARGET:
+			var handler := CADTargetHandler.new()
+			handler.provider = context.target_snapshot
+			handler.extent = context.get("target_extent", Vector2(16.0 / 9.0, 1.0))
+			_handler = handler
 		CADInteractionSpec.Family.PATTERN: _handler = CADPatternHandler.new()
 		CADInteractionSpec.Family.TIMING: _handler = CADTimingHandler.new()
 		CADInteractionSpec.Family.PASSIVE: _handler = CADPassiveHandler.new()
@@ -125,7 +136,7 @@ func suspend(value: bool) -> void:
 	else:
 		_handler.resume_input(clock.elapsed)
 		router.configure(_spec.input_actions(_options), router.controller)
-		if _spec.family == CADInteractionSpec.Family.DIRECTION:
+		if _spec.family in [CADInteractionSpec.Family.DIRECTION, CADInteractionSpec.Family.TARGET]:
 			router.configure_direction(_spec, _input_snapshot)
 
 func cancel() -> void:
@@ -134,6 +145,9 @@ func cancel() -> void:
 
 func remaining() -> float:
 	return maxf(0.0, _window - clock.elapsed)
+
+func target_view() -> Dictionary:
+	return _handler.view() if active and _handler is CADTargetHandler else {}
 
 func completed_steps() -> int:
 	return _handler.index if _handler is CADPatternHandler else 0
@@ -154,6 +168,7 @@ func _complete(data: Dictionary) -> void:
 	result.option_id = data.get("option_id", &"")
 	result.progress = clampf(data.get("progress", 0.0), 0.0, 1.0)
 	result.timing_error_ms = data.get("timing_error_ms", 0.0)
+	result.target_id = data.get("target_id", &"")
 	result.direction = data.get("direction", -1)
 	if result.grade != &"cancelled":
 		result.route_id = _spec.routes.get(result.grade, _gate.timeout_next)

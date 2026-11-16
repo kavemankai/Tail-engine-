@@ -12,6 +12,7 @@ const PAD := {
 }
 
 static func bind(director: CADDirector, label: Label, progress: Range, backdrop: Control = null) -> void:
+	CADTargetOverlay.install(director)
 	var state := {"options": [], "gate": null}
 	var refresh := func() -> void:
 		var lines := PackedStringArray()
@@ -50,6 +51,15 @@ static func interaction_text(gate: CADGate, options: Array, pad: bool, forward :
 	var spec := gate.interaction
 	if spec.family == CADInteractionSpec.Family.DIRECTION:
 		return direction_text(spec, options, pad, forward)
+	if spec.family == CADInteractionSpec.Family.TARGET:
+		var aim := PackedStringArray()
+		for action in spec.direction_actions:
+			var control := glyph(action, pad)
+			if control not in aim:
+				aim.append(control)
+		return "Aim [%s]\nCycle [%s / %s]\n%s [%s]" % [" / ".join(aim),
+			glyph(spec.target_previous_action, pad), glyph(spec.target_next_action, pad),
+			"Hold to lock" if spec.target_lock_seconds > 0.0 else "Select", glyph(spec.target_confirm_action, pad)]
 	if spec.family == CADInteractionSpec.Family.CHOICE:
 		return "\n".join(options.map(func(option: CADOption) -> String: return text_for(option, pad)))
 	var title := String(spec.id)
@@ -58,9 +68,11 @@ static func interaction_text(gate: CADGate, options: Array, pad: bool, forward :
 			title = option.label
 	if spec.family == CADInteractionSpec.Family.PATTERN:
 		var steps := PackedStringArray()
-		for i in spec.pattern_steps.size():
+		var start := maxi(0, completed - 1)
+		var end := mini(spec.pattern_steps.size(), start + 4)
+		for i in range(start, end):
 			steps.append(("✓ " if i < completed else "") + glyph(spec.pattern_steps[i], pad))
-		return "%s\n[%s]" % [title, " → ".join(steps)]
+		return "%s (%d/%d)\n[%s%s]" % [title, mini(completed + 1, spec.pattern_steps.size()), spec.pattern_steps.size(), " → ".join(steps), " → …" if end < spec.pattern_steps.size() else ""]
 	var verb := ""
 	if spec.family == CADInteractionSpec.Family.PASSIVE:
 		verb = "Do not press "

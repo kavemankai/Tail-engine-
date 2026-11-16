@@ -165,3 +165,28 @@ paired `recoil_jab`, `recoil_cross`, `recoil_hook` NPC clips. Map these in your 
 Run `qte_pattern chains` and the full verifier after edits. The fixture proves
 three distinct skeletal poses and continuous timeline roots, not real humanoid
 contact or production animation quality.
+
+### Target and grab examples
+
+`target/selection_episode.tres`, `tracking_episode.tres`, and `grab_episode.tres`
+use the shared registry/evaluator and the standard Flow. Default controls: aim
+with remappable WASD / left stick / D-pad, cycle with Space/A and K/B, confirm
+with J/X. Moving targets require held confirm inside the reticle; cycling or
+losing focus requires a new confirm. All prompts follow InputMap remapping.
+
+Add a `CADTargetRegistry` to your stage, assign it to `target_registry`, and bind
+stable IDs to visible Node3Ds. In the interaction, map those IDs to offered gate
+options with `target_options`. Registry `requires` reads narrative flags. The lab
+manifest begins with `saw_bottle` set so its grab is available; clearing it makes
+the bottle ineligible and demonstrates the no-target recovery route. No widget
+sets the flag or the selected result. Occlusion needs authored eligibility.
+
+For a grab, use `CADGrabTemplate` with one Target gate and input/action/recovery
+timelines. The action timeline calls `attach_selected_prop` at contact and
+`detach_selected_prop` at release, referencing `input_1`. Keep props in the stage
+and provide a Node3D/BoneAttachment3D socket below the bound character. The lab
+uses a greybox hand marker; automated tests also exercise a real BoneAttachment3D
+on the minimal skeletal adapter. Match actor/prop contact before attaching to
+preserve the authored offset without a visible snap. Validate the actual humanoid
+kit separately. Run `qte_target` and the full verifier after changing bindings.
+`python tools/build_target_examples.py` regenerates native resources/timelines.

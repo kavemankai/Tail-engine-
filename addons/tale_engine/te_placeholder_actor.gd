@@ -10,6 +10,11 @@ var _clock := 0.0
 ## Clips received, newest last. Tests read this.
 var clip_log: Array[StringName] = []
 
+func _init() -> void:
+	# Validators instantiate and dispose actors without entering the scene tree.
+	# Own this node immediately so disposal before _ready cannot leak it.
+	add_child(_label)
+
 func setup(new_character: TECharacter) -> void:
 	super(new_character)
 	_material.albedo_color = character.colour
@@ -41,7 +46,6 @@ func _ready() -> void:
 	_label.position.y = 2.1
 	_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	_label.font_size = 48
-	add_child(_label)
 
 func play_clip(clip: StringName) -> void:
 	clip_log.append(clip)

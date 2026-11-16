@@ -3,7 +3,7 @@ extends Resource
 ## Optional CADGate extension. Missing interaction keeps the legacy evaluator.
 ## Routes override named grade destinations in the existing CADSequence graph.
 
-enum Family { GESTURE, CHOICE, TIMING, PASSIVE, DIRECTION, PATTERN }
+enum Family { GESTURE, CHOICE, TIMING, PASSIVE, DIRECTION, PATTERN, TARGET }
 enum Gesture { PRESS, HOLD, TIMED_RELEASE, CHORD }
 enum WrongInput { IGNORE, FAIL }
 enum PatternError { IGNORE, RESET, FAIL }
@@ -53,13 +53,24 @@ enum Sector { UP, UP_RIGHT, RIGHT, DOWN_RIGHT, DOWN, DOWN_LEFT, LEFT, UP_LEFT }
 @export_range(0.0, 5.0) var pattern_min_seconds := 0.0
 @export var pattern_error: PatternError = PatternError.IGNORE
 
+## Target IDs bind to the stage registry; values are existing gate option IDs.
+@export var target_options: Dictionary[StringName, StringName] = {}
+@export var target_confirm_action := &"cad_a"
+@export var target_next_action := &"cad_b"
+@export var target_previous_action := &"cad_dodge"
+## Zero is immediate selection; positive values require continuous held lock.
+@export_range(0.0, 10.0) var target_lock_seconds := 0.0
+## Coordinates/radius are viewport-height units, independent of aspect ratio.
+@export_range(0.01, 0.5) var target_radius := 0.08
+@export_range(0.01, 4.0) var target_cursor_speed := 0.6
+
 func validation_errors(options: Array[CADOption], window: float) -> PackedStringArray:
 	var errors := PackedStringArray()
 	if id == &"":
 		errors.append("Interaction needs a stable id.")
 	if not is_finite(window) or window <= 0.0:
 		errors.append("Interaction window must be finite and positive.")
-	if family not in [Family.GESTURE, Family.CHOICE, Family.TIMING, Family.PASSIVE, Family.DIRECTION, Family.PATTERN]:
+	if family not in [Family.GESTURE, Family.CHOICE, Family.TIMING, Family.PASSIVE, Family.DIRECTION, Family.PATTERN, Family.TARGET]:
 		errors.append("Unsupported interaction family.")
 	if controller_device < -1 or wrong_input not in [WrongInput.IGNORE, WrongInput.FAIL]:
 		errors.append("Invalid interaction input policy.")
@@ -88,7 +99,7 @@ func validation_errors(options: Array[CADOption], window: float) -> PackedString
 	if family == Family.PASSIVE and (actions.is_empty() or not is_finite(passive_seconds) \
 			or passive_seconds <= 0.0 or passive_seconds > window):
 		errors.append("Passive needs forbidden actions and a completion time inside the window.")
-	if family == Family.DIRECTION:
+	if family in [Family.DIRECTION, Family.TARGET]:
 		if direction_actions.size() != 4 or _has_duplicates(direction_actions) or not actions.is_empty():
 			errors.append("Direction needs four unique direction_actions (left/right/up/down); use monitored_actions for other controls.")
 		if direction_mode not in [DirectionMode.FLICK, DirectionMode.HOLD, DirectionMode.SELECT] \
@@ -110,6 +121,19 @@ func validation_errors(options: Array[CADOption], window: float) -> PackedString
 					errors.append("Invalid direction selection sector/option: %s." % sector)
 		elif not valid_sector(direction_sector):
 			errors.append("Direction sector must be enabled by the four/eight-way policy.")
+	if family == Family.TARGET:
+		var controls: Array[StringName] = [target_confirm_action, target_next_action, target_previous_action]
+		if _has_duplicates(controls) or controls.any(func(action: StringName) -> bool: return action in direction_actions):
+			errors.append("Target confirm/next/previous actions must be distinct and separate from aim directions.")
+		if target_options.is_empty():
+			errors.append("Target needs target-to-option mappings.")
+		for target_id in target_options:
+			if target_id == &"" or not options.any(func(option: CADOption) -> bool: return option != null and option.id == target_options[target_id]):
+				errors.append("Invalid target ID/option mapping: %s." % target_id)
+		if not is_finite(target_lock_seconds) or target_lock_seconds < 0.0 or target_lock_seconds >= window \
+				or not is_finite(target_radius) or target_radius <= 0.0 or target_radius > 0.5 \
+				or not is_finite(target_cursor_speed) or target_cursor_speed <= 0.0 or target_cursor_speed > 4.0:
+			errors.append("Target needs finite lock duration inside window, radius in (0, 0.5], and cursor speed in (0, 4].")
 	if family == Family.PATTERN:
 		if pattern_steps.is_empty() or pattern_steps.size() > 64 or not actions.is_empty():
 			errors.append("Pattern needs 1–64 steps and empty actions; repetitions go in pattern_steps.")
@@ -143,7 +167,11 @@ func input_actions(options: Array[CADOption]) -> Array[StringName]:
 	for action in actions + monitored_actions + (pattern_steps if family == Family.PATTERN else []):
 		if action not in found:
 			found.append(action)
-	if family == Family.DIRECTION:
+	if family == Family.TARGET:
+		for action in [target_confirm_action, target_next_action, target_previous_action]:
+			if action not in found:
+				found.append(action)
+	if family in [Family.DIRECTION, Family.TARGET]:
 		for action in direction_actions:
 			if action not in found:
 				found.append(action)
@@ -153,7 +181,7 @@ func input_actions(options: Array[CADOption]) -> Array[StringName]:
 	return found
 
 func uses_fixed_option() -> bool:
-	return family != Family.CHOICE and not (family == Family.DIRECTION and direction_mode == DirectionMode.SELECT)
+	return family not in [Family.CHOICE, Family.TARGET] and not (family == Family.DIRECTION and direction_mode == DirectionMode.SELECT)
 
 func valid_sector(value: int) -> bool:
 	return value >= 0 and value < 8 and (direction_eight_way or value % 2 == 0)
