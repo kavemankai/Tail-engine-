@@ -1,6 +1,6 @@
-# Integrating Cinematic Action Director
+# Cinematic Action Director reference
 
-Godot 4.6, GDScript only, no dependencies.
+The action layer. Godot 4.6, GDScript only, no dependencies. It works without Tale Engine; inside an episode, Tale Engine starts it for you (see [AUTHORING.md](AUTHORING.md)).
 
 ## The parts
 
@@ -11,6 +11,7 @@ Godot 4.6, GDScript only, no dependencies.
 | `CADBeat` | Resource. One timeline, an optional gate, and where to go next. |
 | `CADGate` | Resource. A timed window with one or more options and a timeout exit. |
 | `CADOption` | Resource. An InputMap action, press or hold, an optional required flag, and its exit. |
+| `CADBranch` | Resource. A flag and an exit, checked on an ungated beat before its `next`. Lets earlier choices redirect a scene. |
 | `CADDirector` | Node. Runs a sequence on a stage. |
 | `CADPrompt` | Helper that shows the open gate's options on a Label and a progress bar, with key or pad names read from the InputMap. |
 
@@ -73,7 +74,7 @@ The stage restores the camera that was current before the encounter. If there wa
 | `cancel()` | Ends with `&"cancelled"` and releases. |
 | `suspend(true)` | Freezes the gate clock, the watchdog and the timeline, and ignores input and markers. |
 | `window_scale` | Multiplies every gate window. Use it for an accessibility setting. |
-| `flags` | Dictionary read by `CADOption.requires`. An option whose flag is missing is not offered. A gate with no available option takes its timeout exit at once. |
+| `flags` | Dictionary read by `CADOption.requires` and `CADBranch.requires`. An option whose flag is missing is not offered. A gate with no available option takes its timeout exit at once. Prefix a name with `!` to require it unset. |
 
 Reserved outcomes: `cancelled`, `watchdog`, `staging_error`.
 

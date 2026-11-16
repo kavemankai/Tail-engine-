@@ -128,14 +128,14 @@ rotation = Vector3(-0.1326, -0.0, 0)
 fov = 50
 
 [node name="stranger" type="Camera3D" parent="Shots"]
-position = Vector3(-1.4, 1.75, 1.7)
-rotation = Vector3(-0.0963, -0.9917, 0)
-fov = 40
+position = Vector3(-1.9, 1.9, 3.0)
+rotation = Vector3(-0.1452, -0.7509, 0)
+fov = 45
 
 [node name="player" type="Camera3D" parent="Shots"]
-position = Vector3(2.1, 1.75, 1.7)
-rotation = Vector3(-0.0963, 0.9917, 0)
-fov = 40
+position = Vector3(2.6, 1.9, 3.0)
+rotation = Vector3(-0.1452, 0.7509, 0)
+fov = 45
 
 [node name="bartender" type="Camera3D" parent="Shots"]
 position = Vector3(-0.9, 1.75, 1.6)
