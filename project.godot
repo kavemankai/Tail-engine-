@@ -135,6 +135,38 @@ cad_down={
 ]
 }
 
+cad_dir_left={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"physical_keycode":65)
+, Object(InputEventJoypadMotion,"device":-1,"axis":0,"axis_value":-1.0)
+, Object(InputEventJoypadButton,"device":-1,"button_index":13)
+]
+}
+
+cad_dir_right={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"physical_keycode":68)
+, Object(InputEventJoypadMotion,"device":-1,"axis":0,"axis_value":1.0)
+, Object(InputEventJoypadButton,"device":-1,"button_index":14)
+]
+}
+
+cad_dir_up={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"physical_keycode":87)
+, Object(InputEventJoypadMotion,"device":-1,"axis":1,"axis_value":-1.0)
+, Object(InputEventJoypadButton,"device":-1,"button_index":11)
+]
+}
+
+cad_dir_down={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"physical_keycode":83)
+, Object(InputEventJoypadMotion,"device":-1,"axis":1,"axis_value":1.0)
+, Object(InputEventJoypadButton,"device":-1,"button_index":12)
+]
+}
+
 [internationalization]
 
 locale/translations_pot_files=PackedStringArray("res://content/episode_0/dialogue/episode_0.dialogue")

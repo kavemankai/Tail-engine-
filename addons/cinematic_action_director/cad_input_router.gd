@@ -5,12 +5,14 @@ extends RefCounted
 ## the default, so a held confirm cannot satisfy a newly acquired challenge.
 
 var controller := -1
+var direction: CADDirectionInput
 var _actions: Array[StringName] = []
 var _down: Dictionary = {}
 var _blocked: Dictionary = {}
 var _sources: Dictionary = {}
 
 func configure(actions: Array[StringName], device: int = -1, carry := false) -> void:
+	direction = null
 	_actions = actions.duplicate()
 	controller = device
 	_down.clear()
@@ -21,6 +23,8 @@ func configure(actions: Array[StringName], device: int = -1, carry := false) -> 
 		_blocked[action] = not carry and Input.is_action_pressed(action)
 
 func relevant(event: InputEvent) -> bool:
+	if direction != null and direction.relevant(event):
+		return true
 	for action in _actions:
 		if event.is_action(action):
 			return true
@@ -28,6 +32,15 @@ func relevant(event: InputEvent) -> bool:
 
 func route(event: InputEvent, at: float) -> Array[CADInputSample]:
 	var samples: Array[CADInputSample] = []
+	if direction != null and direction.relevant(event):
+		var sample := direction.route(event, at, controller)
+		if sample != null:
+			if sample.started:
+				if sample.device >= 0 and controller < 0:
+					controller = sample.device
+				CADInputDevice.set_device(sample.device >= 0)
+			samples.append(sample)
+		return samples
 	if event.is_echo():
 		return samples
 	var pad := event is InputEventJoypadButton or event is InputEventJoypadMotion
@@ -65,6 +78,10 @@ func route(event: InputEvent, at: float) -> Array[CADInputSample]:
 		sample.at = at
 		samples.append(sample)
 	return samples
+
+func configure_direction(spec: CADInteractionSpec, snapshot: Callable = Callable()) -> void:
+	direction = CADDirectionInput.new()
+	direction.configure(spec, snapshot)
 
 func _source_id(event: InputEvent) -> String:
 	if event is InputEventJoypadButton:

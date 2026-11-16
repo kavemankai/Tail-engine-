@@ -42,6 +42,8 @@ var detailed_results: Dictionary[StringName, CADResult] = {}
 var interaction_runner: CADInteractionRunner
 ## Optional deterministic seconds source; leave empty for real active time.
 var clock_source: Callable
+## Optional held-event provider for deterministic directional acquisition tests.
+var input_snapshot: Callable
 
 var _active := false
 var _busy := false
@@ -304,9 +306,10 @@ func _open_gate() -> void:
 		_resolve(TIMEOUT, gate.timeout_next)
 		return
 	if gate.interaction != null:
-		interaction_runner = CADInteractionRunner.new(clock_source)
+		interaction_runner = CADInteractionRunner.new(clock_source, input_snapshot)
 		interaction_runner.resolved.connect(_on_interaction_resolved)
-		if not interaction_runner.begin(gate, _options, window_scale, _run_id, _visit, _beat.id):
+		if not interaction_runner.begin(gate, _options, window_scale, _run_id, _visit, _beat.id, _interaction_context()):
+			push_warning(interaction_runner.last_error)
 			_finish(&"staging_error")
 			return
 		if not _active or _gate != Gate.OPEN:
@@ -398,3 +401,17 @@ func _on_joy_connection_changed(device: int, connected: bool) -> void:
 	if not connected and _active and interaction_runner != null and interaction_runner.active \
 			and interaction_runner.router.controller == device:
 		cancel()
+
+func _interaction_context() -> Dictionary:
+	var camera := get_viewport().get_camera_3d()
+	if camera != null:
+		var basis := camera.global_basis.orthonormalized()
+		var forward := Vector2(-basis.z.x, -basis.z.z)
+		if forward.is_zero_approx():
+			var right := Vector2(basis.x.x, basis.x.z)
+			forward = Vector2(right.y, -right.x)
+		return {"camera_forward": forward.normalized()}
+	var camera_2d := get_viewport().get_camera_2d()
+	if camera_2d != null:
+		return {"camera_forward": Vector2.UP.rotated(camera_2d.global_rotation)}
+	return {}

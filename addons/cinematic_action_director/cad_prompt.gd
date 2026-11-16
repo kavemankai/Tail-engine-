@@ -16,7 +16,8 @@ static func bind(director: CADDirector, label: Label, progress: Range, backdrop:
 	var refresh := func() -> void:
 		var lines := PackedStringArray()
 		if state.gate != null and state.gate.interaction != null:
-			label.text = interaction_text(state.gate, state.options, director.using_pad)
+			var forward := director.interaction_runner.direction_forward if director.interaction_runner != null else Vector2.UP
+			label.text = interaction_text(state.gate, state.options, director.using_pad, forward)
 			return
 		for option: CADOption in state.options:
 			lines.append(text_for(option, director.using_pad))
@@ -43,8 +44,10 @@ static func bind(director: CADDirector, label: Label, progress: Range, backdrop:
 	director.input_device_changed.connect(refresh)
 	hide_prompt.call()
 
-static func interaction_text(gate: CADGate, options: Array, pad: bool) -> String:
+static func interaction_text(gate: CADGate, options: Array, pad: bool, forward := Vector2.UP) -> String:
 	var spec := gate.interaction
+	if spec.family == CADInteractionSpec.Family.DIRECTION:
+		return direction_text(spec, options, pad, forward)
 	if spec.family == CADInteractionSpec.Family.CHOICE:
 		return "\n".join(options.map(func(option: CADOption) -> String: return text_for(option, pad)))
 	var title := String(spec.id)
@@ -63,6 +66,93 @@ static func interaction_text(gate: CADGate, options: Array, pad: bool) -> String
 	for action in spec.actions:
 		keys.append(glyph(action, pad))
 	return "%s   [%s%s]" % [title, verb, " + ".join(keys)]
+
+static func direction_text(spec: CADInteractionSpec, options: Array, pad: bool, forward: Vector2) -> String:
+	var lines := PackedStringArray()
+	var pairs: Array = []
+	if spec.direction_mode == CADInteractionSpec.DirectionMode.SELECT:
+		var sectors := spec.direction_options.keys()
+		sectors.sort()
+		for sector: int in sectors:
+			for option: CADOption in options:
+				if option.id == spec.direction_options[sector]:
+					pairs.append([option, sector])
+	else:
+		for option: CADOption in options:
+			if option.id == spec.option_id:
+				pairs.append([option, int(spec.direction_sector)])
+	for pair: Array in pairs:
+		var option: CADOption = pair[0]
+		var sector: int = pair[1]
+		if spec.direction_space == CADInteractionSpec.DirectionSpace.CAMERA:
+			sector = CADDirectionHandler.input_sector(sector, forward, spec.direction_eight_way)
+		var verb := "Hold " if spec.direction_mode == CADInteractionSpec.DirectionMode.HOLD else ""
+		lines.append("%s\n[%s%s]" % [option.label, verb, direction_controls(spec, sector, pad)])
+	return "\n".join(lines)
+
+static func direction_controls(spec: CADInteractionSpec, sector: int, pad: bool) -> String:
+	var vector := CADDirectionHandler.vector_of(sector)
+	var required: Array[int] = []
+	if absf(vector.x) > 0.01:
+		required.append(0 if vector.x < 0.0 else 1)
+	if absf(vector.y) > 0.01:
+		required.append(2 if vector.y < 0.0 else 3)
+	if not pad:
+		var keys := PackedStringArray()
+		for i in required:
+			var found := ""
+			for binding in InputMap.action_get_events(spec.direction_actions[i]):
+				if binding is InputEventKey:
+					found = OS.get_keycode_string(binding.physical_keycode if binding.physical_keycode != KEY_NONE else binding.keycode)
+					break
+			if found == "":
+				return "Unbound"
+			keys.append(found)
+		return " + ".join(keys)
+	var groups: Dictionary = {}
+	for i in required:
+		for binding in InputMap.action_get_events(spec.direction_actions[i]):
+			if spec.controller_device >= 0 and binding.device >= 0 and binding.device != spec.controller_device:
+				continue
+			var group := ""
+			var axis := Vector2.ZERO
+			var text := ""
+			if binding is InputEventJoypadMotion:
+				group = "stick:%d" % int(binding.axis / 2)
+				axis = Vector2(signf(binding.axis_value), 0) if binding.axis % 2 == 0 else Vector2(0, signf(binding.axis_value))
+			elif binding is InputEventJoypadButton:
+				group = "buttons"
+				text = PAD.get(binding.button_index, "Pad %d" % binding.button_index)
+				var dpad := {JOY_BUTTON_DPAD_UP: Vector2.UP, JOY_BUTTON_DPAD_RIGHT: Vector2.RIGHT,
+					JOY_BUTTON_DPAD_DOWN: Vector2.DOWN, JOY_BUTTON_DPAD_LEFT: Vector2.LEFT}
+				axis = dpad.get(binding.button_index, Vector2.ZERO)
+			if group == "":
+				continue
+			var entry: Dictionary = groups.get(group, {"covered": [], "vector": Vector2.ZERO, "buttons": [], "dpad": true})
+			if i not in entry.covered:
+				entry.covered.append(i)
+				entry.vector += axis
+				entry.buttons.append(text)
+				if group == "buttons" and axis.is_zero_approx():
+					entry.dpad = false
+			groups[group] = entry
+	var alternatives := PackedStringArray()
+	for group: String in groups:
+		var entry: Dictionary = groups[group]
+		if entry.covered.size() != required.size():
+			continue
+		var arrow := direction_arrow(CADDirectionHandler.sector_of(entry.vector, true))
+		if group.begins_with("stick:"):
+			var stick := int(group.get_slice(":", 1))
+			alternatives.append("%s %s" % ["Left stick" if stick == 0 else ("Right stick" if stick == 1 else "Axes %d/%d" % [stick * 2, stick * 2 + 1]), arrow])
+		elif entry.dpad:
+			alternatives.append("D-pad " + arrow)
+		else:
+			alternatives.append(" + ".join(entry.buttons))
+	return " / ".join(alternatives) if not alternatives.is_empty() else "Unbound"
+
+static func direction_arrow(sector: int) -> String:
+	return ["↑", "↗", "→", "↘", "↓", "↙", "←", "↖"][sector] if sector >= 0 and sector < 8 else "?"
 
 static func text_for(option: CADOption, pad: bool) -> String:
 	var verb := "Hold " if option.hold_seconds > 0.0 else ""
