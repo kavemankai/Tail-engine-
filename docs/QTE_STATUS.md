@@ -79,9 +79,10 @@ paired struggle/escape/stagger clips through the actor adapter. Tests cover regu
 and irregular deltas, fractional pause accounting, failure bounds, assist input,
 restart/unload, full Flow escape and failure. Physical/humanoid acceptance is open.
 
-Phase 6 final local verification: **793 Godot checks across 17 suites**, three
+Phase 6 final local verification: **795 Godot checks across 17 suites**, three
 Python runner tests, clean episode validation, Windows x86_64 export and isolated
-packaged main/lab startup all passed. Phases 7–8 are not implemented by this
+packaged main/lab startup all passed. Post-review regression checks also verify
+cycling and confirming targets with identical screen positions. Phases 7–8 are not implemented by this
 milestone: local slowdown, action dialogue/focus, momentum, typed adaptive context,
 semantic intent, trace tooling and final hardware/production-animation QA remain.
 

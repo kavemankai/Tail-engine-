@@ -282,7 +282,9 @@ hide blocked targets where that distinction matters.
 The director supplies an injectable `target_snapshot` Callable and `target_extent`
 to the runner. Snapshots contain only `{id, label, position}`; coordinates and
 `target_radius` use viewport-height units. The runner never retains world nodes.
-Focus uses nearest distance then stable ID; cycling follows sorted eligible IDs.
+Focus uses nearest distance, retains explicit focus on exact ties, then uses stable
+ID for unowned ties. Cycling follows sorted eligible IDs, including overlapping
+targets.
 Direction actions aim the reticle through the existing analogue/digital router.
 `target_confirm_action`, `target_next_action`, and `target_previous_action` are
 remappable and distinct. Acquisition starts at the first eligible target. Zero

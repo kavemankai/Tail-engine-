@@ -59,8 +59,11 @@ func selection_contract() -> void:
 	acquire(value)
 	targets = [{"id": &"a", "position": Vector2(0.3, 0.5)}, {"id": &"b", "position": Vector2(0.3, 0.5)}]
 	value.tick()
-	expect(value.target_view().focused == &"a", "overlapping targets break distance ties by stable ID")
-	value.cancel()
+	expect(value.target_view().focused == &"a", "overlapping targets break initial distance ties by stable ID")
+	value.input(edge(&"cad_b"), 1, 1)
+	expect(value.target_view().focused == &"b", "explicit focus cycling can select overlapping targets")
+	value.input(edge(&"cad_a"), 1, 1)
+	expect(value.last_result.target_id == &"b", "overlapping focus stays stable through confirm sampling")
 
 func tracking_contract() -> void:
 	for fps in [30, 60, 120]:

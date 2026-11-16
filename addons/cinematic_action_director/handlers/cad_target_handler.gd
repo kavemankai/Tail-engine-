@@ -89,7 +89,8 @@ func _focus() -> void:
 	var distance := spec.target_radius
 	for entry: Dictionary in entries:
 		var next_distance := cursor.distance_to(entry.position)
-		if next_distance <= distance and (candidate == &"" or next_distance < distance - 0.0000001):
+		if next_distance <= distance + 0.0000001 and (candidate == &"" or next_distance < distance - 0.0000001 \
+				or (absf(next_distance - distance) <= 0.0000001 and entry.id == focused)):
 			candidate = entry.id
 			distance = next_distance
 	if candidate != focused:
@@ -106,6 +107,7 @@ func _cycle(step: int) -> void:
 			index = i
 	var next := posmod(index + step, entries.size()) if index >= 0 else (0 if step > 0 else entries.size() - 1)
 	cursor = entries[next].position
+	focused = entries[next].id
 	_held = false
 	progress = 0.0
 	_focus()
