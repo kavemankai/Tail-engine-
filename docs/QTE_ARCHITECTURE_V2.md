@@ -1,6 +1,6 @@
 # Tail Engine — QTE Architecture v2 and Implementation Roadmap
 
-**Status:** Proposed design; not implemented.  
+**Status:** Target architecture; software Phases 0–2 are implemented on the development branch. See [QTE_STATUS.md](QTE_STATUS.md) for verified coverage and outstanding phases. Hardware and real-humanoid acceptance remain open.
 **Baseline audited:** `kavemankai/Tail-engine-`, default branch `ccr-a20ee9e7-3y4ohl`, commit `8aaefe08dad93327bf98e383a6a615e2fcc32987` (16 November 2026).  
 **Engine target:** Standard Godot 4.6.3, GDScript, controller-first Windows/1080p.  
 **Scope:** Exactly the 30 selected mechanics below. This document changes no runtime behaviour.
@@ -231,4 +231,4 @@ For every showcase, verify **actual humanoid rigs** on the existing `TEActor` ad
 
 **First fix/diagnose the failing import-stage CI run without weakening validation.** Then implement Phase 1 as an additive, backwards-compatible seam with a regression test covering both existing encounters. Only after that should the new handlers be built. Confirm real Windows controller behaviour and humanoid paired contact early rather than leaving those risks until the end.
 
-**This document is a committed design plan, not evidence that any of its proposed additions were implemented or tested.**
+**This document describes the full target, not proof that all its proposed additions exist. Use [QTE_STATUS.md](QTE_STATUS.md) for current implementation and verification evidence.**

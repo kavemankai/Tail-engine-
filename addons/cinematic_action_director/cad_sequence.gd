@@ -40,6 +40,8 @@ func validation_errors() -> PackedStringArray:
 		else:
 			exits.append(beat.gate.timeout_next)
 			if beat.gate.interaction != null:
+				if beat.gate.interaction.timing_marker != &"" and beat.gate.interaction.timing_marker == beat.gate.open_marker:
+					errors.append("Beat %s: timing anchor must follow gate opening; use an empty timing_marker for gate-relative timing." % beat.id)
 				for problem in beat.gate.interaction.validation_errors(beat.gate.options, beat.gate.window_seconds):
 					errors.append("Beat %s: %s" % [beat.id, problem])
 				for destination in beat.gate.interaction.routes.values():

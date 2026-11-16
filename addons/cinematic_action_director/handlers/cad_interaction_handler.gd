@@ -20,5 +20,11 @@ func tick(_elapsed: float, _delta: float) -> Dictionary:
 func reset_input() -> void:
 	pass
 
+func marker(_id: StringName, _at: float) -> bool:
+	return false
+
+func timeout() -> Dictionary:
+	return {"grade": &"timeout", "progress": progress}
+
 func wrong() -> Dictionary:
 	return {"grade": &"miss", "progress": progress} if spec.wrong_input == CADInteractionSpec.WrongInput.FAIL else {}

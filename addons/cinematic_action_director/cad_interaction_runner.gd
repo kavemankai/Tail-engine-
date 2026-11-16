@@ -24,11 +24,17 @@ func _init(time_source: Callable = Callable()) -> void:
 	clock = CADClock.new(time_source)
 
 func begin(gate: CADGate, offered: Array[CADOption], scale: float, run: int, visit: int, beat: StringName) -> bool:
-	if active or gate == null or gate.interaction == null or not gate.interaction.validation_errors(gate.options, gate.window_seconds).is_empty() \
+	if active or gate == null or gate.interaction == null or not gate.interaction.validation_errors(gate.options, gate.window_seconds * scale).is_empty() \
 			or not is_finite(scale) or scale <= 0.0:
 		return false
 	_gate = gate.duplicate(true)
 	_spec = _gate.interaction
+	# Assistance widens accuracy/chord tolerances without moving authored contact
+	# instants or changing animation speed. Hold/neutral durations stay explicit.
+	_spec.perfect_seconds *= scale
+	_spec.success_seconds *= scale
+	_spec.partial_seconds *= scale
+	_spec.chord_seconds *= scale
 	_options.clear()
 	for option in offered:
 		_options.append(option.duplicate(true))
@@ -43,9 +49,14 @@ func begin(gate: CADGate, offered: Array[CADOption], scale: float, run: int, vis
 	match _spec.family:
 		CADInteractionSpec.Family.GESTURE: _handler = CADGestureHandler.new()
 		CADInteractionSpec.Family.CHOICE: _handler = CADChoiceHandler.new()
+		CADInteractionSpec.Family.TIMING: _handler = CADTimingHandler.new()
+		CADInteractionSpec.Family.PASSIVE: _handler = CADPassiveHandler.new()
 	_handler.configure(_spec, _options)
 	active = true
-	if _options.is_empty() or (_spec.family == CADInteractionSpec.Family.GESTURE and not _options.any(
+	if _spec.family == CADInteractionSpec.Family.PASSIVE and _spec.actions.any(
+		func(action: StringName) -> bool: return Input.is_action_pressed(action)):
+		_complete({"grade": &"miss"})
+	elif _options.is_empty() or (_spec.family != CADInteractionSpec.Family.CHOICE and not _options.any(
 		func(option: CADOption) -> bool: return option.id == _spec.option_id)):
 		_complete({"grade": &"timeout"})
 	return true
@@ -66,14 +77,22 @@ func tick() -> void:
 	if not active or clock.paused:
 		return
 	var elapsed := clock.tick()
-	# Strict half-open window: deadline input is late, including after a hitch.
-	if elapsed >= _window:
-		_complete({"grade": &"timeout", "progress": _handler.progress})
-		return
-	var result := _handler.tick(elapsed, elapsed - _last_tick)
-	_last_tick = elapsed
+	# Evaluate continuous progress up to the deadline before expiring. A held
+	# action that completed before a frame hitch still succeeds. Input edges at
+	# the deadline remain late. Passive's completion at the deadline is explicit.
+	var evaluation_time := minf(elapsed, _window - 0.0000001)
+	var result := _handler.tick(evaluation_time, maxf(0.0, evaluation_time - _last_tick))
+	_last_tick = evaluation_time
 	if not result.is_empty():
 		_complete(result)
+	elif elapsed >= _window:
+		_complete(_handler.timeout())
+
+func marker(id: StringName, run: int, visit: int) -> bool:
+	if not active or clock.paused or run != run_id or visit != visit_id:
+		return false
+	tick()
+	return _handler.marker(id, clock.elapsed) if active else false
 
 func suspend(value: bool) -> void:
 	if not active or clock.paused == value:

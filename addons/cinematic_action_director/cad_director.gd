@@ -150,6 +150,9 @@ func marker(id: StringName, visit: int) -> bool:
 			_open_gate()
 		_check_complete()
 		return true
+	if _gate == Gate.OPEN and interaction_runner != null and interaction_runner.active:
+		if interaction_runner.marker(id, _run_id, visit):
+			return true
 	if _gate == Gate.PENDING and id == _beat.gate.open_marker:
 		_open_gate()
 		return true

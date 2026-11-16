@@ -28,6 +28,14 @@ Timelines move the actor's root transform. Your clips should play in place unles
 
 The player character gets a controller added for walk-around steps. It moves the `CharacterBody3D`; drive your locomotion blend from `velocity` in your actor script.
 
+`tests/fixtures/tree_actor.gd` is a minimal two-bone AnimationTree/OneShot adapter
+fixture. Tests drive both player and NPC through `CADStage.act`, verify a mapped
+skeletal clip changes pose, and check skeletal playback does not double-apply the
+stage's root displacement. It is not a humanoid rig or a contact-quality test.
+No real humanoid/paired animation assets are present in this checkout. Before
+production use, validate the actual kit's locomotion lock, retargeting/rest poses,
+foot placement, contact frames, branch blends and socket attachments.
+
 ## Sets
 
 Replace the boxes under a location's `Set` node with your geometry and collision. Keep the names under `Marks`, `Shots`, `Hubs` and `Zones`, and move them to suit the new set. Run the validator; it lists any name a step or dialogue file still expects.

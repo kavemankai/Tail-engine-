@@ -36,7 +36,7 @@ game; use Escape/Start or Resume to continue.
 ## Check it
 
 ```bash
-python tools/verify.py                               # import, nine suites, episode validation
+python tools/verify.py                               # import, eleven suites, episode validation
 python tools/verify.py --suites lifecycle save        # a focused regression run
 ```
 
@@ -44,6 +44,8 @@ The wrapper requires Python 3 and Godot 4.6.3 on PATH (or `--godot /path/to/godo
 It fails on engine/script errors and leaks even if Godot exits zero, checks that
 the suites completed, and saves logs in `build/logs/`. CI runs it on fresh checkouts.
 Each suite has a 90-second watchdog; the wrapper also bounds each process.
+Verbose Linux import uses a fresh editor profile so plugin caches cannot hide
+startup/shutdown errors; see [the diagnosed CI failure](docs/VERIFICATION.md).
 
 The underlying scenes remain available:
 
@@ -80,6 +82,10 @@ godot --path . --write-movie out.avi --fixed-fps 30 res://tests/record.tscn
 
 [docs/AUTHORING.md](docs/AUTHORING.md) covers the episode graph, dialogue files, story variables, hubs and encounters. [docs/INTEGRATION.md](docs/INTEGRATION.md) is the action layer's reference.
 [docs/ROADMAP.md](docs/ROADMAP.md) tracks current work and the remaining release gates.
+[docs/QTE_STATUS.md](docs/QTE_STATUS.md) records exactly which v2 mechanics are
+implemented and which remain outstanding. Choose **Interaction lab** on the title
+menu for resource-authored reaction, hold, release, chord, parry and restraint
+examples using the same Flow, actors, cameras and branching runtime.
 
 ## Limits
 

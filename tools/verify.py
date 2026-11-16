@@ -68,6 +68,9 @@ def main():
         with tempfile.TemporaryDirectory(prefix="last-call-pack-") as directory:
             run(args.godot, "pack-startup", ["--main-pack", str(executable.with_suffix(".pck")),
                                            "--quit-after", "5"], timeout=30, project_dir=directory)
+            run(args.godot, "pack-lab-startup", ["--main-pack", str(executable.with_suffix(".pck")),
+                                               "--quit-after", "5", "res://content/qte_lab/lab.tscn"],
+                timeout=30, project_dir=directory)
         with zipfile.ZipFile(ROOT / "build/LastCall-windows-greybox.zip", "w", zipfile.ZIP_DEFLATED) as archive:
             for file in sorted(destination.iterdir()):
                 if file.is_file():

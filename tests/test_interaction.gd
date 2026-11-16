@@ -9,8 +9,10 @@ func run() -> void:
 	hold_contract()
 	choice_contract()
 	router_contract()
+	remapping_contract()
 	validation_contract()
 	director_contract()
+	focus_contract()
 	await lab_contract()
 
 func runner() -> CADInteractionRunner:
@@ -165,6 +167,10 @@ func router_contract() -> void:
 	other.pressed = false
 	expect(router.route(other, 0.0).is_empty(), "second controller cannot release first controller input")
 	expect(router.route(first, 0.0).is_empty(), "repeated press is debounced")
+	var unrelated_release := InputEventKey.new()
+	unrelated_release.physical_keycode = KEY_SPACE
+	unrelated_release.pressed = false
+	expect(router.route(unrelated_release, 0.0).is_empty(), "keyboard release cannot release a latched pad action")
 	var release := first.duplicate() as InputEventJoypadButton
 	release.pressed = false
 	expect(router.route(release, 0.0).size() == 1, "owned controller release is delivered")
@@ -182,6 +188,43 @@ func validation_contract() -> void:
 	spec.interaction.actions = [&"cad_dodge"]
 	spec.interaction.routes[&"unknown_grade"] = &"won"
 	expect(not spec.interaction.validation_errors(spec.options, 2.0).is_empty(), "unknown result grade is rejected")
+
+func remapping_contract() -> void:
+	var original := InputMap.action_get_events(&"cad_dodge")
+	InputMap.action_erase_events(&"cad_dodge")
+	var binding := InputEventKey.new()
+	binding.physical_keycode = KEY_F9
+	InputMap.action_add_event(&"cad_dodge", binding)
+	var value := runner()
+	begin(value, gate())
+	var old_key := InputEventKey.new()
+	old_key.physical_keycode = KEY_SPACE
+	old_key.pressed = true
+	value.input(old_key, 1, 1)
+	expect(value.active, "removed binding cannot complete interaction")
+	var new_key := binding.duplicate() as InputEventKey
+	new_key.pressed = true
+	value.input(new_key, 1, 1)
+	expect(value.last_result != null and value.last_result.grade == &"success", "router resolves current remapped InputMap action")
+	InputMap.action_erase_events(&"cad_dodge")
+	for event in original:
+		InputMap.action_add_event(&"cad_dodge", event)
+
+func focus_contract() -> void:
+	var balloon := TEBalloon.new()
+	add_child(balloon)
+	balloon._responses = [DialogueResponse.new(), DialogueResponse.new(), DialogueResponse.new()]
+	var director := CADDirector.new()
+	add_child(director)
+	director.begin(sequence(gate()))
+	var event := InputEventJoypadButton.new()
+	event.button_index = JOY_BUTTON_A
+	event.pressed = true
+	balloon._input(event)
+	director._input(event)
+	expect(balloon._picked == -1 and director.results.get(&"test") == &"go", "shared gamepad confirm is consumed by action owner only")
+	director.free()
+	balloon.free()
 
 func sequence(spec: CADGate) -> CADSequence:
 	var beat := CADBeat.new()

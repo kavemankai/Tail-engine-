@@ -92,8 +92,8 @@ Set `CADGate.interaction` to a `CADInteractionSpec` to opt into the shared runne
 Leave it null to retain the original press/hold, buffer and frozen-hold-window
 behaviour. Episode 0's existing encounter resources remain unchanged.
 
-The first supported families are `GESTURE` (press/hold) and `CHOICE`. Gesture
-specs name a stable `id`, one `actions` entry and an `option_id` referencing a gate
+Supported families are `GESTURE` (press/hold/timed-release/chord), `CHOICE`, `TIMING`
+and `PASSIVE`. Gesture specs name a stable `id`, `actions` and an `option_id` referencing a gate
 option. Choice specs use the gate's offered options. `monitored_actions` declares
 additional wrong-input actions; `wrong_input` either ignores them or resolves
 `miss`. Unrelated controls are ignored. `routes` optionally maps a result grade to
@@ -127,3 +127,33 @@ runner directly; stale tokens are rejected. New evaluators extend
 `CADInteractionHandler` and return pending `{}` or one small result dictionary.
 Register each family in the runner and validator; do not put choreography or Story
 writes in a handler.
+
+### Timing, release, chords and restraint
+
+| Spec field | Meaning |
+|---|---|
+| `gesture = TIMED_RELEASE` | One fresh press arms the challenge; the matching source's release is graded. A held button from before acquisition cannot arm it. |
+| `gesture = CHORD` | `actions` contains 2–4 unique actions. They must overlap within `chord_seconds`; repeated presses do not count as another button. |
+| `family = TIMING` | One press is graded around `ideal_seconds`. Parry is an authored use of this evaluator, not a separate combat system. |
+| `perfect_seconds / success_seconds / partial_seconds` | Ordered, inclusive absolute-error bounds; anything later/outside them is `miss`. Input before the earliest partial bound follows `wrong_input`. |
+| `timing_marker` | Optional, one-shot timing anchor after gate opening. `ideal_seconds` is then an offset from that marker; before the marker, input follows the early policy. Empty uses gate opening. |
+| `family = PASSIVE` | `actions` is the forbidden set. A forbidden press or a forbidden action already held on acquisition yields `miss`; completing `passive_seconds` yields `restrained`. |
+
+Timed release uses the same accuracy bounds as Timing. Too-early release with
+IGNORE disarms the gesture and permits a fresh attempt; FAIL resolves `miss`.
+For a failed chord with IGNORE, release its buttons and try again. With FAIL,
+exceeding the chord tolerance resolves `miss` immediately. A different device
+cannot release an action latched by the original physical source.
+
+`window_scale` widens accuracy/chord tolerances as well as the overall deadline.
+It does **not** shift the ideal/contact instant, lengthen hold/neutral durations,
+or slow animations. A continuous hold completed before a frame hitch retains its
+success. Neutral completion at the deadline is an explicit Passive success; an
+input edge at that deadline is late. Choreography markers must fit after gate
+opening and inside the authored window; the stage validator checks their names
+and chronology. Host-driven markers still require the current visit token.
+
+For graded follow-through, use `routes = {&"perfect": &"strong_reaction",
+&"partial": &"glancing_reaction", &"miss": &"recovery"}` with those destinations
+declared as ordinary beats/outcomes. The input handler never invokes actor or NPC
+clips. The selected beat's timeline calls `CADStage.act` and `cut` as before.

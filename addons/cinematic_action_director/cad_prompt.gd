@@ -51,7 +51,14 @@ static func interaction_text(gate: CADGate, options: Array, pad: bool) -> String
 	for option: CADOption in options:
 		if option.id == spec.option_id:
 			title = option.label
-	var verb := "Hold " if spec.gesture == CADInteractionSpec.Gesture.HOLD else ""
+	var verb := ""
+	if spec.family == CADInteractionSpec.Family.PASSIVE:
+		verb = "Do not press "
+	elif spec.family == CADInteractionSpec.Family.GESTURE:
+		if spec.gesture == CADInteractionSpec.Gesture.HOLD:
+			verb = "Hold "
+		elif spec.gesture == CADInteractionSpec.Gesture.TIMED_RELEASE:
+			verb = "Hold, then release "
 	var keys := PackedStringArray()
 	for action in spec.actions:
 		keys.append(glyph(action, pad))

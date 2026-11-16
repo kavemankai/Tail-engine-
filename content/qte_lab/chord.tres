@@ -1,0 +1,54 @@
+[gd_resource type="Resource" script_class="CADSequence" format=3]
+
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_sequence.gd" id="seq"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_beat.gd" id="beat"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_gate.gd" id="gate"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_option.gd" id="opt"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_interaction_spec.gd" id="interaction"]
+
+[sub_resource type="Resource" id="dodge"]
+script = ExtResource("opt")
+id = &"brace"
+action = &"cad_a"
+label = "Brace with both hands"
+next = &"evade"
+
+[sub_resource type="Resource" id="spec"]
+script = ExtResource("interaction")
+id = &"lab_chord"
+gesture = 3
+chord_seconds = 0.15
+option_id = &"brace"
+actions = Array[StringName]([&"cad_a", &"cad_b"])
+
+[sub_resource type="Resource" id="gate"]
+script = ExtResource("gate")
+options = Array[ExtResource("opt")]([SubResource("dodge")])
+interaction = SubResource("spec")
+window_seconds = 2.0
+timeout_next = &"hit"
+open_marker = &"gate"
+
+[sub_resource type="Resource" id="windup"]
+script = ExtResource("beat")
+id = &"windup"
+timeline = &"windup"
+gate = SubResource("gate")
+
+[sub_resource type="Resource" id="evade"]
+script = ExtResource("beat")
+id = &"evade"
+timeline = &"evade"
+next = &"success"
+
+[sub_resource type="Resource" id="hit"]
+script = ExtResource("beat")
+id = &"hit"
+timeline = &"hit"
+next = &"missed"
+
+[resource]
+script = ExtResource("seq")
+entry = &"windup"
+beats = Array[ExtResource("beat")]([SubResource("windup"), SubResource("evade"), SubResource("hit")])
+outcomes = Array[StringName]([&"success", &"missed"])
