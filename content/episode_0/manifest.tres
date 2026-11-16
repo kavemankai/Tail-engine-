@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="TEStoryManifest" format=3]
+
+[ext_resource type="Script" path="res://addons/tale_engine/te_story_manifest.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+variables = {
+&"stool_noticed": false,
+&"bartender_talked": false,
+&"bartender_friendly": false,
+&"insulted_stranger": false
+}
+choices = {
+&"bartender": {
+&"kind": "You were polite to the bartender.",
+&"rude": "You were short with the bartender.",
+&"silent": "You said nothing to the bartender."
+},
+&"stranger": {
+&"pay": "You paid the tab a second time.",
+&"refuse": "You refused to pay twice.",
+&"insult": "You insulted the stranger.",
+&"silent": "You stared the stranger down."
+}
+}

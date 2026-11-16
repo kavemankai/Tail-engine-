@@ -14,11 +14,24 @@ config/name="Cinematic Action Director"
 run/main_scene="res://content/main.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 
+[autoload]
+
+Settings="*res://addons/tale_engine/te_settings.gd"
+Story="*res://addons/tale_engine/te_story.gd"
+Audio="*res://addons/tale_engine/te_audio.gd"
+DialogueManager="*res://addons/dialogue_manager/dialogue_manager.gd"
+Screen="*res://addons/tale_engine/te_screen.gd"
+Flow="*res://addons/tale_engine/te_flow.gd"
+
 [display]
 
 window/size/viewport_width=1280
 window/size/viewport_height=720
 window/stretch/mode="canvas_items"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/dialogue_manager/plugin.cfg")
 
 [input]
 
@@ -118,6 +131,10 @@ cad_down={
 , Object(InputEventJoypadButton,"resource_local_to_scene":false,"resource_name":"","device":-1,"button_index":12,"pressure":0.0,"pressed":false,"script":null)
 ]
 }
+
+[internationalization]
+
+locale/translations_pot_files=PackedStringArray("res://content/episode_0/dialogue/episode_0.dialogue")
 
 [rendering]
 

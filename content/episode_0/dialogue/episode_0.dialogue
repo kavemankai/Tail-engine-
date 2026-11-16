@@ -1,0 +1,57 @@
+~ look_stool
+player: A bar stool. Heavy, and bolted to nothing. [ID:e0_001]
+do Story.remember("stool_noticed", true)
+=> END
+
+~ talk_bartender
+if Story.flag("bartender_talked")
+	bartender: Still here? [#shot=bartender] [ID:e0_002]
+	=> END
+do Story.put("bartender_talked", true)
+bartender: What'll it be? [#timed=6, #shot=bartender] [ID:e0_003]
+- Whatever's cheap. Thanks. [#opt=kind]
+	do Story.choose("bartender", "kind")
+	do Story.remember("bartender_friendly", true, "The bartender will remember that.")
+	bartender: Manners. Rare in here. [ID:e0_004]
+- Just pour. [#opt=rude]
+	do Story.choose("bartender", "rude")
+	bartender: Charming. [ID:e0_005]
+- ... [#silence, #opt=silent]
+	do Story.choose("bartender", "silent")
+	bartender: Suit yourself. [ID:e0_006]
+=> END
+
+~ stranger
+stranger: Your tab is overdue. [#shot=stranger] [ID:e0_007]
+player: I paid it yesterday. [#shot=player] [ID:e0_008]
+stranger: Then pay it again. [#timed=5, #shot=stranger] [ID:e0_009]
+- Fine. Here. [#opt=pay]
+	do Story.choose("stranger", "pay")
+	stranger: Smart. [ID:e0_010]
+	do exit("paid")
+- I don't pay twice. [#opt=refuse]
+	do Story.choose("stranger", "refuse")
+	stranger: Wrong answer. [ID:e0_011]
+- You couldn't count it anyway. [#opt=insult]
+	do Story.choose("stranger", "insult")
+	do Story.remember("insulted_stranger", true, "He will remember that.")
+- ... [#silence, #opt=silent]
+	do Story.choose("stranger", "silent")
+	stranger: Nothing to say? [ID:e0_012]
+=> END
+
+~ aftermath
+if Story.outcome("bar_fight") == "won"
+	stranger: Alright. Alright. We're square. [#shot=wide] [ID:e0_013]
+elif Story.outcome("bar_fight") == "broken_up"
+	bartender: Take it outside. Both of you. [#shot=bartender] [ID:e0_014]
+	player: Thanks. [#shot=player] [ID:e0_015]
+else
+	stranger: This isn't over. [#shot=stranger] [ID:e0_016]
+if Story.flag("bartender_friendly") and Story.outcome("bar_fight") != "won"
+	bartender: Out the back. I never saw you. [#shot=bartender] [ID:e0_017]
+=> END
+
+~ caught
+stranger: Told you. Pay it again. [#shot=caught] [ID:e0_018]
+=> END
