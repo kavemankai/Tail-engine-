@@ -25,6 +25,8 @@ enum Card { TITLE, RECAP }
 
 @export_group("Encounter")
 @export var sequence: CADSequence
+## Optional authoring template. Choose exactly one of sequence or compound.
+@export var compound: CADCompoundAction
 ## Name of the CADStage node in the location.
 @export var stage: StringName
 ## Stage role -> character id.
@@ -44,3 +46,8 @@ func next_for(exit_name: StringName) -> StringName:
 		if (exit.on == &"*" or exit.on == exit_name) and TECondition.test(exit.when):
 			return exit.next
 	return &""
+
+func resolve_sequence() -> CADSequence:
+	if sequence != null and compound != null:
+		return null
+	return compound.build() if compound != null else sequence

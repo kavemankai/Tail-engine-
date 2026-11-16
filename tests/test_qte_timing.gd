@@ -242,12 +242,11 @@ func lifecycle_matrix() -> void:
 		expect(owned != null and owned.last_result.grade == &"cancelled", "scene unloading cancels handler")
 
 func demo_contract() -> void:
-	var base: TEEpisode = load("res://content/qte_lab/episode.tres")
-	var examples: Dictionary = load("res://content/qte_lab/lab.gd").EXAMPLES
+	var lab: GDScript = load("res://content/qte_lab/lab.gd")
+	var examples: Dictionary = lab.EXAMPLES
 	for path: String in examples.values():
-		var episode: TEEpisode = base.duplicate(true)
-		episode.find(&"lab").sequence = load(path)
-		expect(TEValidator.check(episode).is_empty(), "resource-authored example validates: " + path.get_file())
+		var episode: TEEpisode = lab.episode_for(path)
+		expect(episode != null and TEValidator.check(episode).is_empty(), "resource-authored example validates: " + path.get_file())
 	var stage: CADStage = preload("res://content/episode_0/encounters/bar_fight/stage.tscn").instantiate()
 	add_child(stage)
 	var invalid: CADSequence = load("res://content/qte_lab/parry.tres").duplicate(true)

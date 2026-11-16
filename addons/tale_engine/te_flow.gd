@@ -180,6 +180,10 @@ func _launch(current: TEStep, token: int) -> void:
 		_step_done.emit(exit_name)
 
 func _encounter(current: TEStep) -> StringName:
+	var sequence := current.resolve_sequence()
+	if sequence == null:
+		push_error("Flow: step '%s' needs exactly one valid sequence or compound." % current.id)
+		return &"error"
 	var stage := location.stage(current.stage) if location != null else null
 	if stage == null:
 		push_error("Flow: step '%s' has no stage '%s'." % [current.id, current.stage])
@@ -196,7 +200,7 @@ func _encounter(current: TEStep) -> StringName:
 	director.gate_opened.connect(func(beat: CADBeat, options: Array[CADOption], _window: float) -> void:
 		Screen.layout_prompt(maxi(2, Screen.prompt_label.text.count("\n") + 1)))
 	var outcome := &"error"
-	if director.begin(current.sequence, stage):
+	if director.begin(sequence, stage):
 		director_started.emit(director)
 		outcome = await director.finished if director.active() else director.last_outcome
 		if outcome != &"cancelled":

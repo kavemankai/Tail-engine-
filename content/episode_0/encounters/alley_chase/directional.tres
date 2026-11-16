@@ -1,0 +1,128 @@
+[gd_resource type="Resource" script_class="CADSequence" format=3]
+
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_sequence.gd" id="seq"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_beat.gd" id="beat"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_gate.gd" id="gate"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_option.gd" id="opt"]
+
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_interaction_spec.gd" id="interaction"]
+
+[sub_resource type="Resource" id="fork_spec"]
+script = ExtResource("interaction")
+id = &"alley_directional_fork"
+family = 4
+direction_mode = 2
+direction_options = Dictionary[int, StringName]({0: &"high", 4: &"low"})
+
+[sub_resource type="Resource" id="o_jump"]
+script = ExtResource("opt")
+id = &"jump"
+action = &"cad_a"
+label = "Jump"
+next = &"jump"
+
+[sub_resource type="Resource" id="g_run1"]
+script = ExtResource("gate")
+options = Array[ExtResource("opt")]([SubResource("o_jump")])
+window_seconds = 0.5
+timeout_next = &"stumble"
+open_marker = &"gate"
+cut_on_resolve = false
+
+[sub_resource type="Resource" id="o_roll"]
+script = ExtResource("opt")
+id = &"roll"
+action = &"cad_b"
+label = "Roll"
+next = &"roll"
+
+[sub_resource type="Resource" id="g_run2"]
+script = ExtResource("gate")
+options = Array[ExtResource("opt")]([SubResource("o_roll")])
+window_seconds = 0.5
+timeout_next = &"caught"
+open_marker = &"gate"
+cut_on_resolve = false
+
+[sub_resource type="Resource" id="o_high"]
+script = ExtResource("opt")
+id = &"high"
+action = &"cad_dir_up"
+label = "High road"
+next = &"escape_high"
+
+[sub_resource type="Resource" id="o_low"]
+script = ExtResource("opt")
+id = &"low"
+action = &"cad_dir_down"
+label = "Low road"
+next = &"escape_low"
+
+[sub_resource type="Resource" id="g_run3"]
+script = ExtResource("gate")
+options = Array[ExtResource("opt")]([SubResource("o_high"), SubResource("o_low")])
+interaction = SubResource("fork_spec")
+window_seconds = 0.6
+timeout_next = &"escape_low"
+open_marker = &"gate"
+cut_on_resolve = false
+
+[sub_resource type="Resource" id="run1"]
+script = ExtResource("beat")
+id = &"run1"
+timeline = &"run1"
+gate = SubResource("g_run1")
+
+[sub_resource type="Resource" id="jump"]
+script = ExtResource("beat")
+id = &"jump"
+timeline = &"jump"
+next = &"run2"
+
+[sub_resource type="Resource" id="stumble"]
+script = ExtResource("beat")
+id = &"stumble"
+timeline = &"stumble"
+next = &"run2"
+
+[sub_resource type="Resource" id="run2"]
+script = ExtResource("beat")
+id = &"run2"
+timeline = &"run2"
+gate = SubResource("g_run2")
+
+[sub_resource type="Resource" id="roll"]
+script = ExtResource("beat")
+id = &"roll"
+timeline = &"roll"
+next = &"run3"
+
+[sub_resource type="Resource" id="caught"]
+script = ExtResource("beat")
+id = &"caught"
+timeline = &"caught"
+next = &"was_caught"
+
+[sub_resource type="Resource" id="run3"]
+script = ExtResource("beat")
+id = &"run3"
+timeline = &"run3"
+gate = SubResource("g_run3")
+
+[sub_resource type="Resource" id="escape_high"]
+script = ExtResource("beat")
+id = &"escape_high"
+timeline = &"escape_high"
+next = &"escaped"
+
+[sub_resource type="Resource" id="escape_low"]
+script = ExtResource("beat")
+id = &"escape_low"
+timeline = &"escape_low"
+next = &"escaped"
+
+[resource]
+script = ExtResource("seq")
+entry = &"run1"
+beats = Array[ExtResource("beat")]([SubResource("run1"), SubResource("jump"), SubResource("stumble"), SubResource("run2"), SubResource("roll"), SubResource("caught"), SubResource("run3"), SubResource("escape_high"), SubResource("escape_low")])
+outcomes = Array[StringName]([&"escaped", &"was_caught"])

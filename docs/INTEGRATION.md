@@ -144,7 +144,8 @@ sector is available as `CADResult.direction` and in its scalar dump.
 
 Raw stick strength uses `direction_activation` (default 0.65) and
 `direction_rearm` (0.25). The helper bypasses InputMap's deadzone rescaling so those
-thresholds are literal. Pre-held directions, source switches and retries require
+thresholds are literal. Activation is radial; rearm requires every bound component
+to be at or below the neutral threshold. Pre-held directions, source switches and retries require
 neutral first; opposing held controls do not count as neutral. A 25 ms configurable
 `direction_settle_seconds` coalesces separately delivered axes/keys before judging
 a sector. This prevents diagonal gestures failing on their first cardinal event.
@@ -193,3 +194,34 @@ For graded follow-through, use `routes = {&"perfect": &"strong_reaction",
 &"partial": &"glancing_reaction", &"miss": &"recovery"}` with those destinations
 declared as ordinary beats/outcomes. The input handler never invokes actor or NPC
 clips. The selected beat's timeline calls `CADStage.act` and `cut` as before.
+
+## Compound resources
+
+`CADCompoundAction.build()` produces a fresh `CADSequence`; it is an authoring
+extension point, not a second graph runner. Assign either `TEStep.sequence` or
+`TEStep.compound`. `resolve_sequence()` returns the graph used by both Flow and
+TEValidator; invalid or ambiguous payloads fail before the director acquires input.
+Existing episode resources and save files need no migration.
+
+`CADCounterattackTemplate` exports two gates and six timeline names. It builds:
+
+```text
+defence -> evade -> counter -> land -> countered
+       \-> hit_reaction -> hit       \-> recover -> defended
+```
+
+Published beat IDs are `defence`, `evade`, `hit_reaction`, `counter`, `land` and
+`recover`. Configure the three terminal outcome IDs if different names are needed.
+All gate options are copied and wired to the corresponding successful reaction;
+timeout goes to its failure reaction. Grade overrides remain configurable, but
+must choose `evade/hit_reaction` for defence or `land/recover` for the counter.
+This prevents template-local cycles or silently skipped choreography. Use a plain
+CADSequence for a different graph. `build()` returns null on invalid authoring;
+`last_errors` and `validation_errors()` provide diagnostics without mutating gates.
+
+A missed or partial counter can therefore finish `defended`, with the defence's
+original result intact. Input handlers still know nothing about the compound.
+The timelines own shots, root motion and paired `act()` cues. The directional lab
+stage uses separate method tracks for simultaneous player/NPC/camera calls and
+has tested root continuity at all template branch boundaries. Real skeletal pose
+blends and physical contact remain an asset-level acceptance task.

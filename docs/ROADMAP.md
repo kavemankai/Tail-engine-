@@ -24,10 +24,14 @@ are a later milestone, with selection and licensing decided before integration.
   encounters and a skeletal AnimationTree adapter fixture. See [QTE_STATUS.md](QTE_STATUS.md)
   for the implemented subset and later phases; this is not all 30 mechanics.
 
+- Directional flick/block/selection, camera-frame snapshots and input rearm, plus
+  a reusable counterattack template and opt-in Episode 0 directional variants.
+  Pattern/target/pressure and later cinematic layers remain outstanding.
+
 ## Before sharing the demo
 
 1. Run `python tools/verify.py --export-windows` on the final revision. Confirm
-   clean import, all eleven suites, episode validation and Windows packaging.
+   clean import, all thirteen suites, episode validation and Windows packaging.
 2. Complete [the Windows smoke test](WINDOWS_SMOKE_TEST.md) on a real PC and
    physical controller. Record the build commit and device details. This includes
    all four routes, relaunch/Continue, rewind, focus loss, device switching and

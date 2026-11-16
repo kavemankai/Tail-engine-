@@ -1,0 +1,59 @@
+[gd_resource type="Resource" script_class="CADCounterattackTemplate" format=3]
+
+[ext_resource type="Script" path="res://addons/cinematic_action_director/compounds/cad_counterattack_template.gd" id="template"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_gate.gd" id="gate"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_option.gd" id="option"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_interaction_spec.gd" id="interaction"]
+
+[sub_resource type="Resource" id="dodge"]
+script = ExtResource("option")
+id = &"dodged"
+action = &"cad_dir_left"
+label = "Dodge left"
+
+[sub_resource type="Resource" id="defence_spec"]
+script = ExtResource("interaction")
+id = &"counter_defence"
+family = 4
+option_id = &"dodged"
+wrong_input = 1
+
+[sub_resource type="Resource" id="defence"]
+script = ExtResource("gate")
+options = Array[ExtResource("option")]([SubResource("dodge")])
+interaction = SubResource("defence_spec")
+window_seconds = 1.5
+open_marker = &"gate"
+cut_on_resolve = false
+
+[sub_resource type="Resource" id="strike"]
+script = ExtResource("option")
+id = &"strike"
+action = &"cad_a"
+label = "Counter at the opening"
+
+[sub_resource type="Resource" id="counter_spec"]
+script = ExtResource("interaction")
+id = &"counter_strike"
+family = 2
+option_id = &"strike"
+actions = Array[StringName]([&"cad_a"])
+ideal_seconds = 0.4
+routes = Dictionary[StringName, StringName]({&"partial": &"recover"})
+
+[sub_resource type="Resource" id="counter"]
+script = ExtResource("gate")
+options = Array[ExtResource("option")]([SubResource("strike")])
+interaction = SubResource("counter_spec")
+window_seconds = 1.5
+
+[resource]
+script = ExtResource("template")
+defence = SubResource("defence")
+counter = SubResource("counter")
+defence_timeline = &"telegraph"
+evade_timeline = &"evade"
+hit_timeline = &"hit"
+counter_timeline = &"counter_ready"
+land_timeline = &"counter_land"
+recover_timeline = &"recover"
