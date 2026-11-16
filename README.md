@@ -28,7 +28,7 @@ game; use Escape/Start or Resume to continue.
 |---|---|
 | `addons/tale_engine` | The narrative runtime: story state, episode graph, dialogue balloon, cast, hubs, saves, validator. |
 | `addons/cinematic_action_director` | The action layer: timelines with timed inputs and branching. Works on its own. |
-| `addons/dialogue_manager` | Dialogue Manager 4.2.0 (MIT), vendored unmodified. |
+| `addons/dialogue_manager` | Dialogue Manager 4.2.0 (MIT), with a documented editor lifecycle fix. |
 | `content/episode_0` | The placeholder episode: step graph, dialogue, cast, two locations, two encounters. |
 | `tests` | Headless suites, the autoplayer, and scenes for validating and recording. |
 | `docs` | Authoring, asset swap, action-layer reference, and the earlier research. |

@@ -15,11 +15,11 @@ ERRORS = re.compile(r"SCRIPT ERROR:|^ERROR:|^FAIL |^WARNING: ObjectDB instances 
 VERSION = "4.6.3.stable"
 
 
-def run(godot, name, args, timeout=300, marker=None, project_dir=None):
+def run(godot, name, args, timeout=300, marker=None, project_dir=None, env=None):
     command = [godot, "--headless", "--path", str(project_dir or ROOT), *args]
     try:
         result = subprocess.run(command, cwd=ROOT, stdout=subprocess.PIPE,
-                                stderr=subprocess.STDOUT, text=True, timeout=timeout)
+                                stderr=subprocess.STDOUT, text=True, timeout=timeout, env=env)
     except subprocess.TimeoutExpired as exc:
         output = exc.stdout or b""
         if isinstance(output, bytes):
@@ -43,7 +43,14 @@ def main():
     version = subprocess.check_output([args.godot, "--version"], text=True).strip()
     if not version.startswith(VERSION + "."):
         raise RuntimeError(f"Expected Godot {VERSION}, got {version}")
-    run(args.godot, "import", ["--editor", "--import"])
+    # A cached Dialogue Manager compiler version used to hide its startup leak.
+    # Give Linux CI a fresh editor profile every time; do not alter player saves.
+    with tempfile.TemporaryDirectory(prefix="last-call-import-profile-") as profile:
+        env = os.environ.copy()
+        if sys.platform.startswith("linux"):
+            for kind in ("CONFIG", "DATA", "CACHE"):
+                env[f"XDG_{kind}_HOME"] = str(Path(profile) / kind.lower())
+        run(args.godot, "import", ["--verbose", "--editor", "--import"], env=env)
     suites = ["--", *args.suites] if args.suites else []
     run(args.godot, "tests", ["res://tests/run.tscn", *suites],
         marker=r"CHECKS [1-9][0-9]* FAILURES 0")
