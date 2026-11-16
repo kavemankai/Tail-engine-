@@ -6,4 +6,5 @@ extends Resource
 ## Key in CADDirector.flags. Prefix with "!" to require it unset.
 @export var requires: StringName
 ## A beat ID or a terminal outcome.
+@export var predicate: CADContextPredicate
 @export var next: StringName

@@ -73,6 +73,10 @@ enum Sector { UP, UP_RIGHT, RIGHT, DOWN_RIGHT, DOWN, DOWN_LEFT, LEFT, UP_LEFT }
 ## Optional progress-dependent multiplier of resistance, clamped to [0, 1].
 @export var pressure_curve: Curve
 
+## Optional semantic choice and bounded per-grade momentum effects.
+@export var option_intents: Dictionary[StringName, StringName] = {}
+@export var momentum_changes: Dictionary[StringName, int] = {}
+
 func validation_errors(options: Array[CADOption], window: float) -> PackedStringArray:
 	var errors := PackedStringArray()
 	if id == &"":
@@ -187,6 +191,12 @@ func validation_errors(options: Array[CADOption], window: float) -> PackedString
 	for action in input_actions(options):
 		if action == &"" or not InputMap.has_action(action):
 			errors.append("Missing interaction InputMap action: %s" % action)
+	for id in option_intents:
+		if option_intents[id] not in CADResult.INTENTS or not options.any(func(option: CADOption) -> bool: return option != null and option.id == id):
+			errors.append("Intent mappings need an offered option and a supported semantic intention.")
+	for grade in momentum_changes:
+		if grade not in CADResult.GRADES or grade == &"cancelled" or absi(momentum_changes[grade]) > 100:
+			errors.append("Momentum changes need a noncancelled grade and an integer in [-100, 100].")
 	for grade in routes:
 		if grade not in CADResult.GRADES or grade == &"cancelled" or routes[grade] == &"":
 			errors.append("Invalid interaction grade route: %s" % grade)

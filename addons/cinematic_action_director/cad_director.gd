@@ -39,6 +39,8 @@ var trail: Array[StringName] = []
 var results: Dictionary[StringName, StringName] = {}
 ## Additive typed detail; never changes the legacy results or save-file shape.
 var detailed_results: Dictionary[StringName, CADResult] = {}
+var context := CADEncounterContext.new()
+var _resolved_visits: Dictionary = {}
 var interaction_runner: CADInteractionRunner
 ## Optional deterministic seconds source; leave empty for real active time.
 var clock_source: Callable
@@ -87,6 +89,8 @@ static func validation_errors(sequence: CADSequence, stage: CADStage = null) -> 
 			for option in beat.gate.options:
 				if option != null and not InputMap.has_action(option.action):
 					errors.append("Missing InputMap action: %s" % option.action)
+	if stage == null and sequence.beats.any(func(beat: CADBeat) -> bool: return beat != null and beat.playback_scale != 1.0):
+		errors.append("Local cinematic speed requires a stage.")
 	if stage != null:
 		errors.append_array(stage.validation_errors(sequence))
 	return errors
@@ -127,6 +131,12 @@ func begin(sequence: CADSequence, stage: CADStage = null,
 	trail = []
 	results = {}
 	detailed_results = {}
+	_resolved_visits.clear()
+	context = CADEncounterContext.new()
+	context.configure(sequence)
+	if stage != null and stage.target_registry != null:
+		for id in context.prop_states:
+			context.prop_states[id] = context.prop_states[id] and stage.target_registry.available(id, flags)
 	interaction_runner = null
 	_run_id += 1
 	_suspended = false
@@ -272,6 +282,9 @@ func _enter(id: StringName) -> void:
 	_pending_next = &""
 	_watchdog = _watchdog_for(_beat)
 	trail.append(id)
+	context.enter(_beat)
+	if _stage != null:
+		_stage.set_playback_scale(_beat.playback_scale)
 	var visit := _visit
 	beat_started.emit(_beat, visit)
 	if not _active or visit != _visit:
@@ -287,7 +300,7 @@ func _watchdog_for(beat: CADBeat) -> float:
 		return beat.watchdog_seconds
 	var total := WATCHDOG_MARGIN
 	if beat.timeline != &"":
-		total += _stage.timeline_length(beat.timeline)
+		total += _stage.timeline_length(beat.timeline) / (beat.playback_scale * maxf(0.001, _stage.base_timeline_speed()))
 	if beat.gate != null:
 		total += beat.gate.window_seconds * window_scale
 		for option in beat.gate.options:
@@ -344,7 +357,7 @@ func _check_complete() -> void:
 		if _timeline_done:
 			_goto = _beat.next
 			for branch in _beat.branches:
-				if flag_holds(branch.requires):
+				if flag_holds(branch.requires) and (branch.predicate == null or branch.predicate.matches(context)):
 					_goto = branch.next
 					break
 	elif _gate == Gate.RESOLVED and (_beat.gate.cut_on_resolve or _timeline_done):
@@ -384,8 +397,10 @@ func _exit_tree() -> void:
 func _on_interaction_resolved(result: CADResult) -> void:
 	if not _active or result.run_id != _run_id or result.visit_id != _visit or _gate != Gate.OPEN:
 		return
-	if result.grade == &"cancelled":
+	if result.grade == &"cancelled" or _resolved_visits.has(result.visit_id):
 		return
+	_resolved_visits[result.visit_id] = true
+	context.apply(result)
 	detailed_results[result.beat_id] = result
 	interaction_resolved.emit(result)
 	if _active and result.run_id == _run_id and result.visit_id == _visit:

@@ -5,6 +5,8 @@ extends RefCounted
 
 const GRADES: Array[StringName] = [&"perfect", &"success", &"partial", &"miss", &"timeout", &"restrained", &"cancelled"]
 
+const INTENTS: Array[StringName] = [&"escape", &"defend", &"restrain", &"intimidate", &"injure"]
+
 var challenge_id: StringName
 var beat_id: StringName
 var run_id := 0
@@ -17,10 +19,11 @@ var route_id: StringName
 var timing_error_ms := 0.0
 var progress := 0.0
 var direction := -1
+var momentum_delta := 0
 
 func to_dict() -> Dictionary:
 	return {"challenge_id": String(challenge_id), "beat_id": String(beat_id),
 		"run_id": run_id, "visit_id": visit_id, "option_id": String(option_id),
 		"intent_id": String(intent_id), "target_id": String(target_id),
 		"grade": String(grade), "route_id": String(route_id),
-		"timing_error_ms": timing_error_ms, "progress": progress, "direction": direction}
+		"timing_error_ms": timing_error_ms, "progress": progress, "direction": direction, "momentum_delta": momentum_delta}

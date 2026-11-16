@@ -350,3 +350,31 @@ clips, and release contact in native timelines. It owns no input or physics.
 `CADInteractionHandler.prepare_suspend()` optionally returns a completion result
 when flushing continuous progress before suspension. The runner ticks and checks
 that result before clearing held state, preserving correct active-time accounting.
+
+### Local playback and authored encounter context
+
+`CADBeat.playback_scale` (0.05–4, default 1) scopes timeline and bound actor
+playback. The independent interaction clock and voice speed stay unchanged.
+Acquisition captures original speeds; unbind, finish, cancellation and unloading
+restore them. Derived watchdogs account for cinematic duration at the local/base
+speeds. `CADStage.bind` returns false if an unsupported actor would replace a role
+during slowdown. AnimationPlayer actors use TEActor's default adapter. AnimationTree
+actors override `cad_supports_playback_scale`, `cad_playback_speed`, and
+`cad_set_playback_speed` to drive their own TimeScale node. The skeletal fixture
+shows these hooks; an AnimationTree without an adapter is rejected for slowdown.
+
+`CADSequence` declares `momentum_limit` (0–100), `momentum_start`, actor role/status
+IDs in `actor_statuses` and prop IDs/availability in `prop_states`. Each run gets a
+fresh `CADEncounterContext`; beats may author `actor_changes` and `prop_changes`
+for declared IDs. Registry eligibility filters initial prop availability, and
+attachment markers update declared prop ownership. These are explicit authored
+states, not pose inference. `CADBranch.predicate` supports typed momentum, intent,
+actor-status and prop-availability checks, combined with the existing `requires`
+flag. First matching branch wins. No arbitrary expression evaluator is added.
+
+Interaction `option_intents` maps option IDs to escape, defend, restrain,
+intimidate or injure. `momentum_changes` maps noncancelled grades to bounded deltas.
+The runner snapshots these policies and emits `CADResult.intent_id` and
+`momentum_delta`. The director applies each visit's effects once, before emitting
+the public result signal. Legacy option strings and routes retain their shape.
+`context.to_dict()` returns isolated scalar snapshots for safe host integration.
