@@ -2,7 +2,7 @@ extends Node
 ## Headless checks. Run: godot --headless --path . res://tests/run.tscn
 ## Pass suite names after "--" to run a subset: -- cad story
 
-const SUITES := ["cad", "story", "dialogue", "flow", "explore", "save", "validate", "lifecycle", "settings", "interaction", "qte_timing", "qte_direction", "compounds", "qte_pattern", "chains", "qte_target", "qte_pressure"]
+const SUITES := ["cad", "story", "dialogue", "flow", "explore", "save", "validate", "lifecycle", "settings", "interaction", "qte_timing", "qte_direction", "compounds", "qte_pattern", "chains", "qte_target", "qte_pressure", "qte_cinematic", "action_dialogue", "qte_narrative", "qte_authoring"]
 
 func _ready() -> void:
 	run.call_deferred()
@@ -25,7 +25,12 @@ func run() -> void:
 			get_tree().quit(1)
 			return
 		print("== ", suite_name)
-		var suite: TestSuite = load(path).new()
+		var script: Script = load(path)
+		if script == null or not script.can_instantiate():
+			push_error("Could not instantiate test suite: " + path)
+			get_tree().quit(1)
+			return
+		var suite: TestSuite = script.new()
 		add_child(suite)
 		var watchdog := Timer.new()
 		watchdog.one_shot = true

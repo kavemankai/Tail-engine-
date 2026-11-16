@@ -17,6 +17,12 @@ func validation_errors(ids: Array) -> PackedStringArray:
 			errors.append("Target registry has no Node3D binding for '%s'." % id)
 	return errors
 
+func available(id: StringName, flags: Dictionary) -> bool:
+	var node := target(id)
+	var condition := String(requires.get(id, &""))
+	var allowed := condition.is_empty() or (not bool(flags.get(condition.substr(1), false)) if condition.begins_with("!") else bool(flags.get(condition, false)))
+	return is_instance_valid(node) and node.is_inside_tree() and node.is_visible_in_tree() and allowed
+
 func snapshot(ids: Array, flags: Dictionary) -> Array[Dictionary]:
 	var found: Array[Dictionary] = []
 	if not is_inside_tree():

@@ -177,6 +177,8 @@ func _complete(data: Dictionary) -> void:
 	result.option_id = data.get("option_id", &"")
 	result.progress = clampf(data.get("progress", 0.0), 0.0, 1.0)
 	result.timing_error_ms = data.get("timing_error_ms", 0.0)
+	result.momentum_delta = _spec.momentum_changes.get(result.grade, 0)
+	result.intent_id = _spec.option_intents.get(result.option_id, &"")
 	result.target_id = data.get("target_id", &"")
 	result.direction = data.get("direction", -1)
 	if result.grade != &"cancelled":

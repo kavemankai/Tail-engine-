@@ -9,6 +9,10 @@ extends Resource
 @export var timeline: StringName
 @export_range(0.0, 2.0, 0.01) var blend_seconds := 0.0
 @export var gate: CADGate
+## Local cinematic speed; input and voice clocks are unchanged.
+@export_range(0.05, 4.0) var playback_scale := 1.0
+@export var actor_changes: Dictionary[StringName, StringName] = {}
+@export var prop_changes: Dictionary[StringName, bool] = {}
 ## Where an ungated beat goes when it is done. A beat ID or a terminal outcome.
 @export var next: StringName
 ## Checked before `next` on an ungated beat, so earlier choices can redirect it.

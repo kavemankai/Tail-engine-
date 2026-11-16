@@ -55,6 +55,7 @@ def main():
     run(args.godot, "tests", ["res://tests/run.tscn", *suites],
         marker=r"CHECKS [1-9][0-9]* FAILURES 0")
     run(args.godot, "validate", ["res://tests/validate.tscn"], marker=r"0 problem\(s\)")
+    run(args.godot, "authoring", ["res://tools/authoring.tscn"], marker=r"AUTHORING [1-9][0-9]* resources, 0 errors")
     if args.export_windows:
         destination = ROOT / "build/windows"
         destination.mkdir(parents=True, exist_ok=True)

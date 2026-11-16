@@ -7,9 +7,22 @@ const RESERVED: Array[StringName] = [&"cancelled", &"watchdog", &"staging_error"
 @export var entry: StringName
 @export var beats: Array[CADBeat] = []
 @export var outcomes: Array[StringName] = []
+@export_range(0, 100) var momentum_limit := 3
+@export_range(0, 100) var momentum_start := 0
+## Declared actor roles/statuses and prop availability for typed predicates.
+@export var actor_statuses: Dictionary[StringName, StringName] = {}
+@export var prop_states: Dictionary[StringName, bool] = {}
 
 func validation_errors() -> PackedStringArray:
 	var errors := PackedStringArray()
+	if momentum_limit < 0 or momentum_limit > 100 or momentum_start < 0 or momentum_start > momentum_limit:
+		errors.append("Encounter momentum must start within its 0–100 bound.")
+	for role in actor_statuses:
+		if role == &"" or actor_statuses[role] == &"":
+			errors.append("Actor context needs nonempty role/status IDs.")
+	for id in prop_states:
+		if id == &"":
+			errors.append("Prop context needs nonempty IDs.")
 	var destinations: Dictionary = {}
 	for outcome in outcomes:
 		if outcome == &"" or destinations.has(outcome) or outcome in RESERVED:
@@ -29,14 +42,24 @@ func validation_errors() -> PackedStringArray:
 	for beat in beats:
 		if beat == null:
 			continue
+		if not is_finite(beat.playback_scale) or beat.playback_scale < 0.05 or beat.playback_scale > 4.0:
+			errors.append("Beat %s: playback_scale must be finite and between 0.05 and 4." % beat.id)
+		for role in beat.actor_changes:
+			if not actor_statuses.has(role) or beat.actor_changes[role] == &"":
+				errors.append("Beat %s changes an undeclared/empty actor status." % beat.id)
+		for id in beat.prop_changes:
+			if not prop_states.has(id):
+				errors.append("Beat %s changes an undeclared prop state." % beat.id)
 		var exits: Array[StringName] = []
 		if beat.gate == null:
 			exits.append(beat.next)
 			for branch in beat.branches:
-				if branch == null or branch.requires == &"":
+				if branch == null or (branch.requires == &"" and branch.predicate == null):
 					errors.append("Beat %s has an empty branch." % beat.id)
 				else:
 					exits.append(branch.next)
+					if branch.predicate != null:
+						errors.append_array(branch.predicate.validation_errors(self))
 		else:
 			exits.append(beat.gate.timeout_next)
 			if beat.gate.interaction != null:

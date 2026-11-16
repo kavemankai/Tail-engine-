@@ -207,3 +207,53 @@ logical `grapple_struggle`, `grapple_escape`, `grapple_stagger` and
 `grapple_release` clips through TEActor. These are adapter/greybox demonstrations;
 real paired humanoid contact remains an acceptance gate. Rebuild native resources
 with `python tools/build_pressure_examples.py`; run `qte_pressure` and verification.
+
+### Cinematic decisions and adaptive follow-through
+
+The lab's **Last chance — cinematic intent** episode combines a half-speed parry,
+a quarter-speed action conversation, semantic choices and preauthored follow-through.
+A perfect defence earns two momentum; restraining with sufficient momentum, a
+ready player and an observed available prop selects the strong timeline. Escape
+selects a separate route. Mistakes and missing props take compatible recovery.
+The lab manifest supplies prior observation flags; production episodes should earn
+these in exploration/dialogue. All choreography is native AnimationPlayer data.
+
+Use `playback_scale` per beat and provide the three TEActor playback hooks for
+AnimationTree rigs (see ASSET_SWAP). Input seconds remain real active seconds.
+Set `option_intents` and per-grade `momentum_changes` in interaction specs. Declare
+role/status and prop IDs on the sequence before using `actor_changes`,
+`prop_changes`, or `CADContextPredicate` on a branch. Keep a compatible fallback;
+the engine selects authored clips and does not synthesize contact alignment.
+
+Author short `CADBark` resources on the stage and call `bark(id)` from timelines.
+Use Choice gates for replies; let the action director own input until the encounter
+ends. Afterwards regular dialogue can read `Story.intent("lab")`, as the example's
+`aftermath.dialogue` demonstrates. Completed grades, targets, momentum and intent
+are available through Story's history readers without changing old option strings.
+Place checkpoints at safe boundaries; resume never reconstructs a live grapple.
+
+Regenerate the example with `python tools/build_cinematic_examples.py`. Run
+`qte_cinematic action_dialogue qte_narrative`, then the full verifier. Tests exercise
+actual skeletal TimeScale playback, voice ownership/pause, all adaptive routes,
+Dialogue Manager handoff, JSON save/resume, rewind and cancellation during dialogue.
+The lab uses greyboxes and no production voice/contact kit.
+
+### Audit and diagnose a new encounter
+
+1. Create a sequence/compound and put it in a `TEEpisode` with its cast and stage.
+2. Run `godot --headless --path . res://tools/authoring.tscn -- res://path/episode.tres`.
+   Fix reported errors and review reachability/possible ungated-cycle warnings.
+   The JSON report lists beat/gate counts and handler families. Intentional gated
+   retries remain allowed; warnings do not infer the effects of animation methods.
+3. In a debug build, use F3 to inspect the active beat, momentum/intent, actor/prop
+   context, time/progress and controller owner. Export the bounded trace to
+   `user://cad_trace.json`; indices and dropped counts identify buffer truncation.
+4. Run the full verifier, then perform the Windows/controller and production-rig
+   acceptance checks. Numeric root continuity and synthetic inputs remain separate
+   from visual contact/retargeting, audible mix and physical-driver verification.
+
+`python tools/verify.py` now audits all lab episodes after regression/episode
+validation. Engine errors and ObjectDB leaks are still failures. The test harness
+also rejects a non-instantiable suite immediately instead of waiting for the outer
+timeout. New stories can reuse the examples and templates without changing QTE
+runtime; live simultaneous Dialogue Manager balloons remain a deferred extension.

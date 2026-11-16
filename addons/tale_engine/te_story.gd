@@ -18,6 +18,8 @@ var outcomes: Dictionary = {}
 var results: Dictionary = {}
 ## Ids of one-time things already used, such as hotspots.
 var seen: Dictionary = {}
+## Optional versioned scalar QTE history, committed only after completed encounters.
+var interactions: Dictionary = {}
 
 func reset(new_manifest: TEStoryManifest = null) -> void:
 	if new_manifest != null:
@@ -30,6 +32,7 @@ func reset(new_manifest: TEStoryManifest = null) -> void:
 	outcomes = {}
 	results = {}
 	seen = {}
+	interactions = {}
 
 func flag(key: StringName) -> bool:
 	return true if vars.get(key, false) else false
@@ -75,14 +78,26 @@ func recap() -> PackedStringArray:
 	return lines
 
 func to_dict() -> Dictionary:
-	return {"vars": vars.duplicate(true), "choices": choices.duplicate(), "outcomes": outcomes.duplicate(),
+	var data := {"vars": vars.duplicate(true), "choices": choices.duplicate(), "outcomes": outcomes.duplicate(),
 		"results": results.duplicate(true), "seen": seen.duplicate()}
+	if not interactions.is_empty():
+		data["interactions"] = interactions.duplicate(true)
+	return data
 
 func from_dict(data: Dictionary) -> void:
-	for field: String in ["vars", "choices", "outcomes", "results", "seen"]:
+	for field: String in ["vars", "choices", "outcomes", "results", "seen", "interactions"]:
 		# A later episode revision may add variables absent in an older save.
 		var restored: Dictionary = vars.duplicate(true) if field == "vars" else {}
 		var saved: Dictionary = data.get(field, {})
 		for key in saved:
 			restored[StringName(key)] = saved[key]
 		set(field, restored)
+
+func interaction(step_id: StringName, beat_id: StringName) -> Dictionary:
+	return interactions.get(step_id, {}).get("results", {}).get(String(beat_id), {}).duplicate(true)
+
+func encounter_context(step_id: StringName) -> Dictionary:
+	return interactions.get(step_id, {}).get("context", {}).duplicate(true)
+
+func intent(step_id: StringName) -> String:
+	return String(interactions.get(step_id, {}).get("context", {}).get("intent", ""))

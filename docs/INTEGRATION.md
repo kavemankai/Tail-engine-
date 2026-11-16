@@ -350,3 +350,90 @@ clips, and release contact in native timelines. It owns no input or physics.
 `CADInteractionHandler.prepare_suspend()` optionally returns a completion result
 when flushing continuous progress before suspension. The runner ticks and checks
 that result before clearing held state, preserving correct active-time accounting.
+
+### Local playback and authored encounter context
+
+`CADBeat.playback_scale` (0.05–4, default 1) scopes timeline and bound actor
+playback. The independent interaction clock and voice speed stay unchanged.
+Acquisition captures original speeds; unbind, finish, cancellation and unloading
+restore them. Derived watchdogs account for cinematic duration at the local/base
+speeds. `CADStage.bind` returns false if an unsupported actor would replace a role
+during slowdown. AnimationPlayer actors use TEActor's default adapter. AnimationTree
+actors override `cad_supports_playback_scale`, `cad_playback_speed`, and
+`cad_set_playback_speed` to drive their own TimeScale node. The skeletal fixture
+shows these hooks; an AnimationTree without an adapter is rejected for slowdown.
+
+`CADSequence` declares `momentum_limit` (0–100), `momentum_start`, actor role/status
+IDs in `actor_statuses` and prop IDs/availability in `prop_states`. Each run gets a
+fresh `CADEncounterContext`; beats may author `actor_changes` and `prop_changes`
+for declared IDs. Registry eligibility filters initial prop availability, and
+attachment markers update declared prop ownership. These are explicit authored
+states, not pose inference. `CADBranch.predicate` supports typed momentum, intent,
+actor-status and prop-availability checks, combined with the existing `requires`
+flag. First matching branch wins. No arbitrary expression evaluator is added.
+
+Interaction `option_intents` maps option IDs to escape, defend, restrain,
+intimidate or injure. `momentum_changes` maps noncancelled grades to bounded deltas.
+The runner snapshots these policies and emits `CADResult.intent_id` and
+`momentum_delta`. The director applies each visit's effects once, before emitting
+the public result signal. Legacy option strings and routes retain their shape.
+`context.to_dict()` returns isolated scalar snapshots for safe host integration.
+
+### Action dialogue and safe-boundary consequences
+
+`CADStage.barks` contains `CADBark` resources (stable ID, stage speaker role,
+1–160 characters, 0.05–60 active seconds, optional voice, priority 0–90). Native
+method tracks call `bark(id)`. Each cue is emitted once per visit, including looped
+waiting animations. Validation checks cue IDs, durations and speaker roles.
+`TEActionDialogue` in Flow renders a compact subtitle and drives the speaker's
+`speak()` hook. It reads no controls: use the existing Choice interaction for a
+timed reply. Its clock and owned voice pause with the encounter/tree and close on
+finish/cancel/unload. Priority arbitration prevents action barks from replacing a
+legacy Dialogue Manager voice (priority 100); cleanup stops only its owned voice.
+Equal/higher-priority action cues replace the active line; there is no unbounded
+queue. Voice duration may extend a caption, bounded to 60 seconds. Voice pitch is
+unaffected by cinematic slowdown.
+
+This implements barks and CAD-owned timed dialogue choices during action. A live
+Dialogue Manager balloon is still rejected while CAD owns input; the example
+hands back to a regular conversation after the encounter. Actors require matched
+speaking/contact animations and real voice assets for production acceptance.
+
+On an authored terminal outcome, Flow commits typed history to the optional
+`Story.interactions[step_id]` extension. `Story.interaction(step, beat)` and
+`Story.encounter_context(step)` return isolated snapshots; `Story.intent(step)` is
+a convenience reader for dialogue conditions. Records contain schema 1, scalar
+CADResult dictionaries and the final encounter context. Cancellation/error writes
+no typed history. Legacy option results keep their shape. Version-1 saves without
+this extension remain valid; present history is validated for schema, identities,
+finite numeric bounds, grades/intents and context types. No actor nodes, animation
+positions or in-flight QTE clocks are saved. Existing checkpoints capture completed
+records; rewind restores the earlier snapshot and removes later consequences.
+
+### Bounded diagnostics and authoring audit
+
+`director.trace` is an opt-in `CADTrace`. Flow enables it in debug builds; direct
+hosts set `trace.enabled = true` before `begin()`. Capacity defaults to 256 and is
+clamped to 1–1024; oldest events are evicted with a dropped count. Restart clears
+the buffer and changes run identity. Events include beat/gate lifecycle, mapped
+input actions/device, grade/timing/progress/route/intent, pause/resume, camera cuts,
+barks, prop markers and finish. Timestamps are monotonic diagnostic wall time,
+separate from active-time interaction deadlines. No trace call advances input time.
+
+`trace_event(kind, fields)` adds current beat/visit IDs. Fields are limited to 32
+finite scalars with short keys; strings are capped at 256 characters. Node/resource
+references are rejected with `last_error`. `snapshot()` returns an isolated schema-1
+dictionary; `write_json("user://cad_trace.json")` reports file errors explicitly.
+Trace data is never part of Story/save snapshots. Flow retains only the last bounded
+trace in `latest_trace`. The F3 debug panel shows current context, gate/controller
+state and recent events, with an export button for current/last trace.
+
+`CADAuthoringReport.inspect(sequence, stage)` combines existing validation with
+counts/families and conservative reachability/ungated-cycle warnings. Warnings do
+not reject intentional retries or assume timeline side effects cannot change flags.
+Run `godot --headless --path . res://tools/authoring.tscn -- res://path/episode.tres`
+for a headless report. No arguments audits all lab examples, including their host
+episode/stage bindings. Explicit standalone sequences get structural checks; embed
+them in an episode to validate cast/stage/assets. Errors return a nonzero exit;
+JSON is written to `build/logs/authoring.json`. The standard Python verifier now
+runs this audit and retains strict engine/script/leak/completion checks.

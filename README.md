@@ -36,7 +36,7 @@ game; use Escape/Start or Resume to continue.
 ## Check it
 
 ```bash
-python tools/verify.py                               # import, seventeen suites, episode validation
+python tools/verify.py                               # import, twenty-one suites, episode validation, authoring audit
 python tools/verify.py --suites lifecycle save        # a focused regression run
 ```
 

@@ -26,3 +26,16 @@ func face(point: Vector3) -> void:
 	var flat := Vector3(point.x, global_position.y, point.z)
 	if not flat.is_equal_approx(global_position):
 		look_at(flat)
+
+## AnimationTree adapters override these three hooks to drive a TimeScale node.
+func cad_supports_playback_scale() -> bool:
+	return find_children("*", "AnimationTree", true, false).is_empty()
+
+func cad_playback_speed() -> float:
+	var player := get_node_or_null(^"AnimationPlayer") as AnimationPlayer
+	return player.speed_scale if player != null else 1.0
+
+func cad_set_playback_speed(speed: float) -> void:
+	var player := get_node_or_null(^"AnimationPlayer") as AnimationPlayer
+	if player != null:
+		player.speed_scale = speed

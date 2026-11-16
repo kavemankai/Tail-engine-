@@ -13,6 +13,7 @@ signal gate_resolved(beat: CADBeat, result: StringName)
 signal finished(outcome: StringName)
 signal input_device_changed
 signal interaction_resolved(result: CADResult)
+signal suspension_changed(paused: bool)
 
 enum Gate { NONE, PENDING, OPEN, RESOLVED }
 
@@ -39,6 +40,10 @@ var trail: Array[StringName] = []
 var results: Dictionary[StringName, StringName] = {}
 ## Additive typed detail; never changes the legacy results or save-file shape.
 var detailed_results: Dictionary[StringName, CADResult] = {}
+var trace := CADTrace.new()
+var _trace_paused := false
+var context := CADEncounterContext.new()
+var _resolved_visits: Dictionary = {}
 var interaction_runner: CADInteractionRunner
 ## Optional deterministic seconds source; leave empty for real active time.
 var clock_source: Callable
@@ -87,6 +92,8 @@ static func validation_errors(sequence: CADSequence, stage: CADStage = null) -> 
 			for option in beat.gate.options:
 				if option != null and not InputMap.has_action(option.action):
 					errors.append("Missing InputMap action: %s" % option.action)
+	if stage == null and sequence.beats.any(func(beat: CADBeat) -> bool: return beat != null and beat.playback_scale != 1.0):
+		errors.append("Local cinematic speed requires a stage.")
 	if stage != null:
 		errors.append_array(stage.validation_errors(sequence))
 	return errors
@@ -127,14 +134,23 @@ func begin(sequence: CADSequence, stage: CADStage = null,
 	trail = []
 	results = {}
 	detailed_results = {}
+	_resolved_visits.clear()
+	context = CADEncounterContext.new()
+	context.configure(sequence)
+	if stage != null and stage.target_registry != null:
+		for id in context.prop_states:
+			context.prop_states[id] = context.prop_states[id] and stage.target_registry.available(id, flags)
 	interaction_runner = null
 	_run_id += 1
+	trace.reset(_run_id)
+	_trace_paused = false
 	_suspended = false
 	_goto = &""
 	_active = true
 	last_outcome = &""
 	if _stage != null:
 		_stage.acquire(self)
+	trace_event(&"begin", {"entry": sequence.entry})
 	_enter(sequence.entry)
 	return true
 
@@ -174,6 +190,22 @@ func suspend(suspended: bool) -> void:
 	if _active and _stage != null:
 		_stage.pause(suspended)
 
+func trace_event(kind: StringName, fields: Dictionary = {}) -> void:
+	if trace.enabled:
+		var data := fields.duplicate()
+		data["visit_id"] = _visit
+		data["beat_id"] = _beat.id if _beat != null else &""
+		trace.record(kind, data)
+
+func record() -> Dictionary:
+	var records := {}
+	for id in detailed_results:
+		records[String(id)] = detailed_results[id].to_dict()
+	return {"schema": 1, "results": records, "context": context.to_dict()}
+
+func input_suspended() -> bool:
+	return _suspended or get_tree().paused
+
 func active() -> bool:
 	return _active
 
@@ -190,6 +222,7 @@ func _input(event: InputEvent) -> void:
 	CADInputDevice.observe(event)
 	if not _active or _suspended or _beat == null or _beat.gate == null:
 		return
+	_trace_input(event)
 	if _beat.gate.interaction != null:
 		if _gate == Gate.OPEN and interaction_runner != null:
 			if interaction_runner.router.relevant(event):
@@ -272,7 +305,11 @@ func _enter(id: StringName) -> void:
 	_pending_next = &""
 	_watchdog = _watchdog_for(_beat)
 	trail.append(id)
+	context.enter(_beat)
+	if _stage != null:
+		_stage.set_playback_scale(_beat.playback_scale)
 	var visit := _visit
+	trace_event(&"beat", {"timeline": _beat.timeline, "playback_scale": _beat.playback_scale, "momentum": context.momentum, "intent": context.intent})
 	beat_started.emit(_beat, visit)
 	if not _active or visit != _visit:
 		return
@@ -287,7 +324,7 @@ func _watchdog_for(beat: CADBeat) -> float:
 		return beat.watchdog_seconds
 	var total := WATCHDOG_MARGIN
 	if beat.timeline != &"":
-		total += _stage.timeline_length(beat.timeline)
+		total += _stage.timeline_length(beat.timeline) / (beat.playback_scale * maxf(0.001, _stage.base_timeline_speed()))
 	if beat.gate != null:
 		total += beat.gate.window_seconds * window_scale
 		for option in beat.gate.options:
@@ -302,6 +339,7 @@ func _open_gate() -> void:
 	for option in gate.options:
 		if flag_holds(option.requires):
 			_options.append(option)
+	trace_event(&"gate_open", {"offered": _options.size(), "window": gate.window_seconds * window_scale, "family": _family_name(gate.interaction)})
 	if _options.is_empty():
 		_resolve(TIMEOUT, gate.timeout_next)
 		return
@@ -329,6 +367,7 @@ func _open_gate() -> void:
 func _resolve(result: StringName, next: StringName) -> void:
 	if not _active or _gate != Gate.OPEN:
 		return
+	trace_event(&"route", {"option": result, "next": next})
 	_gate = Gate.RESOLVED
 	_pending_next = next
 	results[_beat.id] = result
@@ -340,17 +379,21 @@ func _resolve(result: StringName, next: StringName) -> void:
 		_check_complete()
 
 func _check_complete() -> void:
+	if is_instance_valid(_stage) and is_instance_valid(_stage.target_registry):
+		for id in context.prop_states:
+			context.prop_states[id] = context.prop_states[id] and _stage.target_registry.available(id, flags)
 	if _beat.gate == null:
 		if _timeline_done:
 			_goto = _beat.next
 			for branch in _beat.branches:
-				if flag_holds(branch.requires):
+				if flag_holds(branch.requires) and (branch.predicate == null or branch.predicate.matches(context)):
 					_goto = branch.next
 					break
 	elif _gate == Gate.RESOLVED and (_beat.gate.cut_on_resolve or _timeline_done):
 		_goto = _pending_next
 
 func _finish(outcome: StringName, notify := true) -> void:
+	trace_event(&"finish", {"outcome": outcome, "momentum": context.momentum, "intent": context.intent})
 	last_outcome = outcome
 	_busy = true
 	var was_open := _gate == Gate.OPEN
@@ -384,18 +427,25 @@ func _exit_tree() -> void:
 func _on_interaction_resolved(result: CADResult) -> void:
 	if not _active or result.run_id != _run_id or result.visit_id != _visit or _gate != Gate.OPEN:
 		return
-	if result.grade == &"cancelled":
+	if result.grade == &"cancelled" or _resolved_visits.has(result.visit_id):
 		return
+	_resolved_visits[result.visit_id] = true
+	context.apply(result)
+	trace_event(&"result", {"grade": result.grade, "option": result.option_id, "route": result.route_id, "intent": result.intent_id, "target": result.target_id, "momentum": context.momentum, "progress": result.progress, "timing_error_ms": result.timing_error_ms, "direction": result.direction})
 	detailed_results[result.beat_id] = result
 	interaction_resolved.emit(result)
 	if _active and result.run_id == _run_id and result.visit_id == _visit:
 		_resolve(result.option_id if result.option_id != &"" else TIMEOUT, result.route_id)
 
 func _pause_interaction_clocks(paused: bool) -> void:
+	if paused != _trace_paused:
+		_trace_paused = paused
+		trace_event(&"pause" if paused else &"resume")
 	if _beat_clock != null:
 		_beat_clock.set_paused(paused)
 	if interaction_runner != null:
 		interaction_runner.suspend(paused)
+	suspension_changed.emit(paused)
 
 func _on_joy_connection_changed(device: int, connected: bool) -> void:
 	if not connected and _active and interaction_runner != null and interaction_runner.active \
@@ -426,3 +476,21 @@ func _interaction_context() -> Dictionary:
 	if camera_2d != null:
 		context.camera_forward = Vector2.UP.rotated(camera_2d.global_rotation)
 	return context
+
+func _trace_input(event: InputEvent) -> void:
+	if not trace.enabled:
+		return
+	var actions: Array[StringName] = []
+	if _beat.gate.interaction != null:
+		actions = _beat.gate.interaction.input_actions(_options)
+	else:
+		for option in _beat.gate.options:
+			if option != null: actions.append(option.action)
+	var matching := PackedStringArray()
+	for action in actions:
+		if event.is_action(action): matching.append(String(action))
+	if not matching.is_empty():
+		trace_event(&"input", {"actions": ",".join(matching), "pressed": event.is_pressed(), "device": event.device if event is InputEventJoypadButton or event is InputEventJoypadMotion else -1, "open": _gate == Gate.OPEN})
+
+func _family_name(spec: CADInteractionSpec) -> String:
+	return "legacy" if spec == null else (String(CADInteractionSpec.Family.keys()[spec.family]) if spec.family >= 0 and spec.family < CADInteractionSpec.Family.size() else "invalid")

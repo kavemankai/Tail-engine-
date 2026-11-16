@@ -47,7 +47,9 @@ func _ready() -> void:
 	blend.add_node(&"Idle", idle)
 	blend.add_node(&"Action", _action)
 	blend.add_node(&"OneShot", shot)
-	blend.connect_node(&"output", 0, &"OneShot")
+	blend.add_node(&"CinematicSpeed", AnimationNodeTimeScale.new())
+	blend.connect_node(&"output", 0, &"CinematicSpeed")
+	blend.connect_node(&"CinematicSpeed", 0, &"OneShot")
 	blend.connect_node(&"OneShot", 0, &"Idle")
 	blend.connect_node(&"OneShot", 1, &"Action")
 	tree.name = "AnimationTree"
@@ -63,3 +65,12 @@ func play_clip(clip: StringName) -> void:
 	_action.animation = clip
 	tree.set("parameters/OneShot/request", AnimationNodeOneShot.ONE_SHOT_REQUEST_FIRE)
 	tree.advance(0.0)
+
+func cad_supports_playback_scale() -> bool:
+	return true
+
+func cad_playback_speed() -> float:
+	return float(tree.get("parameters/CinematicSpeed/scale"))
+
+func cad_set_playback_speed(speed: float) -> void:
+	tree.set("parameters/CinematicSpeed/scale", speed)
