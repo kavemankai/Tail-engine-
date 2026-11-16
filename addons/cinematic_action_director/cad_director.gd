@@ -141,6 +141,15 @@ func suspend(suspended: bool) -> void:
 func active() -> bool:
 	return _active
 
+## True for an empty name, a truthy flag, or "!name" with a falsy flag.
+func flag_holds(name: StringName) -> bool:
+	var text := String(name)
+	if text == "":
+		return true
+	if text.begins_with("!"):
+		return not flags.get(StringName(text.substr(1)), false)
+	return true if flags.get(name, false) else false
+
 func _input(event: InputEvent) -> void:
 	if event is InputEventJoypadButton or (event is InputEventJoypadMotion and absf(event.axis_value) > 0.5):
 		using_pad = true
@@ -240,7 +249,7 @@ func _open_gate() -> void:
 	_gate_elapsed = 0.0
 	_options = []
 	for option in gate.options:
-		if option.requires == &"" or flags.get(option.requires, false):
+		if flag_holds(option.requires):
 			_options.append(option)
 	if _options.is_empty():
 		_resolve(TIMEOUT, gate.timeout_next)
@@ -270,6 +279,10 @@ func _check_complete() -> void:
 	if _beat.gate == null:
 		if _timeline_done:
 			_goto = _beat.next
+			for branch in _beat.branches:
+				if flag_holds(branch.requires):
+					_goto = branch.next
+					break
 	elif _gate == Gate.RESOLVED and (_beat.gate.cut_on_resolve or _timeline_done):
 		_goto = _pending_next
 

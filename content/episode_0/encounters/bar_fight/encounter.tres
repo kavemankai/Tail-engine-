@@ -4,6 +4,7 @@
 [ext_resource type="Script" path="res://addons/cinematic_action_director/cad_beat.gd" id="beat"]
 [ext_resource type="Script" path="res://addons/cinematic_action_director/cad_gate.gd" id="gate"]
 [ext_resource type="Script" path="res://addons/cinematic_action_director/cad_option.gd" id="opt"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_branch.gd" id="branch"]
 
 [sub_resource type="Resource" id="o_dodge"]
 script = ExtResource("opt")
@@ -24,7 +25,7 @@ script = ExtResource("opt")
 id = &"stool"
 action = &"cad_a"
 label = "Grab the stool"
-requires = &"stool_available"
+requires = &"stool_noticed"
 next = &"stool_block"
 
 [sub_resource type="Resource" id="o_back_off"]
@@ -54,11 +55,41 @@ options = Array[ExtResource("opt")]([SubResource("o_push")])
 window_seconds = 1.5
 timeout_next = &"stalemate"
 
+[sub_resource type="Resource" id="g_rush"]
+script = ExtResource("gate")
+options = Array[ExtResource("opt")]([SubResource("o_dodge")])
+window_seconds = 0.5
+timeout_next = &"hit"
+open_marker = &"gate"
+
+[sub_resource type="Resource" id="b_insulted"]
+script = ExtResource("branch")
+requires = &"insulted_stranger"
+next = &"rush"
+
+[sub_resource type="Resource" id="b_friend"]
+script = ExtResource("branch")
+requires = &"bartender_friendly"
+next = &"bartender_steps_in"
+
 [sub_resource type="Resource" id="approach"]
 script = ExtResource("beat")
 id = &"approach"
 timeline = &"approach"
 next = &"windup"
+branches = Array[ExtResource("branch")]([SubResource("b_insulted")])
+
+[sub_resource type="Resource" id="rush"]
+script = ExtResource("beat")
+id = &"rush"
+timeline = &"rush"
+gate = SubResource("g_rush")
+
+[sub_resource type="Resource" id="bartender_steps_in"]
+script = ExtResource("beat")
+id = &"bartender_steps_in"
+timeline = &"bartender_steps_in"
+next = &"broken_up"
 
 [sub_resource type="Resource" id="windup"]
 script = ExtResource("beat")
@@ -109,9 +140,10 @@ script = ExtResource("beat")
 id = &"back_off"
 timeline = &"back_off"
 next = &"withdrew"
+branches = Array[ExtResource("branch")]([SubResource("b_friend")])
 
 [resource]
 script = ExtResource("seq")
 entry = &"approach"
-beats = Array[ExtResource("beat")]([SubResource("approach"), SubResource("windup"), SubResource("evade"), SubResource("hit"), SubResource("counter"), SubResource("stool_block"), SubResource("shove"), SubResource("shove_win"), SubResource("back_off")])
-outcomes = Array[StringName]([&"won", &"stalemate", &"withdrew"])
+beats = Array[ExtResource("beat")]([SubResource("approach"), SubResource("rush"), SubResource("bartender_steps_in"), SubResource("windup"), SubResource("evade"), SubResource("hit"), SubResource("counter"), SubResource("stool_block"), SubResource("shove"), SubResource("shove_win"), SubResource("back_off")])
+outcomes = Array[StringName]([&"won", &"stalemate", &"withdrew", &"broken_up"])

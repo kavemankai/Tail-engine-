@@ -11,6 +11,8 @@ extends Resource
 @export var gate: CADGate
 ## Where an ungated beat goes when it is done. A beat ID or a terminal outcome.
 @export var next: StringName
+## Checked before `next` on an ungated beat, so earlier choices can redirect it.
+@export var branches: Array[CADBranch] = []
 ## Ends the encounter with &"watchdog" if the beat runs this long. Zero derives
 ## a limit from the timeline and gate; host-driven beats must set it.
 @export_range(0.0, 600.0, 0.01) var watchdog_seconds := 0.0

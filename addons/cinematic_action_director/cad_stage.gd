@@ -70,7 +70,8 @@ func act(role: StringName, clip: StringName) -> void:
 		var player := target.get_node_or_null(^"AnimationPlayer") as AnimationPlayer
 		if player != null and player.has_animation(clip):
 			player.play(clip)
-		else:
+		elif target != slot(role):
+			# An empty slot ignores clips, so a stage can run without its cast.
 			push_warning("CADStage: role '%s' cannot play '%s'." % [role, clip])
 
 ## Cut to a camera slot.

@@ -32,6 +32,11 @@ func validation_errors() -> PackedStringArray:
 		var exits: Array[StringName] = []
 		if beat.gate == null:
 			exits.append(beat.next)
+			for branch in beat.branches:
+				if branch == null or branch.requires == &"":
+					errors.append("Beat %s has an empty branch." % beat.id)
+				else:
+					exits.append(branch.next)
 		else:
 			exits.append(beat.gate.timeout_next)
 			var option_ids: Dictionary = {}
