@@ -1,0 +1,84 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://addons/tale_engine/te_location.gd" id="loc"]
+[ext_resource type="PackedScene" path="res://examples/last_call/episode_0/encounters/alley_chase/stage.tscn" id="stage_ChaseStage"]
+
+[sub_resource type="Environment" id="env"]
+background_mode = 1
+background_color = Color(0.07, 0.08, 0.13, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.6, 0.65, 0.78, 1)
+ambient_light_energy = 0.8
+
+[sub_resource type="BoxMesh" id="m_Floor"]
+size = Vector3(44, 0.2, 10)
+
+[sub_resource type="StandardMaterial3D" id="c_Floor"]
+albedo_color = Color(0.17, 0.18, 0.22, 1)
+
+[sub_resource type="BoxShape3D" id="s_Floor"]
+size = Vector3(44, 0.2, 10)
+
+[sub_resource type="BoxMesh" id="m_Wall"]
+size = Vector3(44, 4, 0.2)
+
+[sub_resource type="StandardMaterial3D" id="c_Wall"]
+albedo_color = Color(0.13, 0.14, 0.2, 1)
+
+[sub_resource type="BoxShape3D" id="s_Wall"]
+size = Vector3(44, 4, 0.2)
+
+[node name="Alley" type="Node3D"]
+script = ExtResource("loc")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+rotation = Vector3(-0.9, -0.5, 0)
+light_energy = 1.2
+
+[node name="World" type="WorldEnvironment" parent="."]
+environment = SubResource("env")
+
+[node name="Set" type="Node3D" parent="."]
+
+[node name="Marks" type="Node3D" parent="."]
+
+[node name="Shots" type="Node3D" parent="."]
+
+[node name="Hubs" type="Node3D" parent="."]
+
+[node name="Zones" type="Node3D" parent="."]
+
+[node name="Floor" type="StaticBody3D" parent="Set"]
+position = Vector3(14, -0.1, 0)
+
+[node name="Mesh" type="MeshInstance3D" parent="Set/Floor"]
+mesh = SubResource("m_Floor")
+surface_material_override/0 = SubResource("c_Floor")
+
+[node name="Shape" type="CollisionShape3D" parent="Set/Floor"]
+shape = SubResource("s_Floor")
+
+[node name="Wall" type="StaticBody3D" parent="Set"]
+position = Vector3(14, 2, -3)
+
+[node name="Mesh" type="MeshInstance3D" parent="Set/Wall"]
+mesh = SubResource("m_Wall")
+surface_material_override/0 = SubResource("c_Wall")
+
+[node name="Shape" type="CollisionShape3D" parent="Set/Wall"]
+shape = SubResource("s_Wall")
+
+[node name="runner_start" type="Marker3D" parent="Marks"]
+position = Vector3(0, 0, 0)
+rotation = Vector3(0, -1.5708, 0)
+
+[node name="pursuer_start" type="Marker3D" parent="Marks"]
+position = Vector3(-3, 0, 0)
+rotation = Vector3(0, -1.5708, 0)
+
+[node name="caught" type="Camera3D" parent="Shots"]
+position = Vector3(14.2, 1.7, 4.5)
+rotation = Vector3(-0.109, 0.1759, 0)
+fov = 50
+
+[node name="ChaseStage" parent="." instance=ExtResource("stage_ChaseStage")]

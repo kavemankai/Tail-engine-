@@ -1,7 +1,7 @@
 extends TestSuite
 ## Story state, conditions and save files.
 
-const EPISODE := preload("res://content/episode_0/episode.tres")
+const EPISODE := preload("res://examples/last_call/episode_0/episode.tres")
 
 func run() -> void:
 	var notices: Array[String] = []

@@ -109,7 +109,7 @@ func predicate_validation() -> void:
 		expect(not graph.validation_errors().is_empty(), "invalid cinematic/context field %s is rejected" % change)
 
 func playback_contract() -> void:
-	var stage: CADStage = load("res://content/qte_lab/pressure/stage.tscn").instantiate()
+	var stage: CADStage = load("res://examples/last_call/qte_lab/pressure/stage.tscn").instantiate()
 	add_child(stage)
 	var actor := TEActor.new()
 	var player := AnimationPlayer.new()

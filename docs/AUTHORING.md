@@ -1,6 +1,6 @@
 # Authoring an episode
 
-An episode is a folder of data. `content/episode_0` is the working example; copy it to start a new one.
+An episode is a folder of data. `examples/last_call/episode_0` is the working example; copy it to start a new one.
 
 ```
 episode.tres      the step graph
@@ -11,7 +11,7 @@ locations/*.tscn
 encounters/<name>/stage.tscn + encounter.tres
 ```
 
-Point `content/main.gd` at your `episode.tres`. Run `tests/validate.tscn` after every change; it reports missing names before you have to play to find them.
+Point `examples/last_call/main.gd` at your `episode.tres`. Run `tests/validate.tscn` after every change; it reports missing names before you have to play to find them.
 
 ## The step graph
 
@@ -104,7 +104,7 @@ Built with the action layer; [INTEGRATION.md](INTEGRATION.md) is the full refere
 
 ## Testing a route
 
-Choose **Interaction lab** on the title menu, or open `content/qte_lab/lab.tscn`.
+Choose **Interaction lab** on the title menu, or open `examples/last_call/qte_lab/lab.tscn`.
 The reaction, hold, timed-release, chord, parry and restraint `.tres` resources use
 the existing bar stage's windup, dodge, hit and back-off timelines. Parry grades
 have separately named perfect, success, partial and failure routes. `episode.tres`
@@ -125,7 +125,7 @@ Set an encounter step's `compound` to a `CADCounterattackTemplate` resource inst
 of setting `sequence`. Author its defence/counter gates and six timeline names;
 Flow compiles a fresh ordinary CADSequence when entering the encounter. The
 validator checks both the graph and the stage. See
-`content/qte_lab/direction/counter.template.tres` and its episode for the complete
+`examples/last_call/qte_lab/direction/counter.template.tres` and its episode for the complete
 example. Missing the counter follows recovery and preserves the defence result.
 
 Direction specs use four remappable actions, a sector, thresholds and flick/hold/
@@ -134,10 +134,10 @@ Input-relative examples use the same camera geography for both shots; camera-
 relative specs freeze a planar frame when opening the gate. See INTEGRATION.md
 for sector IDs, settling/rearm semantics, and template grade-route constraints.
 
-`content/episode_0/encounters/*/directional.tres` are opt-in variants. The bar uses
+`examples/last_call/episode_0/encounters/*/directional.tres` are opt-in variants. The bar uses
 true directional dodge; the alley's high/low fork uses Direction selection. Their
 original graphs, flag-conditioned stool/bartender consequences and outcomes are
-preserved. `content/qte_lab/direction/episode_0_directional.tres` exercises them
+preserved. `examples/last_call/qte_lab/direction/episode_0_directional.tres` exercises them
 through the full story graph without changing the default episode. Run validation
 and the `compounds` suite after editing these resources.
 

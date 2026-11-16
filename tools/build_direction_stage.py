@@ -6,7 +6,7 @@ artists can edit the generated library in Godot's Animation panel.
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-DEST = ROOT / "content/qte_lab/direction"
+DEST = ROOT / "examples/last_call/qte_lab/direction"
 
 
 def vector(value):

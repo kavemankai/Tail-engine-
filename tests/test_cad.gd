@@ -1,10 +1,10 @@
 extends TestSuite
 ## The action layer on its own: director rules, then both encounters on 3D stages.
 
-const BAR_STAGE := preload("res://content/episode_0/encounters/bar_fight/stage.tscn")
-const BAR := preload("res://content/episode_0/encounters/bar_fight/encounter.tres")
-const CHASE_STAGE := preload("res://content/episode_0/encounters/alley_chase/stage.tscn")
-const CHASE := preload("res://content/episode_0/encounters/alley_chase/encounter.tres")
+const BAR_STAGE := preload("res://examples/last_call/episode_0/encounters/bar_fight/stage.tscn")
+const BAR := preload("res://examples/last_call/episode_0/encounters/bar_fight/encounter.tres")
+const CHASE_STAGE := preload("res://examples/last_call/episode_0/encounters/alley_chase/stage.tscn")
+const CHASE := preload("res://examples/last_call/episode_0/encounters/alley_chase/encounter.tres")
 const ACTION := &"cad_dodge"
 
 var director: CADDirector

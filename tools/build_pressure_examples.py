@@ -3,7 +3,7 @@ from pathlib import Path
 from build_pattern_examples import ext, names, resource
 
 ROOT = Path(__file__).resolve().parents[1]
-DEST = ROOT / 'content/qte_lab/pressure'
+DEST = ROOT / 'examples/last_call/qte_lab/pressure'
 
 
 def build():
@@ -36,12 +36,12 @@ def build():
                 text += resource(beat, 'beat', f'id = &"{beat}"\ntimeline = &"{timeline}"\n' + ('gate = SubResource("gate1")' if beat == 'input' else f'next = &"{next}"'))
             text += '\n[resource]\nscript = ExtResource("seq")\nentry = &"input"\nbeats = Array[ExtResource("beat")]([SubResource("input"), SubResource("escape"), SubResource("stagger"), SubResource("caught")])\noutcomes = Array[StringName]([&"escaped", &"staggered", &"caught_outcome"])\n'
         (DEST / f'{name}.tres').write_text(text)
-        episode = (ROOT / 'content/qte_lab/direction' / ('counter_episode.tres' if name == 'grapple' else 'choice_episode.tres')).read_text()
+        episode = (ROOT / 'examples/last_call/qte_lab/direction' / ('counter_episode.tres' if name == 'grapple' else 'choice_episode.tres')).read_text()
         episode = episode.replace('direction/arena.tscn', 'pressure/arena.tscn').replace('DirectionStage', 'PressureStage').replace('direction/counter.template.tres' if name == 'grapple' else 'direction/choice.tres', f'pressure/{name}.tres')
         (DEST / f'{name}_episode.tres').write_text(episode)
-    stage = (ROOT / 'content/qte_lab/direction/stage.tscn').read_text().replace('direction/timelines.tres', 'pressure/timelines.tres').replace('DirectionStage', 'PressureStage')
+    stage = (ROOT / 'examples/last_call/qte_lab/direction/stage.tscn').read_text().replace('direction/timelines.tres', 'pressure/timelines.tres').replace('DirectionStage', 'PressureStage')
     (DEST / 'stage.tscn').write_text(stage)
-    arena = (ROOT / 'content/qte_lab/direction/arena.tscn').read_text().replace('direction/stage.tscn', 'pressure/stage.tscn').replace('Direction', 'Pressure')
+    arena = (ROOT / 'examples/last_call/qte_lab/direction/arena.tscn').read_text().replace('direction/stage.tscn', 'pressure/stage.tscn').replace('Direction', 'Pressure')
     (DEST / 'arena.tscn').write_text(arena)
     library = ['[gd_resource type="AnimationLibrary" format=3]\n']
     for name in ['ready', 'twist', 'escape', 'release', 'stagger', 'caught']:

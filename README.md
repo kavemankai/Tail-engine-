@@ -29,9 +29,19 @@ game; use Escape/Start or Resume to continue.
 | `addons/tale_engine` | The narrative runtime: story state, episode graph, dialogue balloon, cast, hubs, saves, validator. |
 | `addons/cinematic_action_director` | The action layer: timelines with timed inputs and branching. Works on its own. |
 | `addons/dialogue_manager` | Dialogue Manager 4.2.0 (MIT), with a documented editor lifecycle fix. |
-| `content/episode_0` | The placeholder episode: step graph, dialogue, cast, two locations, two encounters. |
+| `examples/last_call/episode_0` | The placeholder episode: step graph, dialogue, cast, two locations, two encounters. |
 | `tests` | Headless suites, the autoplayer, and scenes for validating and recording. |
 | `docs` | Authoring, asset swap, action-layer reference, and the earlier research. |
+
+## Start your own game
+
+```bash
+python tools/new_project.py ../my_game "My Game Title"
+```
+
+This copies the three engine addons and a one-scene starter episode into a new
+project that validates and runs. The Last Call demo lives in `examples/last_call`
+and is not needed by the engine.
 
 ## Check it
 

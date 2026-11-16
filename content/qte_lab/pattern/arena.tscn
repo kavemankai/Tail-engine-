@@ -1,8 +1,0 @@
-[gd_scene format=3]
-
-[ext_resource type="PackedScene" path="res://content/episode_0/locations/bar.tscn" id="bar"]
-[ext_resource type="PackedScene" path="res://content/qte_lab/pattern/stage.tscn" id="stage"]
-
-[node name="PatternArena" instance=ExtResource("bar")]
-
-[node name="PatternStage" parent="." instance=ExtResource("stage")]

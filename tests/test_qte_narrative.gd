@@ -1,8 +1,8 @@
 extends TestSuite
 ## Complete resource-authored action/dialogue routes plus safe-boundary saves.
 
-const EPISODE := preload("res://content/qte_lab/cinematic/episode.tres")
-const ENCOUNTER := preload("res://content/qte_lab/cinematic/encounter.tres")
+const EPISODE := preload("res://examples/last_call/qte_lab/cinematic/episode.tres")
+const ENCOUNTER := preload("res://examples/last_call/qte_lab/cinematic/encounter.tres")
 
 func run() -> void:
 	var errors := TEValidator.check(EPISODE)
@@ -30,7 +30,7 @@ func run() -> void:
 	await frames(3)
 
 func pose_contract() -> void:
-	var library: AnimationLibrary = load("res://content/qte_lab/cinematic/timelines.tres")
+	var library: AnimationLibrary = load("res://examples/last_call/qte_lab/cinematic/timelines.tres")
 	for role: String in ["Player", "Aggressor"]:
 		for pair in [["threat","block"],["threat","hit"],["block","question"],["hit","question"],["question","assess"],["assess","strong"],["assess","soft"],["assess","escape"]]:
 			var first := library.get_animation(pair[0])

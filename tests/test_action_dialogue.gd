@@ -6,7 +6,7 @@ func run() -> void:
 	await frames(3)
 
 func bark_contract() -> void:
-	var stage: CADStage = load("res://content/qte_lab/pressure/stage.tscn").instantiate()
+	var stage: CADStage = load("res://examples/last_call/qte_lab/pressure/stage.tscn").instantiate()
 	add_child(stage)
 	var actor: TEActor = load("res://addons/tale_engine/placeholder_actor.tscn").instantiate()
 	var character := TECharacter.new()
@@ -111,7 +111,7 @@ func history_contract() -> void:
 	director._process(0)
 	var record := director.record()
 	expect(CADEncounterRecord.valid(record), "completed encounter produces a valid versioned scalar history")
-	var episode: TEEpisode = load("res://content/episode_0/episode.tres")
+	var episode: TEEpisode = load("res://examples/last_call/episode_0/episode.tres")
 	Story.reset(episode.manifest)
 	Story.interactions[&"fight"] = record
 	var data := Story.to_dict()

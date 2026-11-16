@@ -65,8 +65,8 @@ func graph_contract() -> void:
 	expect("ungated cycle" in "\n".join(report.warnings), "authoring audit flags possible automatic cycles instead of waiting forever")
 	graph.beats[0].gate.options[0].next = &"missing"
 	expect(not CADAuthoringReport.inspect(graph).errors.is_empty(), "authoring report retains structural errors as failures")
-	var native: CADSequence = load("res://content/qte_lab/cinematic/encounter.tres")
-	var stage: CADStage = load("res://content/qte_lab/cinematic/stage.tscn").instantiate()
+	var native: CADSequence = load("res://examples/last_call/qte_lab/cinematic/encounter.tres")
+	var stage: CADStage = load("res://examples/last_call/qte_lab/cinematic/stage.tscn").instantiate()
 	add_child(stage)
 	report = CADAuthoringReport.inspect(native, stage)
 	expect(report.errors.is_empty() and report.warnings.is_empty() and report.gates == 2, "cinematic native encounter passes graph and stage authoring audit")

@@ -1,10 +1,10 @@
 extends TestSuite
 ## Resource compilation, real stage playback, paired skeletal dispatch and Flow.
 
-const COMBO := preload("res://content/qte_lab/pattern/combo.tres")
-const CHAIN := preload("res://content/qte_lab/pattern/chain.tres")
-const EPISODE := preload("res://content/qte_lab/pattern/combo_episode.tres")
-const STAGE := preload("res://content/qte_lab/pattern/stage.tscn")
+const COMBO := preload("res://examples/last_call/qte_lab/pattern/combo.tres")
+const CHAIN := preload("res://examples/last_call/qte_lab/pattern/chain.tres")
+const EPISODE := preload("res://examples/last_call/qte_lab/pattern/combo_episode.tres")
+const STAGE := preload("res://examples/last_call/qte_lab/pattern/stage.tscn")
 const ACTOR := preload("res://tests/fixtures/tree_actor.gd")
 
 func run() -> void:
@@ -42,10 +42,10 @@ func compiler_contract() -> void:
 	expect(restored != null and restored.build() != null, "saved combo reloads and compiles")
 	DirAccess.remove_absolute(path)
 	for name: String in ["alternating", "ordered", "combo", "chain"]:
-		expect(TEValidator.check(load("res://content/qte_lab/pattern/%s_episode.tres" % name)).is_empty(), "Pattern lab episode %s validates" % name)
+		expect(TEValidator.check(load("res://examples/last_call/qte_lab/pattern/%s_episode.tres" % name)).is_empty(), "Pattern lab episode %s validates" % name)
 
 func continuity_contract() -> void:
-	var library: AnimationLibrary = load("res://content/qte_lab/pattern/timelines.tres")
+	var library: AnimationLibrary = load("res://examples/last_call/qte_lab/pattern/timelines.tres")
 	for role: String in ["Player", "Aggressor"]:
 		for name: StringName in [&"jab", &"cross", &"hook", &"block", &"recover"]:
 			var animation := library.get_animation(name)

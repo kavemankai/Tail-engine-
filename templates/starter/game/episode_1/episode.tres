@@ -1,0 +1,65 @@
+[gd_resource type="Resource" script_class="TEEpisode" format=3]
+
+[ext_resource type="Script" path="res://addons/tale_engine/te_episode.gd" id="episode"]
+[ext_resource type="Script" path="res://addons/tale_engine/te_step.gd" id="step"]
+[ext_resource type="Script" path="res://addons/tale_engine/te_exit.gd" id="exit"]
+[ext_resource type="Resource" path="res://game/episode_1/manifest.tres" id="manifest"]
+[ext_resource type="Resource" path="res://game/episode_1/cast.tres" id="cast"]
+[ext_resource type="Resource" path="res://game/episode_1/dialogue/intro.dialogue" id="dlg"]
+
+[sub_resource type="Resource" id="x_title"]
+script = ExtResource("exit")
+on = &"*"
+next = &"greeting"
+
+[sub_resource type="Resource" id="s_title"]
+script = ExtResource("step")
+id = &"title"
+kind = 3
+heading = "Episode 1"
+body = "{{TITLE}}"
+exits = Array[ExtResource("exit")]([SubResource("x_title")])
+
+[sub_resource type="Resource" id="x_greeting"]
+script = ExtResource("exit")
+on = &"*"
+next = &"recap"
+
+[sub_resource type="Resource" id="s_greeting"]
+script = ExtResource("step")
+id = &"greeting"
+kind = 1
+title = "The greeting"
+location = "res://game/episode_1/locations/room.tscn"
+checkpoint = true
+dialogue = ExtResource("dlg")
+cue = "greeting"
+shot = &"wide"
+cast = {
+&"player": "player_mark",
+&"friend": "friend_mark"
+}
+exits = Array[ExtResource("exit")]([SubResource("x_greeting")])
+
+[sub_resource type="Resource" id="x_recap"]
+script = ExtResource("exit")
+on = &"*"
+next = &"END"
+
+[sub_resource type="Resource" id="s_recap"]
+script = ExtResource("step")
+id = &"recap"
+kind = 3
+card = 1
+heading = "Your choices"
+exits = Array[ExtResource("exit")]([SubResource("x_recap")])
+
+[resource]
+script = ExtResource("episode")
+id = &"episode_1"
+title = "{{TITLE}}"
+manifest = ExtResource("manifest")
+cast = ExtResource("cast")
+player = &"player"
+entry = &"title"
+steps = Array[ExtResource("step")]([SubResource("s_title"), SubResource("s_greeting"), SubResource("s_recap")])

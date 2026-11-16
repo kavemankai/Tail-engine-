@@ -2,7 +2,7 @@ extends Node
 ## Scripted playthroughs for recording. Run under a display:
 ## godot --path . --write-movie out.avi --fixed-fps 30 res://tests/record.tscn
 
-const EPISODE := preload("res://content/episode_0/episode.tres")
+const EPISODE := preload("res://examples/last_call/episode_0/episode.tres")
 ## Dialogue options, hotspots to visit, gate inputs.
 const ROUTES := [
 	[["kind", "insult"], ["Stool", "Bartender", "Stranger"], {&"rush": "cad_dodge", &"counter": "cad_a", &"shove": "hold:cad_a"}],
