@@ -1,0 +1,15 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://assets/shaders/rain_glass.gdshader" id="1_1pynv"]
+[ext_resource type="Texture2D" path="res://assets/textures/rain_drops_normal.png" id="2_nvd1r"]
+
+[resource]
+render_priority = 0
+shader = ExtResource("1_1pynv")
+shader_parameter/drops_normal = ExtResource("2_nvd1r")
+shader_parameter/tint = null
+shader_parameter/tiling = null
+shader_parameter/refraction = null
+shader_parameter/blur_lod = null
+shader_parameter/rain_speed = null
+shader_parameter/rain_enabled = null

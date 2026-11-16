@@ -1,0 +1,16 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/textures/brushed_albedo.png" id="1_p6dij"]
+[ext_resource type="Texture2D" path="res://assets/textures/brushed_normal.png" id="2_tua8u"]
+[ext_resource type="Texture2D" path="res://assets/textures/brushed_rough.png" id="3_lo488"]
+
+[resource]
+albedo_color = Color(0.55, 0.57, 0.6, 1)
+albedo_texture = ExtResource("1_p6dij")
+metallic = 0.85
+roughness_texture = ExtResource("3_lo488")
+normal_enabled = true
+normal_texture = ExtResource("2_tua8u")
+uv1_triplanar = true
+uv1_triplanar_sharpness = 4.0
+texture_filter = 5

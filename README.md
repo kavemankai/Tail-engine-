@@ -2,7 +2,7 @@
 
 A Telltale-style narrative game runtime for Godot 4.6: walk-around hubs, conversations with timed choices, playable action scenes, story state that later scenes read, checkpoints and rewind. An episode is data. Adding scenes, lines, choices and fights needs no engine code.
 
-Everything on screen is a greybox placeholder. Characters are capsules, sets are boxes, and no line is voiced. Real characters, sets and voice plug in without changing the engine; see [docs/ASSET_SWAP.md](docs/ASSET_SWAP.md).
+The current Episode 0 prototype uses optional humanoids and the Halogen bar alongside remaining greybox content; dialogue is unvoiced. These assets are exploratory, not a required art direction: they can be replaced or abandoned. See [the prototype asset notes](docs/OPTIONAL_PROTOTYPE_ASSETS.md) and [asset swapping](docs/ASSET_SWAP.md).
 
 ## Run it
 

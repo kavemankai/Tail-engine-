@@ -1,0 +1,13 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://assets/shaders/holo.gdshader" id="1_jpn4m"]
+[ext_resource type="Texture2D" path="res://assets/textures/holo_booth7.png" id="2_d3tpl"]
+
+[resource]
+render_priority = 0
+shader = ExtResource("1_jpn4m")
+shader_parameter/holo_texture = ExtResource("2_d3tpl")
+shader_parameter/tint = null
+shader_parameter/energy = 1.3
+shader_parameter/rotate_speed = null
+shader_parameter/animated = null

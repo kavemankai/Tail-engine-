@@ -1,0 +1,54 @@
+[gd_resource type="Resource" script_class="CharacterAppearance" format=3]
+
+[ext_resource type="Script" path="res://addons/narrative_characters/scripts/attachment_spec.gd" id="1_o5dyu"]
+[ext_resource type="Material" path="res://addons/narrative_characters/materials/rook_stubble.tres" id="2_tnk7v"]
+[ext_resource type="ArrayMesh" path="res://addons/narrative_characters/meshes/rook_stubble.res" id="3_fru3g"]
+[ext_resource type="Material" path="res://addons/narrative_characters/materials/accent_metal.tres" id="4_r0lnk"]
+[ext_resource type="Material" path="res://addons/narrative_characters/materials/rook_led.tres" id="5_m7a47"]
+[ext_resource type="ArrayMesh" path="res://addons/narrative_characters/meshes/rook_body.res" id="6_x0u8i"]
+[ext_resource type="Script" path="res://addons/narrative_characters/scripts/character_appearance.gd" id="7_2q4et"]
+[ext_resource type="ArrayMesh" path="res://addons/narrative_characters/meshes/rook_shirt.res" id="8_a3f7u"]
+[ext_resource type="ArrayMesh" path="res://addons/narrative_characters/meshes/rook_vest.res" id="9_dhb1x"]
+[ext_resource type="ArrayMesh" path="res://addons/narrative_characters/meshes/rook_gaiter.res" id="10_0xutn"]
+[ext_resource type="ArrayMesh" path="res://addons/narrative_characters/meshes/rook_pants.res" id="11_ou7ms"]
+[ext_resource type="ArrayMesh" path="res://addons/narrative_characters/meshes/rook_boots.res" id="12_q487i"]
+[ext_resource type="ArrayMesh" path="res://addons/narrative_characters/meshes/rook_gloves.res" id="13_m63n5"]
+
+[sub_resource type="Resource" id="Resource_cg0oj"]
+script = ExtResource("1_o5dyu")
+mesh = ExtResource("3_fru3g")
+material = ExtResource("2_tnk7v")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.5998, 0.01740005)
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_syd2f"]
+radius = 0.011
+height = 0.036
+
+[sub_resource type="Resource" id="Resource_qepn5"]
+script = ExtResource("1_o5dyu")
+mesh = SubResource("CapsuleMesh_syd2f")
+material = ExtResource("4_r0lnk")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0959161, 0.086771965, -8.6897984e-05)
+
+[sub_resource type="SphereMesh" id="SphereMesh_2ntse"]
+radius = 0.004
+height = 0.008
+
+[sub_resource type="Resource" id="Resource_43utt"]
+script = ExtResource("1_o5dyu")
+mesh = SubResource("SphereMesh_2ntse")
+material = ExtResource("5_m7a47")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.104916096, 0.09477198, 0.009913102)
+
+[resource]
+script = ExtResource("7_2q4et")
+body_mesh = ExtResource("6_x0u8i")
+skinned_parts = Array[Mesh]([ExtResource("8_a3f7u"), ExtResource("9_dhb1x"), ExtResource("10_0xutn"), ExtResource("11_ou7ms"), ExtResource("12_q487i"), ExtResource("13_m63n5")])
+attachments = Array[ExtResource("1_o5dyu")]([SubResource("Resource_cg0oj"), SubResource("Resource_qepn5"), SubResource("Resource_43utt")])
+hidden_nodes = PackedStringArray("Eyebrows")
+model_scale = Vector3(1.1, 1.04, 1.12)
+head_anchors = {
+"EyeFocus": Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.09877193, 0.11803797),
+"HeadCenter": Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.11227667, 0.0039131017),
+"HeadTop": Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2402767, 0.0039131017)
+}

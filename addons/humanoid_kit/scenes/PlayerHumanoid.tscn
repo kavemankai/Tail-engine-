@@ -1,0 +1,18 @@
+[gd_scene load_steps=3 format=3]
+[ext_resource type="PackedScene" path="Humanoid.tscn" id="1"]
+[ext_resource type="Script" path="../scripts/player.gd" id="2"]
+
+[node name="PlayerHumanoid" instance=ExtResource("1")]
+script = ExtResource("2")
+
+[node name="Orbit" type="Node3D" parent="."]
+top_level = true
+position = Vector3(0, 1.45, 0)
+
+[node name="Pitch" type="Node3D" parent="Orbit"]
+rotation = Vector3(-0.22, 0, 0)
+
+[node name="Camera3D" type="Camera3D" parent="Orbit/Pitch"]
+position = Vector3(0, 0, 5.4)
+current = true
+fov = 67.0

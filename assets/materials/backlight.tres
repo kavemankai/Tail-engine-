@@ -1,0 +1,10 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://assets/shaders/backlight.gdshader" id="1_ci8ei"]
+[ext_resource type="Texture2D" path="res://assets/textures/backlight_panel.png" id="2_dchm0"]
+
+[resource]
+render_priority = 0
+shader = ExtResource("1_ci8ei")
+shader_parameter/panel = ExtResource("2_dchm0")
+shader_parameter/energy = 0.75

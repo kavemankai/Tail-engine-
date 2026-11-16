@@ -1,0 +1,8 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/props/Speaker_mesh.res" id="1_wri37"]
+
+[node name="Speaker" type="Node3D" unique_id=2056835723]
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=794556023]
+mesh = ExtResource("1_wri37")
