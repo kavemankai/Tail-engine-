@@ -13,6 +13,15 @@ const EXAMPLES := {
 	"Directional block": "res://content/qte_lab/direction/block_episode.tres",
 	"Directional choice": "res://content/qte_lab/direction/choice_episode.tres",
 	"Dodge and counterattack": "res://content/qte_lab/direction/counter_episode.tres",
+	"Alternating buttons": "res://content/qte_lab/pattern/alternating_episode.tres",
+	"Ordered sequence": "res://content/qte_lab/pattern/ordered_episode.tres",
+	"Three-punch combo": "res://content/qte_lab/pattern/combo_episode.tres",
+	"Attack / defence chain": "res://content/qte_lab/pattern/chain_episode.tres",
+	"Target selection": "res://content/qte_lab/target/selection_episode.tres",
+	"Moving target lock": "res://content/qte_lab/target/tracking_episode.tres",
+	"Select and grab a prop": "res://content/qte_lab/target/grab_episode.tres",
+	"Opposed pressure": "res://content/qte_lab/pressure/pressure_episode.tres",
+	"Grapple escape": "res://content/qte_lab/pressure/grapple_episode.tres",
 	"Episode 0 — directional variants": "res://content/qte_lab/direction/episode_0_directional.tres",
 }
 var _box := VBoxContainer.new()

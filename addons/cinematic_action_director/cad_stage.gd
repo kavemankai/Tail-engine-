@@ -6,6 +6,9 @@ extends Node
 ## Method tracks on the stage call marker(), act() and cut().
 
 @export var timelines: AnimationPlayer
+@export var target_registry: CADTargetRegistry
+
+var prop_attachments := CADPropAttachments.new()
 
 var _director: CADDirector
 var _visit := 0
@@ -88,11 +91,43 @@ func cut(role: StringName) -> void:
 	if camera not in _used_cameras:
 		_used_cameras.append(camera)
 
+## Authored contact markers. The offset at contact is retained without a snap.
+func attach_prop(target_id: StringName, role: StringName, socket_path: NodePath) -> bool:
+	if not is_instance_valid(target_registry):
+		return false
+	var target_actor := actor(role)
+	var socket := target_actor.get_node_or_null(socket_path) as Node3D if is_instance_valid(target_actor) else null
+	return prop_attachments.attach(target_registry.target(target_id), socket)
+
+func detach_prop(target_id: StringName) -> bool:
+	return prop_attachments.detach(target_registry.target(target_id)) if is_instance_valid(target_registry) else false
+
+## Selected IDs come from the runner result, never a UI widget or Story flag.
+func attach_selected_prop(result_beat: StringName, role: StringName, socket_path: NodePath) -> bool:
+	var result := _selected_target(result_beat)
+	return attach_prop(result, role, socket_path) if result != &"" else false
+
+func detach_selected_prop(result_beat: StringName) -> bool:
+	var result := _selected_target(result_beat)
+	return detach_prop(result) if result != &"" else false
+
+func _selected_target(result_beat: StringName) -> StringName:
+	if _director == null or not _director.detailed_results.has(result_beat):
+		return &""
+	return _director.detailed_results[result_beat].target_id
+
 # --- Used by CADDirector --------------------------------------------------
 
 func validation_errors(sequence: CADSequence) -> PackedStringArray:
 	var errors := PackedStringArray()
+	if target_registry != null:
+		errors.append_array(target_registry.validation_errors(target_registry.targets.keys()))
 	for beat in sequence.beats:
+		if beat != null and beat.gate != null and beat.gate.interaction != null and beat.gate.interaction.family == CADInteractionSpec.Family.TARGET:
+			if target_registry == null:
+				errors.append("Beat %s: Target requires a target_registry." % beat.id)
+			else:
+				errors.append_array(target_registry.validation_errors(beat.gate.interaction.target_options.keys()))
 		if beat == null or beat.timeline == &"":
 			continue
 		if timelines == null or not timelines.has_animation(beat.timeline):
@@ -102,6 +137,7 @@ func validation_errors(sequence: CADSequence) -> PackedStringArray:
 		var gate := beat.gate
 		if animation.loop_mode != Animation.LOOP_NONE and (gate == null or not gate.cut_on_resolve):
 			errors.append("Beat %s: a looping timeline needs a gate that cuts on resolve." % beat.id)
+		errors.append_array(_attachment_errors(animation, sequence))
 		var calls := _method_calls(animation)
 		if gate != null and gate.open_marker != &"" and [&"marker", gate.open_marker] not in calls:
 			errors.append("Beat %s: timeline '%s' has no '%s' marker." % [beat.id, beat.timeline, gate.open_marker])
@@ -156,7 +192,8 @@ func pause(paused: bool) -> void:
 	elif _was_playing:
 		timelines.play()
 
-func release() -> void:
+func release(cancelled := true) -> void:
+	prop_attachments.release(cancelled)
 	_director = null
 	_current = &""
 	if timelines != null:
@@ -233,3 +270,36 @@ func _marker_time(animation: Animation, marker_id: StringName) -> float:
 				if not params.is_empty() and params[0] == marker_id:
 					return animation.track_get_key_time(track, key)
 	return -1.0
+
+func _exit_tree() -> void:
+	prop_attachments.release(true)
+
+func _attachment_errors(animation: Animation, sequence: CADSequence) -> PackedStringArray:
+	var errors := PackedStringArray()
+	for track in animation.get_track_count():
+		if animation.track_get_type(track) != Animation.TYPE_METHOD:
+			continue
+		for key in animation.track_get_key_count(track):
+			var method := animation.method_track_get_name(track, key)
+			if method not in [&"attach_prop", &"detach_prop", &"attach_selected_prop", &"detach_selected_prop"]:
+				continue
+			var args := animation.method_track_get_params(track, key)
+			if args.size() != (3 if method in [&"attach_prop", &"attach_selected_prop"] else 1):
+				errors.append("Timeline %s: %s has invalid arguments." % [animation.resource_name, method])
+				continue
+			if (args[0] is not String and args[0] is not StringName) or (args.size() == 3 and (
+					(args[1] is not String and args[1] is not StringName) or (args[2] is not NodePath and args[2] is not String))):
+				errors.append("Timeline %s: %s arguments need target/result ID, role ID and socket NodePath." % [animation.resource_name, method])
+				continue
+			var selected := method in [&"attach_selected_prop", &"detach_selected_prop"]
+			if selected:
+				if not sequence.beats.any(func(beat: CADBeat) -> bool: return beat != null and beat.id == StringName(args[0]) and beat.gate != null and beat.gate.interaction != null and beat.gate.interaction.family == CADInteractionSpec.Family.TARGET):
+					errors.append("Timeline %s: missing Target result beat '%s'." % [animation.resource_name, args[0]])
+			elif target_registry == null or target_registry.target(StringName(args[0])) == null:
+				errors.append("Timeline %s: attachment target '%s' is not bound." % [animation.resource_name, args[0]])
+			if method in [&"attach_prop", &"attach_selected_prop"]:
+				var role := StringName(args[1])
+				var target_actor := actor(role)
+				if target_actor == null or (_bound.has(role) and target_actor.get_node_or_null(NodePath(args[2])) is not Node3D):
+					errors.append("Timeline %s: missing attachment role/socket '%s/%s'." % [animation.resource_name, role, args[2]])
+	return errors

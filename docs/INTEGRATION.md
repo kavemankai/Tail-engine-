@@ -225,3 +225,128 @@ The timelines own shots, root motion and paired `act()` cues. The directional la
 stage uses separate method tracks for simultaneous player/NPC/camera calls and
 has tested root continuity at all template branch boundaries. Real skeletal pose
 blends and physical contact remain an asset-level acceptance task.
+
+### Ordered and alternating inputs
+
+`CADInteractionSpec.Family.PATTERN` uses `pattern_steps` (1–64 action IDs;
+repetitions allowed), one relative `pattern_deadlines` duration per step, and
+`pattern_min_seconds` between opening/accepted input and the next accepted input.
+Keep ordinary `actions` empty. Alternation is authored as e.g.
+`[cad_a, cad_b, cad_a, cad_b]`; it needs no special evaluator. Deadlines begin at
+gate opening or the previous accepted step. Both the per-step and overall gate
+deadlines win exact ties; simultaneous samples cannot advance multiple steps.
+
+`pattern_error` is IGNORE, RESET or FAIL for wrong/early edges. RESET discards
+all accepted steps and starts the first deadline at that edge, without extending
+the gate window. FAIL returns `miss`; existing `routes[miss]` supplies branching.
+Timeout retains bounded progress. Only fresh pressed edges advance; held input,
+keyboard repeat and source-mismatched releases use the shared router policies.
+Pause discards incomplete patterns; resume starts a fresh first-step deadline
+within the remaining active gate budget. Timing assistance widens each relative
+deadline, while the minimum interval remains explicit. The prompt displays the
+ordered, remapped controls and completed steps; `runner.completed_steps()` exposes
+the read-only count for custom UI.
+
+### Combo and attack/defence chains
+
+`CADChainTemplate` compiles `gates`, `input_timelines`, `action_timelines` and
+`recovery_timelines` (equally sized arrays, 1–32 components) into a `CADSequence`.
+Each component enters `input_N`, successful input plays `action_N`, and failure
+plays `recover_N` then exits with `interrupted_outcome`. A successful action
+finishes its authored timeline before opening the next input. All components
+completed yields `completed_outcome`. Results remain per-component legacy strings
+plus encounter-local typed detail. Gates are deep copied for each build.
+
+Grade overrides may choose only that component's `action_N` or `recover_N`; this
+prevents loops and skipped paired reactions. Arbitrary graphs remain available
+through `CADSequence`. `CADThreePunchTemplate` uses the same compiler and requires
+exactly three gates and three distinct action timelines. It does not infer contact
+frames or create animations. Author both actor cues, positions and camera cuts in
+each timeline. Blend duration defaults to 0.08 seconds. Supply explicit recovery
+timelines with compatible entry poses, including after the final input.
+
+`CADInteractionHandler.resume_input(elapsed)` is an optional extension hook called
+when active-time input resumes, after `reset_input()` on suspension. It must not
+resolve an interaction or advance Story; runners still own completion and routing.
+
+### Targets, tracking and prop sockets
+
+`CADInteractionSpec.Family.TARGET` maps `target_options` (stage target ID → gate
+option ID). A stage exports `target_registry: CADTargetRegistry`; its `targets`
+map IDs to Node3D paths relative to the registry. Optional `labels` and `requires`
+(a flag or `!flag`) control presentation and eligibility. Missing bindings are
+validation errors. Hidden, behind-camera, off-screen and ineligible targets are
+excluded from snapshots. There is no occlusion raycast: author eligibility or
+hide blocked targets where that distinction matters.
+
+The director supplies an injectable `target_snapshot` Callable and `target_extent`
+to the runner. Snapshots contain only `{id, label, position}`; coordinates and
+`target_radius` use viewport-height units. The runner never retains world nodes.
+Focus uses nearest distance, retains explicit focus on exact ties, then uses stable
+ID for unowned ties. Cycling follows sorted eligible IDs, including overlapping
+targets.
+Direction actions aim the reticle through the existing analogue/digital router.
+`target_confirm_action`, `target_next_action`, and `target_previous_action` are
+remappable and distinct. Acquisition starts at the first eligible target. Zero
+`target_lock_seconds` confirms instantly; a positive value requires held confirm
+and continuous focus. Focus changes, release and pause clear progress and require
+fresh confirm. A gap over 0.1 active seconds earns no unobserved tracking credit.
+The gate deadline still limits retries. A missing target produces no selection,
+then the authored timeout/recovery route. `runner.target_view()` provides an
+isolated presentation snapshot; `CADTargetOverlay` draws passive labels/reticle
+below the pause layer. It does not read input or grant Story state.
+
+`CADResult.target_id` identifies the selected target independently of its option.
+`CADGrabTemplate` compiles one Target gate through the shared chain compiler. Its
+successful action timeline calls:
+
+```gdscript
+attach_selected_prop(&"input_1", &"Player", ^"Rig/HandSocket")
+detach_selected_prop(&"input_1")
+```
+
+These stage markers read the runner's result. Direct `attach_prop(target_id,
+role, socket_path)` / `detach_prop(target_id)` are also available. The socket is
+an authored Node3D or BoneAttachment3D below the bound actor. Attach retains the
+current contact offset; it never snaps to an inferred hand pose. Place contact
+and prop/actor keys explicitly before this marker. Stage validation checks result
+beat references and, when actors are bound, socket existence before acquisition.
+The episode-only validator cannot verify an unavailable real rig's sockets.
+
+`CADPropAttachments` follows the socket with a RemoteTransform3D while the prop
+keeps its scene parent, so actor deletion does not destroy the prop. Rigid props
+freeze during ownership and regain their original freeze setting on detach.
+Cancellation/error restores the original acquisition transform, even after an
+authored drop; successful release preserves authored final placement and removes
+all remaining socket ownership. Stage unload also cleans up. These helpers return
+`false` on invalid/missing prop/socket arguments. They do not apply impulses,
+manage a physics inventory, or persist mid-contact poses.
+
+### Opposed pressure and grapple escape
+
+`Family.PRESSURE` uses one `actions` force control and a distinct remappable
+`pressure_assist_action`. Both supply sustained force; rapid presses add no force.
+Progress begins at `pressure_start`, rises at `pressure_gain` while either input
+is held, and loses `pressure_resistance` per active second. Optional
+`pressure_curve: Curve` multiplies opposition by a clamped [0,1] value sampled at
+current progress. Curves require 2–64 finite bounded points/tangents. Validation
+requires gain above maximum opposition and enough time to complete the challenge;
+Pressure windows including assistance are bounded to 600 active seconds.
+
+The evaluator integrates at 0.01-second steps, independent of render FPS, and
+flushes fractional time before input edges, pause and timeout. Held force can
+finish before a delayed frame's gate deadline. Reaching 1 returns success and the
+fixed option; reaching 0 returns miss. At deadline, progress at/above
+`pressure_partial` returns partial; otherwise timeout. Partial returns no selected
+option, so it follows timeout unless explicitly routed through `routes[partial]`.
+The lab supplies separate escape, stagger and caught reaction timelines.
+Pause preserves progress but requires fresh force on resume. Wrong mapped controls
+use the existing wrong-input policy. The progress meter is ordinary gate progress.
+
+`CADGrappleTemplate` validates pressure followed by a final timed-release gate,
+then uses `CADChainTemplate` to compile the graph. Its lab example adds an initial
+directional escape attempt. Author anticipation, paired struggle/escape/recovery
+clips, and release contact in native timelines. It owns no input or physics.
+`CADInteractionHandler.prepare_suspend()` optionally returns a completion result
+when flushing continuous progress before suspension. The runner ticks and checks
+that result before clearing held state, preserving correct active-time accounting.

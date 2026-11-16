@@ -17,7 +17,13 @@ func input(_sample: CADInputSample) -> Dictionary:
 func tick(_elapsed: float, _delta: float) -> Dictionary:
 	return {}
 
+func prepare_suspend() -> Dictionary:
+	return {}
+
 func reset_input() -> void:
+	pass
+
+func resume_input(_elapsed: float) -> void:
 	pass
 
 func marker(_id: StringName, _at: float) -> bool:

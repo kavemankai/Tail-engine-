@@ -18,7 +18,7 @@ func _ready() -> void:
 	player.root_node = NodePath("..")
 	add_child(player)
 	var library := AnimationLibrary.new()
-	for clip: StringName in [&"idle", &"block", &"dodge", &"hit_react", &"windup", &"guard", &"counter"]:
+	for clip: StringName in [&"idle", &"block", &"dodge", &"hit_react", &"windup", &"guard", &"counter", &"punch_jab", &"punch_cross", &"punch_hook", &"recoil_jab", &"recoil_cross", &"recoil_hook", &"grapple_struggle", &"grapple_escape", &"grapple_stagger", &"grapple_release"]:
 		var animation := Animation.new()
 		animation.length = 1.0
 		if clip == &"idle":
@@ -26,7 +26,14 @@ func _ready() -> void:
 		var track := animation.add_track(Animation.TYPE_ROTATION_3D)
 		animation.track_set_path(track, NodePath("Rig:hand"))
 		animation.track_insert_key(track, 0.0, Quaternion.IDENTITY)
-		animation.track_insert_key(track, 0.5, Quaternion(Vector3.FORWARD, 0.7 if clip != &"idle" else 0.0))
+		var contact := Quaternion(Vector3.FORWARD, 0.7 if clip != &"idle" else 0.0)
+		if clip in [&"punch_jab", &"recoil_jab"]:
+			contact = Quaternion(Vector3.RIGHT, 0.65)
+		elif clip in [&"punch_cross", &"recoil_cross"]:
+			contact = Quaternion(Vector3.UP, -0.8)
+		elif clip in [&"punch_hook", &"recoil_hook", &"grapple_struggle", &"grapple_escape", &"grapple_stagger", &"grapple_release"]:
+			contact = Quaternion(Vector3.FORWARD, -1.1)
+		animation.track_insert_key(track, 0.5, contact)
 		animation.track_insert_key(track, 1.0, Quaternion.IDENTITY)
 		library.add_animation(clip, animation)
 	player.add_animation_library(&"", library)

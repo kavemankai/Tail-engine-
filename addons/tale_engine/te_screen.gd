@@ -204,10 +204,17 @@ func hint(text: String) -> void:
 	_hint.text = text
 
 func layout_prompt(lines: int) -> void:
-	var height := maxf(110.0, lines * 28.0 + 32.0)
+	var count := maxi(lines, prompt_label.get_line_count())
+	var font := prompt_label.get_theme_font(&"font")
+	var line_height := font.get_height(prompt_label.get_theme_font_size(&"font_size"))
+	var spacing := prompt_label.get_theme_constant(&"line_spacing")
+	var text_height := maxf(28.0 * count, line_height * count + spacing * maxi(0, count - 1))
+	var bar_height := maxf(10.0, prompt_bar.get_combined_minimum_size().y)
+	var height := maxf(110.0, 8.0 + text_height + 10.0 + bar_height + 12.0)
 	prompt_backdrop.offset_top = prompt_backdrop.offset_bottom - height
-	prompt_label.size.y = height - 32.0
-	prompt_bar.position.y = height - 22.0
+	prompt_label.size.y = text_height
+	prompt_bar.position.y = 8.0 + text_height + 10.0
+	prompt_bar.size.y = bar_height
 
 func fade_out(seconds: float = 0.35) -> void:
 	await _fade_to(1.0, seconds)

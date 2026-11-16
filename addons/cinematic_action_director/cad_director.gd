@@ -364,7 +364,7 @@ func _finish(outcome: StringName, notify := true) -> void:
 	if was_open:
 		gate_closed.emit()
 	if is_instance_valid(_stage):
-		_stage.release()
+		_stage.release(outcome not in _outcomes)
 	_stage = null
 	var release := _release
 	_release = Callable()
@@ -402,7 +402,17 @@ func _on_joy_connection_changed(device: int, connected: bool) -> void:
 			and interaction_runner.router.controller == device:
 		cancel()
 
+func _target_snapshot() -> Array[Dictionary]:
+	if not is_instance_valid(_stage) or not is_instance_valid(_stage.target_registry) or _beat == null or _beat.gate == null:
+		return []
+	return _stage.target_registry.snapshot(_beat.gate.interaction.target_options.keys(), flags)
+
 func _interaction_context() -> Dictionary:
+	var context := {}
+	if is_instance_valid(_stage) and is_instance_valid(_stage.target_registry):
+		context.target_snapshot = _target_snapshot
+		var size := get_viewport().get_visible_rect().size
+		context.target_extent = size / maxf(1.0, size.y)
 	var camera := get_viewport().get_camera_3d()
 	if camera != null:
 		var basis := camera.global_basis.orthonormalized()
@@ -410,8 +420,9 @@ func _interaction_context() -> Dictionary:
 		if forward.is_zero_approx():
 			var right := Vector2(basis.x.x, basis.x.z)
 			forward = Vector2(right.y, -right.x)
-		return {"camera_forward": forward.normalized()}
+		context.camera_forward = forward.normalized()
+		return context
 	var camera_2d := get_viewport().get_camera_2d()
 	if camera_2d != null:
-		return {"camera_forward": Vector2.UP.rotated(camera_2d.global_rotation)}
-	return {}
+		context.camera_forward = Vector2.UP.rotated(camera_2d.global_rotation)
+	return context

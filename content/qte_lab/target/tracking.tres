@@ -1,0 +1,55 @@
+[gd_resource type="Resource" format=3]
+
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_sequence.gd" id="seq"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_beat.gd" id="beat"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_gate.gd" id="gate"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_option.gd" id="option"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_interaction_spec.gd" id="spec"]
+
+[sub_resource type="Resource" id="moving"]
+script = ExtResource("option")
+id = &"moving"
+action = &"cad_a"
+label = "Moving"
+next = &"selected"
+
+[sub_resource type="Resource" id="spec"]
+script = ExtResource("spec")
+id = &"tracking"
+family = 6
+target_options = Dictionary[StringName, StringName]({&"moving": &"moving"})
+target_lock_seconds = 0.6
+target_radius = 0.06
+
+
+[sub_resource type="Resource" id="gate"]
+script = ExtResource("gate")
+options = Array[ExtResource("option")]([SubResource("moving")])
+interaction = SubResource("spec")
+window_seconds = 6.0
+timeout_next = &"recover"
+open_marker = &"gate"
+
+[sub_resource type="Resource" id="input"]
+script = ExtResource("beat")
+id = &"input"
+timeline = &"tracking"
+gate = SubResource("gate")
+
+[sub_resource type="Resource" id="selected"]
+script = ExtResource("beat")
+id = &"selected"
+timeline = &"selected"
+next = &"completed"
+
+[sub_resource type="Resource" id="recover"]
+script = ExtResource("beat")
+id = &"recover"
+timeline = &"recover"
+next = &"interrupted"
+
+[resource]
+script = ExtResource("seq")
+entry = &"input"
+beats = Array[ExtResource("beat")]([SubResource("input"), SubResource("selected"), SubResource("recover")])
+outcomes = Array[StringName]([&"completed", &"interrupted"])

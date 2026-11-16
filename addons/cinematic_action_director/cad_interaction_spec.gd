@@ -3,9 +3,10 @@ extends Resource
 ## Optional CADGate extension. Missing interaction keeps the legacy evaluator.
 ## Routes override named grade destinations in the existing CADSequence graph.
 
-enum Family { GESTURE, CHOICE, TIMING, PASSIVE, DIRECTION }
+enum Family { GESTURE, CHOICE, TIMING, PASSIVE, DIRECTION, PATTERN, TARGET, PRESSURE }
 enum Gesture { PRESS, HOLD, TIMED_RELEASE, CHORD }
 enum WrongInput { IGNORE, FAIL }
+enum PatternError { IGNORE, RESET, FAIL }
 enum DirectionMode { FLICK, HOLD, SELECT }
 enum DirectionSpace { INPUT, CAMERA }
 enum Sector { UP, UP_RIGHT, RIGHT, DOWN_RIGHT, DOWN, DOWN_LEFT, LEFT, UP_LEFT }
@@ -44,13 +45,41 @@ enum Sector { UP, UP_RIGHT, RIGHT, DOWN_RIGHT, DOWN, DOWN_LEFT, LEFT, UP_LEFT }
 ## SELECT maps sectors to existing gate option IDs (not display labels).
 @export var direction_options: Dictionary[int, StringName] = {}
 
+## Repeated actions belong here, not in actions. Alternation is ordinary data.
+@export var pattern_steps: Array[StringName] = []
+## Duration from opening/previous accepted step. Timeout wins exact ties.
+@export var pattern_deadlines: Array[float] = []
+## Minimum interval for every step, including the first. Early edges use policy.
+@export_range(0.0, 5.0) var pattern_min_seconds := 0.0
+@export var pattern_error: PatternError = PatternError.IGNORE
+
+## Target IDs bind to the stage registry; values are existing gate option IDs.
+@export var target_options: Dictionary[StringName, StringName] = {}
+@export var target_confirm_action := &"cad_a"
+@export var target_next_action := &"cad_b"
+@export var target_previous_action := &"cad_dodge"
+## Zero is immediate selection; positive values require continuous held lock.
+@export_range(0.0, 10.0) var target_lock_seconds := 0.0
+## Coordinates/radius are viewport-height units, independent of aspect ratio.
+@export_range(0.01, 0.5) var target_radius := 0.08
+@export_range(0.01, 4.0) var target_cursor_speed := 0.6
+
+## Sustained force or alternate sustained control; opposition is authored data.
+@export_range(0.01, 0.99) var pressure_start := 0.3
+@export_range(0.01, 4.0) var pressure_gain := 0.8
+@export_range(0.0, 4.0) var pressure_resistance := 0.2
+@export_range(0.01, 0.99) var pressure_partial := 0.5
+@export var pressure_assist_action := &"cad_b"
+## Optional progress-dependent multiplier of resistance, clamped to [0, 1].
+@export var pressure_curve: Curve
+
 func validation_errors(options: Array[CADOption], window: float) -> PackedStringArray:
 	var errors := PackedStringArray()
 	if id == &"":
 		errors.append("Interaction needs a stable id.")
 	if not is_finite(window) or window <= 0.0:
 		errors.append("Interaction window must be finite and positive.")
-	if family not in [Family.GESTURE, Family.CHOICE, Family.TIMING, Family.PASSIVE, Family.DIRECTION]:
+	if family not in [Family.GESTURE, Family.CHOICE, Family.TIMING, Family.PASSIVE, Family.DIRECTION, Family.PATTERN, Family.TARGET, Family.PRESSURE]:
 		errors.append("Unsupported interaction family.")
 	if controller_device < -1 or wrong_input not in [WrongInput.IGNORE, WrongInput.FAIL]:
 		errors.append("Invalid interaction input policy.")
@@ -79,7 +108,7 @@ func validation_errors(options: Array[CADOption], window: float) -> PackedString
 	if family == Family.PASSIVE and (actions.is_empty() or not is_finite(passive_seconds) \
 			or passive_seconds <= 0.0 or passive_seconds > window):
 		errors.append("Passive needs forbidden actions and a completion time inside the window.")
-	if family == Family.DIRECTION:
+	if family in [Family.DIRECTION, Family.TARGET]:
 		if direction_actions.size() != 4 or _has_duplicates(direction_actions) or not actions.is_empty():
 			errors.append("Direction needs four unique direction_actions (left/right/up/down); use monitored_actions for other controls.")
 		if direction_mode not in [DirectionMode.FLICK, DirectionMode.HOLD, DirectionMode.SELECT] \
@@ -101,6 +130,53 @@ func validation_errors(options: Array[CADOption], window: float) -> PackedString
 					errors.append("Invalid direction selection sector/option: %s." % sector)
 		elif not valid_sector(direction_sector):
 			errors.append("Direction sector must be enabled by the four/eight-way policy.")
+	if family == Family.TARGET:
+		var controls: Array[StringName] = [target_confirm_action, target_next_action, target_previous_action]
+		if _has_duplicates(controls) or controls.any(func(action: StringName) -> bool: return action in direction_actions):
+			errors.append("Target confirm/next/previous actions must be distinct and separate from aim directions.")
+		if target_options.is_empty():
+			errors.append("Target needs target-to-option mappings.")
+		for target_id in target_options:
+			if target_id == &"" or not options.any(func(option: CADOption) -> bool: return option != null and option.id == target_options[target_id]):
+				errors.append("Invalid target ID/option mapping: %s." % target_id)
+		if not is_finite(target_lock_seconds) or target_lock_seconds < 0.0 or target_lock_seconds >= window \
+				or not is_finite(target_radius) or target_radius <= 0.0 or target_radius > 0.5 \
+				or not is_finite(target_cursor_speed) or target_cursor_speed <= 0.0 or target_cursor_speed > 4.0:
+			errors.append("Target needs finite lock duration inside window, radius in (0, 0.5], and cursor speed in (0, 4].")
+	if family == Family.PATTERN:
+		if pattern_steps.is_empty() or pattern_steps.size() > 64 or not actions.is_empty():
+			errors.append("Pattern needs 1–64 steps and empty actions; repetitions go in pattern_steps.")
+		if pattern_deadlines.size() != pattern_steps.size():
+			errors.append("Pattern needs one relative deadline per step.")
+		if not is_finite(pattern_min_seconds) or pattern_min_seconds < 0.0 \
+				or pattern_error not in [PatternError.IGNORE, PatternError.RESET, PatternError.FAIL]:
+			errors.append("Invalid Pattern minimum interval or error policy.")
+		for deadline in pattern_deadlines:
+			if not is_finite(deadline) or deadline <= pattern_min_seconds or deadline > window:
+				errors.append("Pattern deadlines must exceed the minimum interval and fit in the gate window.")
+		if pattern_min_seconds * pattern_steps.size() >= window:
+			errors.append("Pattern minimum intervals cannot fit in the gate window.")
+	if family == Family.PRESSURE:
+		if window > 600.0:
+			errors.append("Pressure active window must not exceed 600 seconds including assistance.")
+		if actions.size() != 1 or pressure_assist_action == &"" or pressure_assist_action in actions:
+			errors.append("Pressure needs one force action and a distinct alternate hold action.")
+		if not is_finite(pressure_start) or pressure_start <= 0.0 or pressure_start >= 1.0 \
+				or not is_finite(pressure_gain) or pressure_gain < 0.01 or pressure_gain > 4.0 \
+				or not is_finite(pressure_resistance) or pressure_resistance < 0.0 or pressure_resistance >= pressure_gain \
+				or not is_finite(pressure_partial) or pressure_partial <= 0.0 or pressure_partial >= 1.0:
+			errors.append("Pressure needs finite bounded start/partial thresholds and gain exceeding resistance.")
+		elif (1.0 - pressure_start) / (pressure_gain - pressure_resistance) >= window:
+			errors.append("Pressure must be completable under maximum opposition inside the gate window.")
+		if pressure_curve != null:
+			if pressure_curve.point_count < 2 or pressure_curve.point_count > 64:
+				errors.append("Pressure curve needs 2–64 points.")
+			for i in pressure_curve.point_count:
+				var point := pressure_curve.get_point_position(i)
+				if not point.is_finite() or point.x < 0.0 or point.x > 1.0 or point.y < 0.0 or point.y > 1.0 \
+						or not is_finite(pressure_curve.get_point_left_tangent(i)) or not is_finite(pressure_curve.get_point_right_tangent(i)) \
+						or absf(pressure_curve.get_point_left_tangent(i)) > 1000.0 or absf(pressure_curve.get_point_right_tangent(i)) > 1000.0:
+					errors.append("Pressure curve requires finite points in [0, 1] and bounded tangents.")
 	var unique: Dictionary = {}
 	for action in actions:
 		if unique.has(action):
@@ -118,10 +194,16 @@ func validation_errors(options: Array[CADOption], window: float) -> PackedString
 
 func input_actions(options: Array[CADOption]) -> Array[StringName]:
 	var found: Array[StringName] = []
-	for action in actions + monitored_actions:
+	for action in actions + monitored_actions + (pattern_steps if family == Family.PATTERN else []):
 		if action not in found:
 			found.append(action)
-	if family == Family.DIRECTION:
+	if family == Family.PRESSURE and pressure_assist_action not in found:
+		found.append(pressure_assist_action)
+	if family == Family.TARGET:
+		for action in [target_confirm_action, target_next_action, target_previous_action]:
+			if action not in found:
+				found.append(action)
+	if family in [Family.DIRECTION, Family.TARGET]:
 		for action in direction_actions:
 			if action not in found:
 				found.append(action)
@@ -131,7 +213,7 @@ func input_actions(options: Array[CADOption]) -> Array[StringName]:
 	return found
 
 func uses_fixed_option() -> bool:
-	return family != Family.CHOICE and not (family == Family.DIRECTION and direction_mode == DirectionMode.SELECT)
+	return family not in [Family.CHOICE, Family.TARGET] and not (family == Family.DIRECTION and direction_mode == DirectionMode.SELECT)
 
 func valid_sector(value: int) -> bool:
 	return value >= 0 and value < 8 and (direction_eight_way or value % 2 == 0)

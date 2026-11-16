@@ -1,0 +1,87 @@
+[gd_resource type="Resource" format=3]
+
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_sequence.gd" id="seq"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_beat.gd" id="beat"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_gate.gd" id="gate"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_option.gd" id="option"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_interaction_spec.gd" id="spec"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/compounds/cad_grapple_template.gd" id="template"]
+
+[sub_resource type="Resource" id="option1"]
+script = ExtResource("option")
+id = &"direction"
+action = &"cad_a"
+label = "Direction"
+next = &"escape"
+
+[sub_resource type="Resource" id="spec1"]
+script = ExtResource("spec")
+id = &"grapple_direction"
+option_id = &"direction"
+family = 4
+wrong_input = 1
+
+
+[sub_resource type="Resource" id="gate1"]
+script = ExtResource("gate")
+options = Array[ExtResource("option")]([SubResource("option1")])
+interaction = SubResource("spec1")
+window_seconds = 3.0
+open_marker = &"gate"
+timeout_next = &"caught"
+
+[sub_resource type="Resource" id="option2"]
+script = ExtResource("option")
+id = &"pressure"
+action = &"cad_a"
+label = "Pressure"
+next = &"escape"
+
+[sub_resource type="Resource" id="spec2"]
+script = ExtResource("spec")
+id = &"grapple_pressure"
+option_id = &"pressure"
+family = 7
+actions = Array[StringName]([&"cad_a"])
+
+
+[sub_resource type="Resource" id="gate2"]
+script = ExtResource("gate")
+options = Array[ExtResource("option")]([SubResource("option2")])
+interaction = SubResource("spec2")
+window_seconds = 3.0
+open_marker = &"gate"
+timeout_next = &"caught"
+
+[sub_resource type="Resource" id="option3"]
+script = ExtResource("option")
+id = &"release"
+action = &"cad_a"
+label = "Release"
+next = &"escape"
+
+[sub_resource type="Resource" id="spec3"]
+script = ExtResource("spec")
+id = &"grapple_release"
+option_id = &"release"
+gesture = 2
+actions = Array[StringName]([&"cad_a"])
+ideal_seconds = 0.6
+
+
+[sub_resource type="Resource" id="gate3"]
+script = ExtResource("gate")
+options = Array[ExtResource("option")]([SubResource("option3")])
+interaction = SubResource("spec3")
+window_seconds = 3.0
+open_marker = &"gate"
+timeout_next = &"caught"
+
+[resource]
+script = ExtResource("template")
+gates = Array[ExtResource("gate")]([SubResource("gate1"), SubResource("gate2"), SubResource("gate3")])
+input_timelines = Array[StringName]([&"ready", &"ready", &"ready"])
+action_timelines = Array[StringName]([&"twist", &"escape", &"release"])
+recovery_timelines = Array[StringName]([&"caught", &"caught", &"caught"])
+completed_outcome = &"escaped"
+interrupted_outcome = &"caught"
