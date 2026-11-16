@@ -130,8 +130,13 @@ func play(timeline: StringName, blend: float, visit: int) -> bool:
 	_visit = visit
 	if _current == timeline:
 		timelines.stop(true)
+	# Godot drops method keys at time zero when it blends in from another
+	# animation, so those are called here.
+	var blending := blend > 0.0 and _current != &"" and _current != timeline
 	_current = timeline
 	timelines.play(timeline, blend)
+	if blending:
+		_call_keys_at_start(timelines.get_animation(timeline))
 	return true
 
 func pause(paused: bool) -> void:
@@ -187,6 +192,16 @@ func _attach(role: StringName) -> void:
 func _on_timeline_finished(timeline: StringName) -> void:
 	if _director != null and timeline == _current:
 		_director.marker(CADDirector.DONE, _visit)
+
+func _call_keys_at_start(animation: Animation) -> void:
+	var base := timelines.get_node_or_null(timelines.root_node)
+	for track in animation.get_track_count():
+		if base == null or animation.track_get_type(track) != Animation.TYPE_METHOD:
+			continue
+		var target := base.get_node_or_null(animation.track_get_path(track))
+		for key in animation.track_get_key_count(track):
+			if target != null and animation.track_get_key_time(track, key) <= 0.0:
+				target.callv(animation.method_track_get_name(track, key), animation.method_track_get_params(track, key))
 
 ## Every method-track call in a timeline as [method, first argument].
 func _method_calls(animation: Animation) -> Array:

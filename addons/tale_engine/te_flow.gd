@@ -115,13 +115,15 @@ func _play(step_id: StringName) -> void:
 			break
 		if step.checkpoint:
 			_checkpoint()
-		var moved: bool = await _enter_location(step.location)
+		var moved: bool = await _enter_location(step.location, generation)
 		if generation != _generation:
 			return
 		_place_cast()
 		if moved or Screen.is_black():
 			Screen.fade_in()
 		step_started.emit(step)
+		if generation != _generation:
+			return
 		_step_token += 1
 		_launch(step, _step_token)
 		last_exit = await _step_done
@@ -129,6 +131,8 @@ func _play(step_id: StringName) -> void:
 			return
 		Story.outcomes[step.id] = last_exit
 		step_finished.emit(step, last_exit)
+		if generation != _generation:
+			return
 		id = step.next_for(last_exit)
 		if id == &"":
 			push_error("Flow: step '%s' has no exit for '%s'." % [step.id, last_exit])
@@ -212,10 +216,12 @@ func _checkpoint() -> void:
 		TESave.write(save_slot, episode.resource_path, checkpoints)
 
 ## Returns true when a different location was loaded.
-func _enter_location(path: String) -> bool:
+func _enter_location(path: String, generation: int) -> bool:
 	if path == "" or (path == _location_path and location != null):
 		return false
 	await Screen.fade_out()
+	if generation != _generation:
+		return false
 	_free_location()
 	location = (load(path) as PackedScene).instantiate()
 	_location_path = path

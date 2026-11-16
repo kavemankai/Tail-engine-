@@ -58,9 +58,10 @@ func run() -> void:
 	var actor: TEActor = Flow.actors[&"player"]
 	expect(actor.global_position.distance_to(Vector3(-1.4, 0, 0)) < 0.05, "cast actor follows its stage slot")
 	expect(&"dodge" in actor.clip_log, "timeline clip call reached the actor")
+	var finished: Array = []
+	Flow.step_finished.connect(func(step: TEStep, exit_name: StringName) -> void: finished.append([step.id, exit_name]), CONNECT_ONE_SHOT)
 	Flow.force_exit(&"won")
-	var finished: Array = await Flow.step_finished
-	expect(finished[0].id == &"bar_fight" and finished[1] == &"won", "debug force-exit ends the step with the chosen exit")
+	expect(finished == [[&"bar_fight", &"won"]], "debug force-exit ends the step with the chosen exit")
 	Flow.stop()
 	player.free()
 

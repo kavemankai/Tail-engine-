@@ -144,7 +144,7 @@ func bar_tests() -> void:
 	var game_camera := Camera3D.new()
 	add_child(game_camera)
 	game_camera.make_current()
-	var stand_in := Node3D.new()
+	var stand_in := StandIn.new()
 	add_child(stand_in)
 
 	# Dodge, grab the stool, hold the shove.
@@ -159,6 +159,7 @@ func bar_tests() -> void:
 	expect(opened[0].id == &"counter" and option_ids(opened[1]) == "stool,back_off", "choice gate offers both options")
 	await frames(1)
 	expect(stand_in.global_position.distance_to(Vector3(-1.4, 0, 0)) < 0.02, "bound outside actor followed its slot")
+	expect(stand_in.clips == [&"dodge"], "clip key at time zero fires once on a blended beat")
 	pad(JOY_BUTTON_X)
 	opened = await director.gate_opened
 	expect(opened[0].id == &"shove", "prop beat leads to the hold gate")
@@ -251,3 +252,8 @@ func close() -> void:
 
 func option_ids(options: Array) -> String:
 	return ",".join(options.map(func(option: CADOption) -> StringName: return option.id))
+
+class StandIn extends Node3D:
+	var clips: Array[StringName] = []
+	func cad_act(clip: StringName) -> void:
+		clips.append(clip)

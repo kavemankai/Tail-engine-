@@ -24,7 +24,7 @@ func run() -> void:
 	expect(actor.global_position.distance_to(start) > 1.0 and absf(actor.global_position.y) < 0.05, "player walked across the floor")
 	expect(hub.current.name == &"Stool" and "Look" in Screen._hint.text, "nearest hotspot shows its prompt")
 	tap(&"te_interact")
-	await Flow.balloon_opened
+	await frames(1)
 	while hub._busy:
 		await frames(1)
 	await frames(2)
@@ -35,7 +35,7 @@ func run() -> void:
 	var zone: TECameraZone = Flow.location.get_node("Zones/AtCounter")
 	expect(get_viewport().get_camera_3d() != zone.camera(), "follow camera away from the zone")
 	walker._target = hub.get_node("Bartender")
-	while hub.current == null or hub.current.name != &"Bartender":
+	while walker._distance() > 0.9:
 		await get_tree().physics_frame
 	walker._target = null
 	walker._steer(Vector3.ZERO)
@@ -43,9 +43,10 @@ func run() -> void:
 	expect(get_viewport().get_camera_3d() == zone.camera(), "camera zone takes over near the counter")
 	expect(actor.global_position.z > -1.2, "the counter blocked the player")
 
+	var finished: Array = []
+	Flow.step_finished.connect(func(_step: TEStep, exit_name: StringName) -> void: finished.append(exit_name), CONNECT_ONE_SHOT)
 	hub.use(hub.get_node("Stranger"))
-	var finished: Array = await Flow.step_finished
-	expect(finished[1] == &"confront", "exit hotspot ended the hub step")
+	expect(finished == [&"confront"], "exit hotspot ended the hub step")
 	Flow.stop()
 	walker.free()
 	Settings.text_hold_scale = 1.0
