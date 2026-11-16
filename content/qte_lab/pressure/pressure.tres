@@ -1,0 +1,61 @@
+[gd_resource type="Resource" format=3]
+
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_sequence.gd" id="seq"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_beat.gd" id="beat"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_gate.gd" id="gate"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_option.gd" id="option"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_interaction_spec.gd" id="spec"]
+
+[sub_resource type="Resource" id="option1"]
+script = ExtResource("option")
+id = &"pressure"
+action = &"cad_a"
+label = "Pressure"
+next = &"escape"
+
+[sub_resource type="Resource" id="spec1"]
+script = ExtResource("spec")
+id = &"pressure_pressure"
+option_id = &"pressure"
+family = 7
+actions = Array[StringName]([&"cad_a"])
+routes = Dictionary[StringName, StringName]({&"partial": &"stagger"})
+
+
+[sub_resource type="Resource" id="gate1"]
+script = ExtResource("gate")
+options = Array[ExtResource("option")]([SubResource("option1")])
+interaction = SubResource("spec1")
+window_seconds = 3.0
+open_marker = &"gate"
+timeout_next = &"caught"
+
+[sub_resource type="Resource" id="input"]
+script = ExtResource("beat")
+id = &"input"
+timeline = &"ready"
+gate = SubResource("gate1")
+
+[sub_resource type="Resource" id="escape"]
+script = ExtResource("beat")
+id = &"escape"
+timeline = &"escape"
+next = &"escaped"
+
+[sub_resource type="Resource" id="stagger"]
+script = ExtResource("beat")
+id = &"stagger"
+timeline = &"stagger"
+next = &"staggered"
+
+[sub_resource type="Resource" id="caught"]
+script = ExtResource("beat")
+id = &"caught"
+timeline = &"caught"
+next = &"caught_outcome"
+
+[resource]
+script = ExtResource("seq")
+entry = &"input"
+beats = Array[ExtResource("beat")]([SubResource("input"), SubResource("escape"), SubResource("stagger"), SubResource("caught")])
+outcomes = Array[StringName]([&"escaped", &"staggered", &"caught_outcome"])

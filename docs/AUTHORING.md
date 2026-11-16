@@ -190,3 +190,20 @@ on the minimal skeletal adapter. Match actor/prop contact before attaching to
 preserve the authored offset without a visible snap. Validate the actual humanoid
 kit separately. Run `qte_target` and the full verifier after changing bindings.
 `python tools/build_target_examples.py` regenerates native resources/timelines.
+
+### Pressure and grapple examples
+
+The lab's Opposed pressure entry demonstrates success, partial and loss reactions.
+Hold J/X or the alternate K/B control; force is sustained, with no mash bonus.
+Release to yield against authored resistance. `pressure_start`, `pressure_gain`,
+`pressure_resistance`, `pressure_partial` and an optional opposition Curve control
+the contest. Keep a partial route explicit if it should differ from timeout.
+
+Grapple escape uses a `CADGrappleTemplate`: move left, sustain pressure, then press
+and release J/X at the next opening. Release controls between prompts. Every step
+has independent results and an authored recovery. The alternate pressure control
+is available from the start; it needs no rapid alternation. The examples dispatch
+logical `grapple_struggle`, `grapple_escape`, `grapple_stagger` and
+`grapple_release` clips through TEActor. These are adapter/greybox demonstrations;
+real paired humanoid contact remains an acceptance gate. Rebuild native resources
+with `python tools/build_pressure_examples.py`; run `qte_pressure` and verification.

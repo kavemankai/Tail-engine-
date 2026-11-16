@@ -1,6 +1,6 @@
 # QTE v2 implementation status
 
-This milestone implements the **software portion of Phases 0–5**, preserving the
+This milestone implements the **software portion of Phases 0–6**, preserving the
 original Episode 0 encounters. It does not implement the full 30-mechanic target.
 
 ## Completed work and evidence
@@ -71,6 +71,20 @@ layout fix. StringName ordering was reproduced as nonlexical and registry sortin
 now compares strings explicitly, with combined-suite regression coverage. The lab
 opens target windows after camera-cut markers so initial projection is stable.
 
+Phase 6 adds the eighth handler, Pressure: deterministic fixed-step opposed
+progress, scriptable opposition curves, partial results and sustained primary/
+alternate controls without a mash requirement. A shared grapple template composes
+directional movement, pressure and timed release. Native stage timelines dispatch
+paired struggle/escape/stagger clips through the actor adapter. Tests cover regular
+and irregular deltas, fractional pause accounting, failure bounds, assist input,
+restart/unload, full Flow escape and failure. Physical/humanoid acceptance is open.
+
+Phase 6 final local verification: **793 Godot checks across 17 suites**, three
+Python runner tests, clean episode validation, Windows x86_64 export and isolated
+packaged main/lab startup all passed. Phases 7–8 are not implemented by this
+milestone: local slowdown, action dialogue/focus, momentum, typed adaptive context,
+semantic intent, trace tooling and final hardware/production-animation QA remain.
+
 ## Selected mechanics
 
 | ID | Mechanic | Current implementation |
@@ -93,8 +107,8 @@ opens target windows after camera-cut markers so initial projection is stable.
 | 43 | Moving target | Sampled held lock; motion/loss interrupts; hitch credit rejected |
 | 53 | Three-punch combo | Three-punch template, independent gates and paired fixture clip dispatch; humanoid acceptance open |
 | 56 | Attack/defence chain | Shared chain template; mixed attack and directional-block example |
-| 62 | Tug of war | Outstanding Pressure evaluator and accessibility substitute |
-| 69 | Grapple escape | Hold is available; compound/opposition/release choreography outstanding |
+| 62 | Tug of war | Fixed-step opposed Pressure; sustained primary or remappable alternate control |
+| 69 | Grapple escape | Shared grapple template: direction, opposed pressure and timed release; humanoid acceptance open |
 | 72 | Object grab | Target-backed grab template and authored sockets with cancellation restoration; humanoid contact acceptance open |
 | 79 | Timed choice | Legacy and shared Choice; explicit option vs missed decision |
 | 84 | Conversation during action | Outstanding focus coordination; concurrent Flow dialogue is currently rejected |
@@ -108,18 +122,18 @@ opens target windows after camera-cut markers so initial projection is stable.
 
 ## Next phases and open acceptance gates
 
-Continue in the committed order: Pressure/struggle; cinematic/narrative layers;
-authoring/trace/1080p quality gate. New families must register in the shared
-runner and validation, not add scene-local input scripts or a second story graph.
+Continue in the committed order: cinematic/narrative layers;
+authoring/trace/1080p quality gate. Extensions must reuse the shared runner and validation, without scene-local input
+scripts or a second story graph. All eight planned handler families are present.
 
 - Real Windows controller tests have **not** been performed. Synthetic key/pad
   events do not prove driver, disconnect/reconnect or physical UX behaviour.
 - The humanoid kit and paired contact clips are unavailable. The minimal rig
   proves interface/playback only; alignment, snapping, foot contact, impacts and
   variant proportions require real assets and visual review.
-- Counterattack, combo and chain templates are available. Grab/target/socket examples are available;
-  grapple templates, resistance, local slowdown, barks/live dialogue coordination, momentum
-  and semantic-intent authoring remain outstanding.
+- Counterattack, combo, chain, grab and grapple templates are available. Local
+  slowdown, barks/live dialogue coordination, momentum and semantic-intent authoring
+  remain outstanding.
 - New interactions deliberately reject pre-held input and do not consume legacy
   early buffers. Paused incomplete gestures require fresh input on resume.
 - Detailed grades are not persisted into Story yet. Legacy strings/checkpoints

@@ -1,6 +1,6 @@
 # Tail Engine — QTE Architecture v2 and Implementation Roadmap
 
-**Status:** Target architecture; software Phases 0–5 are implemented on the development branch. See [QTE_STATUS.md](QTE_STATUS.md) for verified coverage and outstanding phases. Hardware and real-humanoid acceptance remain open.
+**Status:** Target architecture; software Phases 0–6 are implemented on the development branch. See [QTE_STATUS.md](QTE_STATUS.md) for verified coverage and outstanding phases. Hardware and real-humanoid acceptance remain open.
 **Baseline audited:** `kavemankai/Tail-engine-`, default branch `ccr-a20ee9e7-3y4ohl`, commit `8aaefe08dad93327bf98e383a6a615e2fcc32987` (16 November 2026).  
 **Engine target:** Standard Godot 4.6.3, GDScript, controller-first Windows/1080p.  
 **Scope:** Exactly the 30 selected mechanics below. This document changes no runtime behaviour.

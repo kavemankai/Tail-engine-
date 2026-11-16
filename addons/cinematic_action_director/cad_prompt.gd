@@ -66,6 +66,8 @@ static func interaction_text(gate: CADGate, options: Array, pad: bool, forward :
 	for option: CADOption in options:
 		if option.id == spec.option_id:
 			title = option.label
+	if spec.family == CADInteractionSpec.Family.PRESSURE:
+		return "%s\nHold [%s] or [%s]" % [title, glyph(spec.actions[0], pad), glyph(spec.pressure_assist_action, pad)]
 	if spec.family == CADInteractionSpec.Family.PATTERN:
 		var steps := PackedStringArray()
 		var start := maxi(0, completed - 1)

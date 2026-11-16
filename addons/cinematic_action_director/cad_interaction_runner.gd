@@ -76,6 +76,7 @@ func begin(gate: CADGate, offered: Array[CADOption], scale: float, run: int, vis
 			handler.provider = context.target_snapshot
 			handler.extent = context.get("target_extent", Vector2(16.0 / 9.0, 1.0))
 			_handler = handler
+		CADInteractionSpec.Family.PRESSURE: _handler = CADPressureHandler.new()
 		CADInteractionSpec.Family.PATTERN: _handler = CADPatternHandler.new()
 		CADInteractionSpec.Family.TIMING: _handler = CADTimingHandler.new()
 		CADInteractionSpec.Family.PASSIVE: _handler = CADPassiveHandler.new()
@@ -130,6 +131,14 @@ func marker(id: StringName, run: int, visit: int) -> bool:
 func suspend(value: bool) -> void:
 	if not active or clock.paused == value:
 		return
+	if value:
+		tick()
+		if not active:
+			return
+		var result := _handler.prepare_suspend()
+		if not result.is_empty():
+			_complete(result)
+			return
 	clock.set_paused(value)
 	if value:
 		_handler.reset_input()

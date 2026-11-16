@@ -1,0 +1,129 @@
+[gd_resource type="AnimationLibrary" format=3]
+
+[sub_resource type="Animation" id="ready"]
+resource_name = "ready"
+length = 0.6
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/path = NodePath("Player:position")
+tracks/0/keys = {"times": PackedFloat32Array(0,0.6), "transitions": PackedFloat32Array(1,1), "update": 0, "values": [Vector3(-0.5,0,0),Vector3(-0.5,0,0)]}
+tracks/1/type = "value"
+tracks/1/path = NodePath("Aggressor:position")
+tracks/1/keys = {"times": PackedFloat32Array(0,0.6), "transitions": PackedFloat32Array(1,1), "update": 0, "values": [Vector3(1.2,0,0),Vector3(1.2,0,0)]}
+tracks/2/type = "method"
+tracks/2/path = NodePath(".")
+tracks/2/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "values": [{"method": &"cut", "args": [&"Wide"]}]}
+tracks/3/type = "method"
+tracks/3/path = NodePath(".")
+tracks/3/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "values": [{"method": &"act", "args": [&"Player", &"grapple_struggle"]}]}
+tracks/4/type = "method"
+tracks/4/path = NodePath(".")
+tracks/4/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "values": [{"method": &"act", "args": [&"Aggressor", &"grapple_struggle"]}]}
+tracks/5/type = "method"
+tracks/5/path = NodePath(".")
+tracks/5/keys = {"times": PackedFloat32Array(0.15), "transitions": PackedFloat32Array(1), "values": [{"method": &"marker", "args": [&"gate"]}]}
+
+[sub_resource type="Animation" id="twist"]
+resource_name = "twist"
+length = 0.6
+tracks/0/type = "value"
+tracks/0/path = NodePath("Player:position")
+tracks/0/keys = {"times": PackedFloat32Array(0,0.6), "transitions": PackedFloat32Array(1,1), "update": 0, "values": [Vector3(-0.5,0,0),Vector3(-0.5,0,0)]}
+tracks/1/type = "value"
+tracks/1/path = NodePath("Aggressor:position")
+tracks/1/keys = {"times": PackedFloat32Array(0,0.6), "transitions": PackedFloat32Array(1,1), "update": 0, "values": [Vector3(1.2,0,0),Vector3(1.2,0,0)]}
+tracks/2/type = "method"
+tracks/2/path = NodePath(".")
+tracks/2/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "values": [{"method": &"cut", "args": [&"Close"]}]}
+tracks/3/type = "method"
+tracks/3/path = NodePath(".")
+tracks/3/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "values": [{"method": &"act", "args": [&"Player", &"grapple_struggle"]}]}
+tracks/4/type = "method"
+tracks/4/path = NodePath(".")
+tracks/4/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "values": [{"method": &"act", "args": [&"Aggressor", &"grapple_struggle"]}]}
+
+[sub_resource type="Animation" id="escape"]
+resource_name = "escape"
+length = 0.6
+tracks/0/type = "value"
+tracks/0/path = NodePath("Player:position")
+tracks/0/keys = {"times": PackedFloat32Array(0,0.6), "transitions": PackedFloat32Array(1,1), "update": 0, "values": [Vector3(-0.5,0,0),Vector3(-0.5,0,0)]}
+tracks/1/type = "value"
+tracks/1/path = NodePath("Aggressor:position")
+tracks/1/keys = {"times": PackedFloat32Array(0,0.6), "transitions": PackedFloat32Array(1,1), "update": 0, "values": [Vector3(1.2,0,0),Vector3(1.2,0,0)]}
+tracks/2/type = "method"
+tracks/2/path = NodePath(".")
+tracks/2/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "values": [{"method": &"cut", "args": [&"Close"]}]}
+tracks/3/type = "method"
+tracks/3/path = NodePath(".")
+tracks/3/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "values": [{"method": &"act", "args": [&"Player", &"grapple_escape"]}]}
+tracks/4/type = "method"
+tracks/4/path = NodePath(".")
+tracks/4/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "values": [{"method": &"act", "args": [&"Aggressor", &"grapple_release"]}]}
+
+[sub_resource type="Animation" id="release"]
+resource_name = "release"
+length = 0.6
+tracks/0/type = "value"
+tracks/0/path = NodePath("Player:position")
+tracks/0/keys = {"times": PackedFloat32Array(0,0.6), "transitions": PackedFloat32Array(1,1), "update": 0, "values": [Vector3(-0.5,0,0),Vector3(-0.5,0,0)]}
+tracks/1/type = "value"
+tracks/1/path = NodePath("Aggressor:position")
+tracks/1/keys = {"times": PackedFloat32Array(0,0.6), "transitions": PackedFloat32Array(1,1), "update": 0, "values": [Vector3(1.2,0,0),Vector3(1.2,0,0)]}
+tracks/2/type = "method"
+tracks/2/path = NodePath(".")
+tracks/2/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "values": [{"method": &"cut", "args": [&"Close"]}]}
+tracks/3/type = "method"
+tracks/3/path = NodePath(".")
+tracks/3/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "values": [{"method": &"act", "args": [&"Player", &"grapple_escape"]}]}
+tracks/4/type = "method"
+tracks/4/path = NodePath(".")
+tracks/4/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "values": [{"method": &"act", "args": [&"Aggressor", &"grapple_release"]}]}
+
+[sub_resource type="Animation" id="stagger"]
+resource_name = "stagger"
+length = 0.6
+tracks/0/type = "value"
+tracks/0/path = NodePath("Player:position")
+tracks/0/keys = {"times": PackedFloat32Array(0,0.6), "transitions": PackedFloat32Array(1,1), "update": 0, "values": [Vector3(-0.5,0,0),Vector3(-0.5,0,0)]}
+tracks/1/type = "value"
+tracks/1/path = NodePath("Aggressor:position")
+tracks/1/keys = {"times": PackedFloat32Array(0,0.6), "transitions": PackedFloat32Array(1,1), "update": 0, "values": [Vector3(1.2,0,0),Vector3(1.2,0,0)]}
+tracks/2/type = "method"
+tracks/2/path = NodePath(".")
+tracks/2/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "values": [{"method": &"cut", "args": [&"Close"]}]}
+tracks/3/type = "method"
+tracks/3/path = NodePath(".")
+tracks/3/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "values": [{"method": &"act", "args": [&"Player", &"grapple_stagger"]}]}
+tracks/4/type = "method"
+tracks/4/path = NodePath(".")
+tracks/4/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "values": [{"method": &"act", "args": [&"Aggressor", &"grapple_struggle"]}]}
+
+[sub_resource type="Animation" id="caught"]
+resource_name = "caught"
+length = 0.6
+tracks/0/type = "value"
+tracks/0/path = NodePath("Player:position")
+tracks/0/keys = {"times": PackedFloat32Array(0,0.6), "transitions": PackedFloat32Array(1,1), "update": 0, "values": [Vector3(-0.5,0,0),Vector3(-0.5,0,0)]}
+tracks/1/type = "value"
+tracks/1/path = NodePath("Aggressor:position")
+tracks/1/keys = {"times": PackedFloat32Array(0,0.6), "transitions": PackedFloat32Array(1,1), "update": 0, "values": [Vector3(1.2,0,0),Vector3(1.2,0,0)]}
+tracks/2/type = "method"
+tracks/2/path = NodePath(".")
+tracks/2/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "values": [{"method": &"cut", "args": [&"Close"]}]}
+tracks/3/type = "method"
+tracks/3/path = NodePath(".")
+tracks/3/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "values": [{"method": &"act", "args": [&"Player", &"grapple_stagger"]}]}
+tracks/4/type = "method"
+tracks/4/path = NodePath(".")
+tracks/4/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "values": [{"method": &"act", "args": [&"Aggressor", &"grapple_struggle"]}]}
+
+[resource]
+_data = {
+&"ready": SubResource("ready"),
+&"twist": SubResource("twist"),
+&"escape": SubResource("escape"),
+&"release": SubResource("release"),
+&"stagger": SubResource("stagger"),
+&"caught": SubResource("caught")
+}

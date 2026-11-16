@@ -18,7 +18,7 @@ func _ready() -> void:
 	player.root_node = NodePath("..")
 	add_child(player)
 	var library := AnimationLibrary.new()
-	for clip: StringName in [&"idle", &"block", &"dodge", &"hit_react", &"windup", &"guard", &"counter", &"punch_jab", &"punch_cross", &"punch_hook", &"recoil_jab", &"recoil_cross", &"recoil_hook"]:
+	for clip: StringName in [&"idle", &"block", &"dodge", &"hit_react", &"windup", &"guard", &"counter", &"punch_jab", &"punch_cross", &"punch_hook", &"recoil_jab", &"recoil_cross", &"recoil_hook", &"grapple_struggle", &"grapple_escape", &"grapple_stagger", &"grapple_release"]:
 		var animation := Animation.new()
 		animation.length = 1.0
 		if clip == &"idle":
@@ -31,7 +31,7 @@ func _ready() -> void:
 			contact = Quaternion(Vector3.RIGHT, 0.65)
 		elif clip in [&"punch_cross", &"recoil_cross"]:
 			contact = Quaternion(Vector3.UP, -0.8)
-		elif clip in [&"punch_hook", &"recoil_hook"]:
+		elif clip in [&"punch_hook", &"recoil_hook", &"grapple_struggle", &"grapple_escape", &"grapple_stagger", &"grapple_release"]:
 			contact = Quaternion(Vector3.FORWARD, -1.1)
 		animation.track_insert_key(track, 0.5, contact)
 		animation.track_insert_key(track, 1.0, Quaternion.IDENTITY)

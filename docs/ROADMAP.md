@@ -26,15 +26,18 @@ are a later milestone, with selection and licensing decided before integration.
 
 - Directional flick/block/selection, camera-frame snapshots and input rearm, plus
   a reusable counterattack template and opt-in Episode 0 directional variants.
-  Pattern sequences and shared combo/attack-defence chain templates now have lab
-  examples and regression coverage. Target selection/tracking, selected-result grab markers and socket cleanup
-  now have lab examples and regression coverage. Pressure and later cinematic
-  layers remain outstanding.
+- Pattern sequences and shared combo/attack-defence chain templates, with separate
+  per-input paired reactions and recovery timelines.
+- Target selection/tracking, selected-result grab markers, socket ownership and
+  cancellation restoration, with registry/projection and skeletal socket tests.
+- Opposed Pressure and a directional/pressure/release grapple template, with
+  sustained alternate input and resource-authored lab examples. Cinematic/narrative
+  layers and final quality gates remain open.
 
 ## Before sharing the demo
 
 1. Run `python tools/verify.py --export-windows` on the final revision. Confirm
-   clean import, all sixteen suites, episode validation and Windows packaging.
+   clean import, all seventeen suites, episode validation and Windows packaging.
 2. Complete [the Windows smoke test](WINDOWS_SMOKE_TEST.md) on a real PC and
    physical controller. Record the build commit and device details. This includes
    all four routes, relaunch/Continue, rewind, focus loss, device switching and

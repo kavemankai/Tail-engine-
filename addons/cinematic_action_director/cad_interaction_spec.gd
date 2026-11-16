@@ -3,7 +3,7 @@ extends Resource
 ## Optional CADGate extension. Missing interaction keeps the legacy evaluator.
 ## Routes override named grade destinations in the existing CADSequence graph.
 
-enum Family { GESTURE, CHOICE, TIMING, PASSIVE, DIRECTION, PATTERN, TARGET }
+enum Family { GESTURE, CHOICE, TIMING, PASSIVE, DIRECTION, PATTERN, TARGET, PRESSURE }
 enum Gesture { PRESS, HOLD, TIMED_RELEASE, CHORD }
 enum WrongInput { IGNORE, FAIL }
 enum PatternError { IGNORE, RESET, FAIL }
@@ -64,13 +64,22 @@ enum Sector { UP, UP_RIGHT, RIGHT, DOWN_RIGHT, DOWN, DOWN_LEFT, LEFT, UP_LEFT }
 @export_range(0.01, 0.5) var target_radius := 0.08
 @export_range(0.01, 4.0) var target_cursor_speed := 0.6
 
+## Sustained force or alternate sustained control; opposition is authored data.
+@export_range(0.01, 0.99) var pressure_start := 0.3
+@export_range(0.01, 4.0) var pressure_gain := 0.8
+@export_range(0.0, 4.0) var pressure_resistance := 0.2
+@export_range(0.01, 0.99) var pressure_partial := 0.5
+@export var pressure_assist_action := &"cad_b"
+## Optional progress-dependent multiplier of resistance, clamped to [0, 1].
+@export var pressure_curve: Curve
+
 func validation_errors(options: Array[CADOption], window: float) -> PackedStringArray:
 	var errors := PackedStringArray()
 	if id == &"":
 		errors.append("Interaction needs a stable id.")
 	if not is_finite(window) or window <= 0.0:
 		errors.append("Interaction window must be finite and positive.")
-	if family not in [Family.GESTURE, Family.CHOICE, Family.TIMING, Family.PASSIVE, Family.DIRECTION, Family.PATTERN, Family.TARGET]:
+	if family not in [Family.GESTURE, Family.CHOICE, Family.TIMING, Family.PASSIVE, Family.DIRECTION, Family.PATTERN, Family.TARGET, Family.PRESSURE]:
 		errors.append("Unsupported interaction family.")
 	if controller_device < -1 or wrong_input not in [WrongInput.IGNORE, WrongInput.FAIL]:
 		errors.append("Invalid interaction input policy.")
@@ -147,6 +156,27 @@ func validation_errors(options: Array[CADOption], window: float) -> PackedString
 				errors.append("Pattern deadlines must exceed the minimum interval and fit in the gate window.")
 		if pattern_min_seconds * pattern_steps.size() >= window:
 			errors.append("Pattern minimum intervals cannot fit in the gate window.")
+	if family == Family.PRESSURE:
+		if window > 600.0:
+			errors.append("Pressure active window must not exceed 600 seconds including assistance.")
+		if actions.size() != 1 or pressure_assist_action == &"" or pressure_assist_action in actions:
+			errors.append("Pressure needs one force action and a distinct alternate hold action.")
+		if not is_finite(pressure_start) or pressure_start <= 0.0 or pressure_start >= 1.0 \
+				or not is_finite(pressure_gain) or pressure_gain < 0.01 or pressure_gain > 4.0 \
+				or not is_finite(pressure_resistance) or pressure_resistance < 0.0 or pressure_resistance >= pressure_gain \
+				or not is_finite(pressure_partial) or pressure_partial <= 0.0 or pressure_partial >= 1.0:
+			errors.append("Pressure needs finite bounded start/partial thresholds and gain exceeding resistance.")
+		elif (1.0 - pressure_start) / (pressure_gain - pressure_resistance) >= window:
+			errors.append("Pressure must be completable under maximum opposition inside the gate window.")
+		if pressure_curve != null:
+			if pressure_curve.point_count < 2 or pressure_curve.point_count > 64:
+				errors.append("Pressure curve needs 2–64 points.")
+			for i in pressure_curve.point_count:
+				var point := pressure_curve.get_point_position(i)
+				if not point.is_finite() or point.x < 0.0 or point.x > 1.0 or point.y < 0.0 or point.y > 1.0 \
+						or not is_finite(pressure_curve.get_point_left_tangent(i)) or not is_finite(pressure_curve.get_point_right_tangent(i)) \
+						or absf(pressure_curve.get_point_left_tangent(i)) > 1000.0 or absf(pressure_curve.get_point_right_tangent(i)) > 1000.0:
+					errors.append("Pressure curve requires finite points in [0, 1] and bounded tangents.")
 	var unique: Dictionary = {}
 	for action in actions:
 		if unique.has(action):
@@ -167,6 +197,8 @@ func input_actions(options: Array[CADOption]) -> Array[StringName]:
 	for action in actions + monitored_actions + (pattern_steps if family == Family.PATTERN else []):
 		if action not in found:
 			found.append(action)
+	if family == Family.PRESSURE and pressure_assist_action not in found:
+		found.append(pressure_assist_action)
 	if family == Family.TARGET:
 		for action in [target_confirm_action, target_next_action, target_previous_action]:
 			if action not in found:

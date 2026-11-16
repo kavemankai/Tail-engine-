@@ -319,3 +319,32 @@ authored drop; successful release preserves authored final placement and removes
 all remaining socket ownership. Stage unload also cleans up. These helpers return
 `false` on invalid/missing prop/socket arguments. They do not apply impulses,
 manage a physics inventory, or persist mid-contact poses.
+
+### Opposed pressure and grapple escape
+
+`Family.PRESSURE` uses one `actions` force control and a distinct remappable
+`pressure_assist_action`. Both supply sustained force; rapid presses add no force.
+Progress begins at `pressure_start`, rises at `pressure_gain` while either input
+is held, and loses `pressure_resistance` per active second. Optional
+`pressure_curve: Curve` multiplies opposition by a clamped [0,1] value sampled at
+current progress. Curves require 2–64 finite bounded points/tangents. Validation
+requires gain above maximum opposition and enough time to complete the challenge;
+Pressure windows including assistance are bounded to 600 active seconds.
+
+The evaluator integrates at 0.01-second steps, independent of render FPS, and
+flushes fractional time before input edges, pause and timeout. Held force can
+finish before a delayed frame's gate deadline. Reaching 1 returns success and the
+fixed option; reaching 0 returns miss. At deadline, progress at/above
+`pressure_partial` returns partial; otherwise timeout. Partial returns no selected
+option, so it follows timeout unless explicitly routed through `routes[partial]`.
+The lab supplies separate escape, stagger and caught reaction timelines.
+Pause preserves progress but requires fresh force on resume. Wrong mapped controls
+use the existing wrong-input policy. The progress meter is ordinary gate progress.
+
+`CADGrappleTemplate` validates pressure followed by a final timed-release gate,
+then uses `CADChainTemplate` to compile the graph. Its lab example adds an initial
+directional escape attempt. Author anticipation, paired struggle/escape/recovery
+clips, and release contact in native timelines. It owns no input or physics.
+`CADInteractionHandler.prepare_suspend()` optionally returns a completion result
+when flushing continuous progress before suspension. The runner ticks and checks
+that result before clearing held state, preserving correct active-time accounting.
