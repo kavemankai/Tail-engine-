@@ -36,7 +36,7 @@ game; use Escape/Start or Resume to continue.
 ## Check it
 
 ```bash
-python tools/verify.py                               # import, eleven suites, episode validation
+python tools/verify.py                               # import, thirteen suites, episode validation
 python tools/verify.py --suites lifecycle save        # a focused regression run
 ```
 
@@ -84,7 +84,7 @@ godot --path . --write-movie out.avi --fixed-fps 30 res://tests/record.tscn
 [docs/ROADMAP.md](docs/ROADMAP.md) tracks current work and the remaining release gates.
 [docs/QTE_STATUS.md](docs/QTE_STATUS.md) records exactly which v2 mechanics are
 implemented and which remain outstanding. Choose **Interaction lab** on the title
-menu for resource-authored reaction, hold, release, chord, parry and restraint
+menu for resource-authored reaction, hold, release, chord, parry, restraint, directional and counterattack
 examples using the same Flow, actors, cameras and branching runtime.
 
 ## Limits

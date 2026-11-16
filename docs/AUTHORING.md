@@ -117,3 +117,26 @@ the normal save slot. See the v2 section in
 `tests/autoplay.gd` plays an episode from a policy: which `opt` names to pick, which hotspots to visit, which button to press at which beat. `tests/test_flow.gd` shows four routes with assertions on the steps taken and the story state at the end. Add one per ending you care about.
 
 In a debug build, F3 opens a panel with the current step and variables, and buttons to force any exit or jump to any step.
+
+
+## Counterattacks and directional variants
+
+Set an encounter step's `compound` to a `CADCounterattackTemplate` resource instead
+of setting `sequence`. Author its defence/counter gates and six timeline names;
+Flow compiles a fresh ordinary CADSequence when entering the encounter. The
+validator checks both the graph and the stage. See
+`content/qte_lab/direction/counter.template.tres` and its episode for the complete
+example. Missing the counter follows recovery and preserves the defence result.
+
+Direction specs use four remappable actions, a sector, thresholds and flick/hold/
+selection policy. Use named option IDs in `direction_options`, not display text.
+Input-relative examples use the same camera geography for both shots; camera-
+relative specs freeze a planar frame when opening the gate. See INTEGRATION.md
+for sector IDs, settling/rearm semantics, and template grade-route constraints.
+
+`content/episode_0/encounters/*/directional.tres` are opt-in variants. The bar uses
+true directional dodge; the alley's high/low fork uses Direction selection. Their
+original graphs, flag-conditioned stool/bartender consequences and outcomes are
+preserved. `content/qte_lab/direction/episode_0_directional.tres` exercises them
+through the full story graph without changing the default episode. Run validation
+and the `compounds` suite after editing these resources.

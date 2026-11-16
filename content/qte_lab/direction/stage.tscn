@@ -1,0 +1,32 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_stage.gd" id="stage"]
+[ext_resource type="AnimationLibrary" path="res://content/qte_lab/direction/timelines.tres" id="lib"]
+
+[node name="DirectionStage" type="Node3D" node_paths=PackedStringArray("timelines")]
+script = ExtResource("stage")
+timelines = NodePath("Timelines")
+
+[node name="Player" type="Marker3D" parent="."]
+position = Vector3(-0.5, 0, 0)
+rotation = Vector3(0, -1.5708, 0)
+
+[node name="Aggressor" type="Marker3D" parent="."]
+position = Vector3(1.2, 0, 0)
+rotation = Vector3(0, 1.5708, 0)
+
+[node name="Bartender" type="Marker3D" parent="."]
+position = Vector3(0, 0, -2.2)
+
+[node name="Wide" type="Camera3D" parent="."]
+position = Vector3(0, 1.7, 5.5)
+rotation = Vector3(-0.13, 0, 0)
+fov = 55
+
+[node name="Close" type="Camera3D" parent="."]
+position = Vector3(-0.1, 1.5, 3.2)
+rotation = Vector3(-0.12, 0, 0)
+fov = 45
+
+[node name="Timelines" type="AnimationPlayer" parent="."]
+libraries = {&"": ExtResource("lib")}

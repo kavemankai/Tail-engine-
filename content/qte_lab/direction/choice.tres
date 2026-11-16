@@ -1,0 +1,67 @@
+[gd_resource type="Resource" script_class="CADSequence" format=3]
+
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_sequence.gd" id="seq"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_beat.gd" id="beat"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_gate.gd" id="gate"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_option.gd" id="opt"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_interaction_spec.gd" id="interaction"]
+
+[sub_resource type="Resource" id="dodge"]
+script = ExtResource("opt")
+id = &"dodge"
+action = &"cad_dir_left"
+label = "Take the left opening"
+next = &"evade"
+
+[sub_resource type="Resource" id="right_option"]
+script = ExtResource("opt")
+id = &"right"
+action = &"cad_dir_right"
+label = "Take the right opening"
+next = &"right"
+
+[sub_resource type="Resource" id="right"]
+script = ExtResource("beat")
+id = &"right"
+timeline = &"step_right"
+next = &"right_route"
+
+[sub_resource type="Resource" id="spec"]
+script = ExtResource("interaction")
+id = &"direction_choice"
+direction_options = Dictionary[int, StringName]({6: &"dodge", 2: &"right"})
+family = 4
+direction_mode = 2
+
+[sub_resource type="Resource" id="gate"]
+script = ExtResource("gate")
+options = Array[ExtResource("opt")]([SubResource("dodge"), SubResource("right_option")])
+interaction = SubResource("spec")
+window_seconds = 1.5
+timeout_next = &"hit"
+open_marker = &"gate"
+cut_on_resolve = false
+
+[sub_resource type="Resource" id="windup"]
+script = ExtResource("beat")
+id = &"windup"
+timeline = &"telegraph"
+gate = SubResource("gate")
+
+[sub_resource type="Resource" id="evade"]
+script = ExtResource("beat")
+id = &"evade"
+timeline = &"evade"
+next = &"success"
+
+[sub_resource type="Resource" id="hit"]
+script = ExtResource("beat")
+id = &"hit"
+timeline = &"hit"
+next = &"missed"
+
+[resource]
+script = ExtResource("seq")
+entry = &"windup"
+beats = Array[ExtResource("beat")]([SubResource("windup"), SubResource("evade"), SubResource("hit"), SubResource("right")])
+outcomes = Array[StringName]([&"success", &"missed", &"right_route"])

@@ -18,7 +18,7 @@ func _ready() -> void:
 	player.root_node = NodePath("..")
 	add_child(player)
 	var library := AnimationLibrary.new()
-	for clip: StringName in [&"idle", &"block", &"dodge", &"hit_react", &"windup"]:
+	for clip: StringName in [&"idle", &"block", &"dodge", &"hit_react", &"windup", &"guard", &"counter"]:
 		var animation := Animation.new()
 		animation.length = 1.0
 		if clip == &"idle":

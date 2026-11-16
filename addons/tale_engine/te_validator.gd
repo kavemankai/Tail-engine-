@@ -68,17 +68,23 @@ static func check(episode: TEEpisode) -> PackedStringArray:
 				_check_shots(step.dialogue, [step.cue], location, where, errors)
 			TEStep.Kind.ENCOUNTER:
 				var stage := location.stage(step.stage) if location != null else null
-				if step.sequence == null or stage == null:
+				var sequence := step.resolve_sequence()
+				if step.sequence != null and step.compound != null:
+					errors.append("%s: choose sequence or compound, not both." % where)
+				elif step.compound != null and sequence == null:
+					for problem in step.compound.last_errors:
+						errors.append("%s compound: %s" % [where, problem])
+				if sequence == null or stage == null:
 					errors.append("%s needs a sequence and a stage named '%s' in its location." % [where, step.stage])
 				else:
-					for problem in CADDirector.validation_errors(step.sequence, stage):
+					for problem in CADDirector.validation_errors(sequence, stage):
 						errors.append("%s: %s" % [where, problem])
 					for role: StringName in step.roles:
 						if stage.slot(role) == null:
 							errors.append("%s binds missing stage role '%s'." % [where, role])
 						if episode.cast.find(step.roles[role]) == null:
 							errors.append("%s binds unknown character '%s'." % [where, step.roles[role]])
-					named_exits = step.sequence.outcomes.duplicate()
+					named_exits = sequence.outcomes.duplicate()
 			TEStep.Kind.EXPLORE:
 				var hub := location.hub(step.hub) if location != null else null
 				if hub == null:

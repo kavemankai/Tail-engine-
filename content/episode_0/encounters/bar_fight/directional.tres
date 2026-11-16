@@ -1,0 +1,159 @@
+[gd_resource type="Resource" script_class="CADSequence" format=3]
+
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_sequence.gd" id="seq"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_beat.gd" id="beat"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_gate.gd" id="gate"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_option.gd" id="opt"]
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_branch.gd" id="branch"]
+
+[ext_resource type="Script" path="res://addons/cinematic_action_director/cad_interaction_spec.gd" id="interaction"]
+
+[sub_resource type="Resource" id="direction_spec"]
+script = ExtResource("interaction")
+id = &"bar_directional_dodge"
+family = 4
+option_id = &"dodge"
+
+[sub_resource type="Resource" id="o_dodge"]
+script = ExtResource("opt")
+id = &"dodge"
+action = &"cad_dir_left"
+label = "Dodge left"
+next = &"evade"
+
+[sub_resource type="Resource" id="g_windup"]
+script = ExtResource("gate")
+options = Array[ExtResource("opt")]([SubResource("o_dodge")])
+interaction = SubResource("direction_spec")
+window_seconds = 0.9
+timeout_next = &"hit"
+open_marker = &"gate"
+
+[sub_resource type="Resource" id="o_stool"]
+script = ExtResource("opt")
+id = &"stool"
+action = &"cad_a"
+label = "Grab the stool"
+requires = &"stool_noticed"
+next = &"stool_block"
+
+[sub_resource type="Resource" id="o_back_off"]
+script = ExtResource("opt")
+id = &"back_off"
+action = &"cad_b"
+label = "Back off"
+next = &"back_off"
+
+[sub_resource type="Resource" id="g_counter"]
+script = ExtResource("gate")
+options = Array[ExtResource("opt")]([SubResource("o_stool"), SubResource("o_back_off")])
+window_seconds = 2.0
+timeout_next = &"back_off"
+
+[sub_resource type="Resource" id="o_push"]
+script = ExtResource("opt")
+id = &"push"
+action = &"cad_a"
+label = "Shove"
+hold_seconds = 0.6
+next = &"shove_win"
+
+[sub_resource type="Resource" id="g_shove"]
+script = ExtResource("gate")
+options = Array[ExtResource("opt")]([SubResource("o_push")])
+window_seconds = 1.5
+timeout_next = &"stalemate"
+
+[sub_resource type="Resource" id="g_rush"]
+script = ExtResource("gate")
+options = Array[ExtResource("opt")]([SubResource("o_dodge")])
+interaction = SubResource("direction_spec")
+window_seconds = 0.5
+timeout_next = &"hit"
+open_marker = &"gate"
+
+[sub_resource type="Resource" id="b_insulted"]
+script = ExtResource("branch")
+requires = &"insulted_stranger"
+next = &"rush"
+
+[sub_resource type="Resource" id="b_friend"]
+script = ExtResource("branch")
+requires = &"bartender_friendly"
+next = &"bartender_steps_in"
+
+[sub_resource type="Resource" id="approach"]
+script = ExtResource("beat")
+id = &"approach"
+timeline = &"approach"
+next = &"windup"
+branches = Array[ExtResource("branch")]([SubResource("b_insulted")])
+
+[sub_resource type="Resource" id="rush"]
+script = ExtResource("beat")
+id = &"rush"
+timeline = &"rush"
+gate = SubResource("g_rush")
+
+[sub_resource type="Resource" id="bartender_steps_in"]
+script = ExtResource("beat")
+id = &"bartender_steps_in"
+timeline = &"bartender_steps_in"
+next = &"broken_up"
+
+[sub_resource type="Resource" id="windup"]
+script = ExtResource("beat")
+id = &"windup"
+timeline = &"windup"
+gate = SubResource("g_windup")
+
+[sub_resource type="Resource" id="evade"]
+script = ExtResource("beat")
+id = &"evade"
+timeline = &"evade"
+blend_seconds = 0.08
+next = &"counter"
+
+[sub_resource type="Resource" id="hit"]
+script = ExtResource("beat")
+id = &"hit"
+timeline = &"hit"
+blend_seconds = 0.08
+next = &"counter"
+
+[sub_resource type="Resource" id="counter"]
+script = ExtResource("beat")
+id = &"counter"
+timeline = &"counter"
+gate = SubResource("g_counter")
+
+[sub_resource type="Resource" id="stool_block"]
+script = ExtResource("beat")
+id = &"stool_block"
+timeline = &"stool_block"
+next = &"shove"
+
+[sub_resource type="Resource" id="shove"]
+script = ExtResource("beat")
+id = &"shove"
+timeline = &"shove"
+gate = SubResource("g_shove")
+
+[sub_resource type="Resource" id="shove_win"]
+script = ExtResource("beat")
+id = &"shove_win"
+timeline = &"shove_win"
+next = &"won"
+
+[sub_resource type="Resource" id="back_off"]
+script = ExtResource("beat")
+id = &"back_off"
+timeline = &"back_off"
+next = &"withdrew"
+branches = Array[ExtResource("branch")]([SubResource("b_friend")])
+
+[resource]
+script = ExtResource("seq")
+entry = &"approach"
+beats = Array[ExtResource("beat")]([SubResource("approach"), SubResource("rush"), SubResource("bartender_steps_in"), SubResource("windup"), SubResource("evade"), SubResource("hit"), SubResource("counter"), SubResource("stool_block"), SubResource("shove"), SubResource("shove_win"), SubResource("back_off")])
+outcomes = Array[StringName]([&"won", &"stalemate", &"withdrew", &"broken_up"])
