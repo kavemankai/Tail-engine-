@@ -19,6 +19,8 @@ var season: TESeason
 var step: TEStep
 var location: TELocation
 var actors: Dictionary[StringName, TEActor] = {}
+## Camera direction: cuts, blends, shake.
+var camera := TECamera.new()
 ## Checkpoints reached this playthrough: { step, title, story }.
 var checkpoints: Array = []
 var running := false
@@ -34,6 +36,7 @@ var latest_trace: Dictionary = {}
 var _hub: TEHub
 
 func _ready() -> void:
+	add_child(camera)
 	if OS.is_debug_build():
 		add_child(TEDebug.new())
 
@@ -103,6 +106,7 @@ func stop() -> void:
 	_step_done.emit(&"cancelled")
 	running = false
 	step = null
+	camera.stop()
 	_clear_props()
 	_free_location()
 	Audio.stop_voice()
@@ -206,6 +210,9 @@ func _launch(current: TEStep, token: int) -> void:
 			exit_name = await _encounter(current)
 		TEStep.Kind.EXPLORE:
 			exit_name = await _explore(current)
+		TEStep.Kind.CUTSCENE:
+			await _cutscene(current, token)
+			exit_name = &"end"
 		TEStep.Kind.CARD:
 			var body := current.body
 			if current.card == TEStep.Card.RECAP:
@@ -317,16 +324,40 @@ func _place_cast() -> void:
 func _on_line_shown(line: DialogueLine) -> void:
 	for id: StringName in actors:
 		actors[id].speak(id == StringName(line.character))
-	_cut(StringName(line.get_tag_value("shot")))
+	_cut(StringName(line.get_tag_value("shot")), line.get_tag_value("blend").to_float())
+	var shake_amount := line.get_tag_value("shake").to_float()
+	if shake_amount > 0.0:
+		camera.shake(shake_amount)
 
-func _cut(shot: StringName) -> void:
+## Go to Shots/<shot>. A blend above zero moves the camera there instead of cutting.
+func _cut(shot: StringName, blend := 0.0) -> void:
 	if shot == &"" or location == null:
 		return
-	var camera := location.shot(shot)
-	if camera != null:
-		camera.make_current()
+	var target := location.shot(shot)
+	if target != null:
+		camera.blend_to(target, blend)
 	else:
 		push_warning("Flow: location has no shot '%s'." % shot)
+
+func _cutscene(current: TEStep, token: int) -> void:
+	for cue in current.cues:
+		if token != _step_token:
+			return
+		_cut(cue.shot, cue.blend)
+		if cue.shake > 0.0:
+			camera.shake(cue.shake)
+		for id: StringName in actors:
+			actors[id].speak(id == cue.speaker)
+		for id: StringName in cue.clips:
+			if actors.has(id):
+				actors[id].cad_act(cue.clips[id])
+		Screen.caption(cue.caption)
+		var seconds := cue.hold * (Settings.text_hold_scale if cue.caption != "" else 1.0)
+		await get_tree().create_timer(maxf(seconds, 0.0)).timeout
+	if token == _step_token:
+		for actor: TEActor in actors.values():
+			actor.speak(false)
+		Screen.caption("")
 
 func _clear_props() -> void:
 	# Cancelling resumes awaiting functions synchronously; detach first so they

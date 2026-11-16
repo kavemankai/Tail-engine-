@@ -274,3 +274,21 @@ Point the title menu at it (`season = ...` on a `TETitleMenu`) or call `Flow.sta
 - Major choices of earlier episodes are readable with `Story.prior("episode_1", "gift")`, which returns the option id or an empty string. Use it in dialogue conditions: `if Story.prior("episode_1", "gift") == "keep"`.
 - The next episode's recap starts fresh.
 - Saves record the season, so Continue and rewind return to the right episode with carried state intact. The title menu cycles `slot_count` save slots.
+
+## Camera and cutscenes
+
+Locations supply cameras as `Shots/<name>`. Use `TEShot` instead of a plain `Camera3D` to author a slow move: `drift` (local-space translation), `fov_drift` and `drift_time` play while the shot is active and reset when another takes over.
+
+In dialogue, tags on a line direct the camera:
+
+```
+friend: We need to go. [#shot=close, #blend=0.6, #shake=0.05]
+```
+
+- `shot` cuts to that shot.
+- `blend` (seconds) flies the camera there from the current view instead of cutting.
+- `shake` is an amplitude in metres that fades out over about half a second.
+
+A **Cutscene** step (`kind = 4`) plays a list of `TEShotCue` resources with no input: each cue has a `shot`, `blend`, `hold`, optional `shake`, a `speaker` (marks that actor as talking), a `caption`, and `clips` (character id to logical clip, played as the cue starts). It ends with the exit `end`. The validator checks that every cue's shot, speaker and character exist.
+
+From code, `Flow.camera` (`TECamera`) offers `cut_to`, `blend_to` and `shake`.
