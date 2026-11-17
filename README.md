@@ -101,6 +101,7 @@ godot --path . --write-movie out.avi --fixed-fps 30 res://tests/record.tscn
 
 [docs/AUTHORING.md](docs/AUTHORING.md) covers the episode graph, dialogue files, story variables, hubs and encounters. [docs/INTEGRATION.md](docs/INTEGRATION.md) is the action layer's reference.
 [docs/ROADMAP.md](docs/ROADMAP.md) tracks current work and the remaining release gates.
+[docs/MECHANICS_TO_TEST.md](docs/MECHANICS_TO_TEST.md) lists every mechanic a slice episode should exercise, and which are still to come.
 [docs/QTE_STATUS.md](docs/QTE_STATUS.md) records exactly which v2 mechanics are
 implemented and which remain outstanding. Choose **Interaction lab** on the title
 menu for resource-authored reaction, hold, release, chord, parry, restraint, directional and counterattack
