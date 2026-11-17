@@ -3,7 +3,8 @@ extends TestSuite
 
 func run() -> void:
 	Flow.save_slot = -1
-	Settings.text_hold_scale = 0.05
+	# Long card holds: only force_exit ends an episode, so the test never races a timer.
+	Settings.text_hold_scale = 50.0
 	Engine.time_scale = 4.0
 	await carry_over()
 	await save_resume()
@@ -11,6 +12,7 @@ func run() -> void:
 	Flow.stop()
 	await frames(3)
 	Engine.time_scale = 1.0
+	Settings.text_hold_scale = 1.0
 	Flow.save_slot = 0
 
 func make_season() -> TESeason:
