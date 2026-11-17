@@ -108,7 +108,7 @@ func _save_season_progress() -> void:
 	if not TESave.write(save_slot, next.resource_path, start,
 			{"path": season.resource_path, "index": season.index_of(next)}, {"playtime": playtime}):
 		push_warning(TESave.last_error)
-		Screen.notice("Could not save your progress. Check available disk space and permissions.")
+		Screen.notice(tr("Could not save your progress. Check available disk space and permissions."))
 
 func _begin(new_episode: TEEpisode, new_season: TESeason, carried := {}, history := {}) -> void:
 	stop()
@@ -139,7 +139,7 @@ func resume() -> bool:
 	var recovered := TESave.last_status == TESave.Status.RECOVERED
 	rewind(checkpoints.size() - 1)
 	if recovered:
-		Screen.notice("Your save was updated to match this version of the game.")
+		Screen.notice(tr("Your save was updated to match this version of the game."))
 	return true
 
 ## Go back to a checkpoint. Later checkpoints are dropped.
@@ -270,7 +270,7 @@ func _fail(reason: String, generation: int) -> void:
 	_free_location()
 	Screen.clear()
 	Screen.fade_in()
-	Screen.notice("Something went wrong and this scene could not continue. Your last checkpoint is safe.")
+	Screen.notice(tr("Something went wrong and this scene could not continue. Your last checkpoint is safe."))
 	episode_failed.emit(reason)
 
 func _launch(current: TEStep, token: int) -> void:
@@ -365,7 +365,7 @@ func _checkpoint() -> void:
 		var season_info := {} if season == null else {"path": season.resource_path, "index": season.index_of(episode)}
 		if not TESave.write(save_slot, episode.resource_path, checkpoints, season_info, {"playtime": playtime}):
 			push_warning(TESave.last_error)
-			Screen.notice("Could not save your progress. Check available disk space and permissions.")
+			Screen.notice(tr("Could not save your progress. Check available disk space and permissions."))
 
 ## Returns true when a different location was loaded.
 func _enter_location(path: String, generation: int) -> bool:

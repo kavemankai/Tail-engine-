@@ -104,7 +104,7 @@ func apply() -> void:
 	for key: String in BUSES:
 		AudioServer.set_bus_volume_db(bus_index(BUSES[key]), linear_to_db(maxf(get(key), 0.0001)))
 	CADInputDevice.style_override = StringName(prompt_style)
-	if language != "" and language in TranslationServer.get_loaded_locales():
+	if language != "" and language in languages():
 		TranslationServer.set_locale(language)
 		_language_set = true
 	elif _language_set:
@@ -112,6 +112,15 @@ func apply() -> void:
 		_language_set = false
 	_apply_display()
 	changed.emit()
+
+## Languages the player can choose: the one the game is written in, then
+## every loaded translation.
+func languages() -> PackedStringArray:
+	var codes := PackedStringArray([String(ProjectSettings.get_setting("internationalization/locale/fallback", "en"))])
+	for code in TranslationServer.get_loaded_locales():
+		if code not in codes:
+			codes.append(code)
+	return codes
 
 ## Index of a named bus, creating it (sending to Master) if the project has none.
 static func bus_index(bus: StringName) -> int:

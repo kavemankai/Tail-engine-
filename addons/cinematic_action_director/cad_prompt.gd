@@ -35,23 +35,32 @@ const AXIS_STYLES := {
 	&"nintendo": {JOY_AXIS_TRIGGER_LEFT: "ZL", JOY_AXIS_TRIGGER_RIGHT: "ZR"},
 }
 
+## Translate a piece of prompt text. Button letters are never translated.
+static func _t(text: String) -> String:
+	return String(TranslationServer.translate(text)) if text != "" else ""
+
+## Controls named by a phrase rather than by what is printed on them.
+const PHRASES := ["D-pad Up", "D-pad Down", "D-pad Left", "D-pad Right", "Left stick", "Right stick", "Stick"]
+
 ## What is printed on a controller button for the controller in use.
 static func pad_name(button: int) -> String:
 	var names: Dictionary = STYLES.get(CADInputDevice.style(), {})
-	return names.get(button, PAD.get(button, "Pad %d" % button))
+	var name: String = names.get(button, PAD.get(button, "Pad %d" % button))
+	return _t(name) if name in PHRASES else name
 
 static func axis_name(axis: int) -> String:
 	var names: Dictionary = AXIS_STYLES.get(CADInputDevice.style(), {})
-	return names.get(axis, AXES.get(axis, "Axis %d" % axis))
+	var name: String = names.get(axis, AXES.get(axis, "Axis %d" % axis))
+	return _t(name) if name in PHRASES else name
 
 ## The name of any single input event, for prompts and the rebinding menu.
 static func event_name(event: InputEvent) -> String:
 	if event is InputEventJoypadButton:
 		return pad_name(event.button_index)
 	if event is InputEventJoypadMotion:
+		if event.axis > JOY_AXIS_RIGHT_Y:
+			return axis_name(event.axis)
 		var name := axis_name(event.axis)
-		if not name.ends_with("stick"):
-			return name
 		var arrows := ["←", "→"] if event.axis % 2 == 0 else ["↑", "↓"]
 		return "%s %s" % [name, arrows[0] if event.axis_value < 0.0 else arrows[1]]
 	if event is InputEventKey:
@@ -106,17 +115,17 @@ static func interaction_text(gate: CADGate, options: Array, pad: bool, forward :
 			var control := glyph(action, pad)
 			if control not in aim:
 				aim.append(control)
-		return "Aim [%s]\nCycle [%s / %s]\n%s [%s]" % [" / ".join(aim),
+		return _t("Aim [%s]\nCycle [%s / %s]\n%s [%s]") % [" / ".join(aim),
 			glyph(spec.target_previous_action, pad), glyph(spec.target_next_action, pad),
-			"Hold to lock" if spec.target_lock_seconds > 0.0 else "Select", glyph(spec.target_confirm_action, pad)]
+			_t("Hold to lock") if spec.target_lock_seconds > 0.0 else _t("Select"), glyph(spec.target_confirm_action, pad)]
 	if spec.family == CADInteractionSpec.Family.CHOICE:
 		return "\n".join(options.map(func(option: CADOption) -> String: return text_for(option, pad)))
 	var title := String(spec.id)
 	for option: CADOption in options:
 		if option.id == spec.option_id:
-			title = option.label
+			title = _t(option.label)
 	if spec.family == CADInteractionSpec.Family.PRESSURE:
-		return "%s\nHold [%s] or [%s]" % [title, glyph(spec.actions[0], pad), glyph(spec.pressure_assist_action, pad)]
+		return _t("%s\nHold [%s] or [%s]") % [title, glyph(spec.actions[0], pad), glyph(spec.pressure_assist_action, pad)]
 	if spec.family == CADInteractionSpec.Family.PATTERN:
 		var steps := PackedStringArray()
 		var start := maxi(0, completed - 1)
@@ -126,12 +135,12 @@ static func interaction_text(gate: CADGate, options: Array, pad: bool, forward :
 		return "%s (%d/%d)\n[%s%s]" % [title, mini(completed + 1, spec.pattern_steps.size()), spec.pattern_steps.size(), " → ".join(steps), " → …" if end < spec.pattern_steps.size() else ""]
 	var verb := ""
 	if spec.family == CADInteractionSpec.Family.PASSIVE:
-		verb = "Do not press "
+		verb = _t("Do not press ")
 	elif spec.family == CADInteractionSpec.Family.GESTURE:
 		if spec.gesture == CADInteractionSpec.Gesture.HOLD:
-			verb = "Hold "
+			verb = _t("Hold ")
 		elif spec.gesture == CADInteractionSpec.Gesture.TIMED_RELEASE:
-			verb = "Hold, then release "
+			verb = _t("Hold, then release ")
 	var keys := PackedStringArray()
 	for action in spec.actions:
 		keys.append(glyph(action, pad))
@@ -156,8 +165,8 @@ static func direction_text(spec: CADInteractionSpec, options: Array, pad: bool, 
 		var sector: int = pair[1]
 		if spec.direction_space == CADInteractionSpec.DirectionSpace.CAMERA:
 			sector = CADDirectionHandler.input_sector(sector, forward, spec.direction_eight_way)
-		var verb := "Hold " if spec.direction_mode == CADInteractionSpec.DirectionMode.HOLD else ""
-		lines.append("%s\n[%s%s]" % [option.label, verb, direction_controls(spec, sector, pad)])
+		var verb := _t("Hold ") if spec.direction_mode == CADInteractionSpec.DirectionMode.HOLD else ""
+		lines.append("%s\n[%s%s]" % [_t(option.label), verb, direction_controls(spec, sector, pad)])
 	return "\n".join(lines)
 
 static func direction_controls(spec: CADInteractionSpec, sector: int, pad: bool) -> String:
@@ -176,7 +185,7 @@ static func direction_controls(spec: CADInteractionSpec, sector: int, pad: bool)
 					found = OS.get_keycode_string(binding.physical_keycode if binding.physical_keycode != KEY_NONE else binding.keycode)
 					break
 			if found == "":
-				return "Unbound"
+				return _t("Unbound")
 			keys.append(found)
 		return " + ".join(keys)
 	var groups: Dictionary = {}
@@ -214,19 +223,19 @@ static func direction_controls(spec: CADInteractionSpec, sector: int, pad: bool)
 		var arrow := direction_arrow(CADDirectionHandler.sector_of(entry.vector, true))
 		if group.begins_with("stick:"):
 			var stick := int(group.get_slice(":", 1))
-			alternatives.append("%s %s" % ["Left stick" if stick == 0 else ("Right stick" if stick == 1 else "Axes %d/%d" % [stick * 2, stick * 2 + 1]), arrow])
+			alternatives.append("%s %s" % [_t("Left stick") if stick == 0 else (_t("Right stick") if stick == 1 else "Axes %d/%d" % [stick * 2, stick * 2 + 1]), arrow])
 		elif entry.dpad:
-			alternatives.append("D-pad " + arrow)
+			alternatives.append(_t("D-pad") + " " + arrow)
 		else:
 			alternatives.append(" + ".join(entry.buttons))
-	return " / ".join(alternatives) if not alternatives.is_empty() else "Unbound"
+	return " / ".join(alternatives) if not alternatives.is_empty() else _t("Unbound")
 
 static func direction_arrow(sector: int) -> String:
 	return ["↑", "↗", "→", "↘", "↓", "↙", "←", "↖"][sector] if sector >= 0 and sector < 8 else "?"
 
 static func text_for(option: CADOption, pad: bool) -> String:
-	var verb := "Hold " if option.hold_seconds > 0.0 else ""
-	return "%s   [%s%s]" % [option.label, verb, glyph(option.action, pad)]
+	var verb := _t("Hold ") if option.hold_seconds > 0.0 else ""
+	return "%s   [%s%s]" % [_t(option.label), verb, glyph(option.action, pad)]
 
 ## The name of the first key or pad button mapped to an action.
 static func glyph(action: StringName, pad: bool) -> String:
@@ -238,9 +247,7 @@ static func glyph(action: StringName, pad: bool) -> String:
 			text = pad_name(event.button_index)
 		elif event is InputEventJoypadMotion:
 			# A stick is named without its direction; a trigger by its own name.
-			text = axis_name(event.axis)
-			if text.ends_with("stick"):
-				text = "Stick"
+			text = axis_name(event.axis) if event.axis > JOY_AXIS_RIGHT_Y else _t("Stick")
 		elif event is InputEventKey:
 			text = OS.get_keycode_string(event.physical_keycode if event.physical_keycode != KEY_NONE else event.keycode)
 		if text != "" and is_pad == pad:

@@ -34,6 +34,8 @@ var _finished := false
 
 func _ready() -> void:
 	layer = 40
+	# Dialogue Manager has already translated the line; do not look it up again.
+	auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	_panel.color = Color(0.05, 0.06, 0.1, 0.8)
 	_panel.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
 	_panel.offset_top = -150
@@ -132,7 +134,7 @@ func choosing() -> bool:
 
 func _show(line: DialogueLine) -> void:
 	var character := cast.find(line.character) if cast != null else null
-	_name.text = character.display_name if character != null else line.character
+	_name.text = tr(character.display_name) if character != null and character.display_name != "" else line.character
 	_name.add_theme_color_override(&"font_color", character.colour if character != null else Color.WHITE)
 	_text.text = line.text
 	Screen.log_line(_name.text, line.text, character.colour if character != null else Color.WHITE)

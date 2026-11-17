@@ -106,7 +106,7 @@ func _process(_delta: float) -> void:
 		if distance <= hotspot.radius and distance < best and available(hotspot):
 			best = distance
 			current = hotspot
-	Screen.hint("[%s]  %s" % [CADPrompt.glyph(&"te_interact", CADInputDevice.using_pad), current.label] if current != null else "")
+	Screen.hint("[%s]  %s" % [CADPrompt.glyph(&"te_interact", CADInputDevice.using_pad), tr(current.label)] if current != null else "")
 
 func _unhandled_input(event: InputEvent) -> void:
 	if current != null and event.is_action_pressed(&"te_interact"):

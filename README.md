@@ -55,7 +55,7 @@ and the `humanoid_kit` and `narrative_characters` packs, which only Last Call's
 ## Check it
 
 ```bash
-python tools/verify.py                               # import, twenty-six suites, episode validation, authoring audit
+python tools/verify.py                               # import, twenty-nine suites, episode validation, authoring audit
 python tools/verify.py --suites lifecycle save        # a focused regression run
 ```
 
