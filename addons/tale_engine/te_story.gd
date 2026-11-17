@@ -46,7 +46,9 @@ func value(key: StringName, fallback: Variant = null) -> Variant:
 
 func put(key: StringName, new_value: Variant) -> void:
 	if manifest != null and not manifest.has_variable(key):
-		push_error("Story: variable '%s' is not declared in the manifest." % key)
+		# Storing it would make the next save disagree with the manifest.
+		TEFault.report("Story: variable '%s' is not declared in the manifest; value ignored." % key)
+		return
 	vars[key] = new_value
 	changed.emit(key, new_value)
 
@@ -62,7 +64,8 @@ func remember(key: StringName, new_value: Variant = true, notice: String = "") -
 ## Log a major choice for the end-of-episode recap.
 func choose(choice_id: StringName, option_id: StringName, notice: String = "") -> void:
 	if manifest != null and not manifest.has_option(choice_id, option_id):
-		push_error("Story: choice '%s' / '%s' is not declared in the manifest." % [choice_id, option_id])
+		TEFault.report("Story: choice '%s' / '%s' is not declared in the manifest; choice ignored." % [choice_id, option_id])
+		return
 	choices[choice_id] = option_id
 	if notice != "":
 		remembered.emit(notice)
@@ -93,8 +96,8 @@ func recap() -> PackedStringArray:
 	return lines
 
 func to_dict() -> Dictionary:
-	var data := {"vars": vars.duplicate(true), "choices": choices.duplicate(), "outcomes": outcomes.duplicate(),
-		"results": results.duplicate(true), "seen": seen.duplicate()}
+	var data := {"vars": vars.duplicate(true), "choices": choices.duplicate(true), "outcomes": outcomes.duplicate(true),
+		"results": results.duplicate(true), "seen": seen.duplicate(true)}
 	if not interactions.is_empty():
 		data["interactions"] = interactions.duplicate(true)
 	if not history.is_empty():

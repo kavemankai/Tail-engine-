@@ -5,6 +5,9 @@ extends Resource
 
 enum Kind { EXPLORE, DIALOGUE, ENCOUNTER, CARD, CUTSCENE }
 enum Card { TITLE, RECAP }
+## Exit names that mean the step broke. "*" does not match them; route one
+## explicitly (on = "error") only if the story has a real fallback.
+const FAULT_EXITS: Array[StringName] = [&"error", &"cancelled"]
 
 @export var id: StringName
 @export var kind := Kind.DIALOGUE
@@ -48,7 +51,8 @@ enum Card { TITLE, RECAP }
 ## The step to go to after ending with `exit_name`, or &"" if nothing matches.
 func next_for(exit_name: StringName) -> StringName:
 	for exit in exits:
-		if (exit.on == &"*" or exit.on == exit_name) and TECondition.test(exit.when):
+		var matches := exit.on == exit_name or (exit.on == &"*" and exit_name not in FAULT_EXITS)
+		if matches and TECondition.test(exit.when):
 			return exit.next
 	return &""
 

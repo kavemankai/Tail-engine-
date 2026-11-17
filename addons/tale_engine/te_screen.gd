@@ -5,6 +5,9 @@ extends CanvasLayer
 
 signal card_closed
 
+const QUIT_LABEL := "Quit to menu"
+const QUIT_CONFIRM := "Quit? Progress since the last checkpoint is lost."
+
 var prompt_label := Label.new()
 var prompt_bar := ProgressBar.new()
 var prompt_backdrop := ColorRect.new()
@@ -19,6 +22,7 @@ var _card_body := Label.new()
 var _pause := ColorRect.new()
 var _pause_hint := Label.new()
 var _pause_resume: Button
+var _pause_quit: Button
 var _settings := ColorRect.new()
 var _settings_focus: Control
 var _settings_return_focus: Control
@@ -85,7 +89,7 @@ func _ready() -> void:
 	pause_box.add_child(_pause_hint)
 	_pause_resume = _button(pause_box, "Resume", set_paused.bind(false))
 	_button(pause_box, "Settings", open_settings)
-	_button(pause_box, "Quit to menu", func() -> void: Flow.stop())
+	_pause_quit = _button(pause_box, QUIT_LABEL, _quit_pressed)
 	_pause.hide()
 	_build_settings()
 	# Fades stay above menus, while transparent fades never intercept input.
@@ -95,6 +99,7 @@ func _ready() -> void:
 	InputDevice.changed.connect(_refresh_pause)
 	_refresh_pause()
 	get_tree().root.focus_exited.connect(_focus_lost)
+	Input.joy_connection_changed.connect(_on_joy_connection_changed)
 
 func _centered_box(parent: Control) -> VBoxContainer:
 	var box := VBoxContainer.new()
@@ -187,9 +192,26 @@ func close_settings() -> void:
 	if is_instance_valid(_settings_return_focus) and _settings_return_focus.is_visible_in_tree():
 		_settings_return_focus.grab_focus()
 
+## The first press asks; the second, while still paused, quits.
+func _quit_pressed() -> void:
+	if _pause_quit.text == QUIT_LABEL:
+		_pause_quit.text = QUIT_CONFIRM
+		return
+	Flow.stop()
+
+## Losing the controller in use pauses the game instead of letting timers,
+## choices and prompts run on with nobody able to answer them.
+func _on_joy_connection_changed(_device: int, connected: bool) -> void:
+	if connected or not Flow.running or not CADInputDevice.using_pad:
+		return
+	if not get_tree().paused:
+		set_paused(true)
+	notice("Controller disconnected.")
+
 func set_paused(paused: bool) -> void:
 	get_tree().paused = paused
 	_pause.visible = paused
+	_pause_quit.text = QUIT_LABEL
 	if paused:
 		_pause_resume.grab_focus()
 	else:

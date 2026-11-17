@@ -14,6 +14,9 @@ signal finished(outcome: StringName)
 signal input_device_changed
 signal interaction_resolved(result: CADResult)
 signal suspension_changed(paused: bool)
+## The controller that owned the open prompt was unplugged. The prompt stays
+## open and any device may take it over; the host should pause the game.
+signal controller_lost(device: int)
 
 enum Gate { NONE, PENDING, OPEN, RESOLVED }
 
@@ -450,7 +453,11 @@ func _pause_interaction_clocks(paused: bool) -> void:
 func _on_joy_connection_changed(device: int, connected: bool) -> void:
 	if not connected and _active and interaction_runner != null and interaction_runner.active \
 			and interaction_runner.router.controller == device:
-		cancel()
+		# Unplugging a pad must not cost the player the scene: free the prompt
+		# for whichever device they pick up next and let the host pause.
+		interaction_runner.router.controller = -1
+		trace_event(&"controller_lost", {"device": device})
+		controller_lost.emit(device)
 
 func _target_snapshot() -> Array[Dictionary]:
 	if not is_instance_valid(_stage) or not is_instance_valid(_stage.target_registry) or _beat == null or _beat.gate == null:

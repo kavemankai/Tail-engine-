@@ -49,7 +49,8 @@ func invalid_saves() -> void:
 	for text: String in ["", "{", "null", "[]"]:
 		_raw_save(text)
 		expect(TESave.read(9).is_empty(), "empty, truncated or non-save JSON rejected: " + text)
-	var cases: Array = [{"version": 1}, {"version": 2}]
+		expect(TESave.last_status == TESave.Status.UNREADABLE, "and reported as unreadable rather than missing")
+	var cases: Array = [{"version": 1}, {"version": 2}, {"version": 0}, {"version": "1"}]
 	for field: String in ["episode", "checkpoints"]:
 		var malformed := valid.duplicate(true)
 		malformed[field] = 7
@@ -70,13 +71,8 @@ func invalid_saves() -> void:
 		var malformed := valid.duplicate(true)
 		malformed.checkpoints[0].story[field] = []
 		cases.append(malformed)
-	for step_id: String in ["removed_step", "aftermath"]:
-		var malformed := valid.duplicate(true)
-		malformed.checkpoints[0].step = step_id
-		cases.append(malformed)
-	var wrong_variable := valid.duplicate(true)
-	wrong_variable.checkpoints[0].story.vars[&"stool_noticed"] = "yes"
-	cases.append(wrong_variable)
+	# Saves that only disagree with the episode's content are repaired, not
+	# rejected; see test_faults.gd.
 	var wrong_result := valid.duplicate(true)
 	wrong_result.checkpoints[0].story.results[&"bar_fight"] = []
 	cases.append(wrong_result)

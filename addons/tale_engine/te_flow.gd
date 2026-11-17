@@ -8,6 +8,9 @@ signal balloon_opened(balloon: TEBalloon)
 signal director_started(director: CADDirector)
 signal hub_entered(hub: TEHub)
 signal episode_finished(last_exit: StringName)
+## The episode stopped because of a fault (missing step, unrouted exit, a step
+## that ended with "error"). Never followed by episode_finished.
+signal episode_failed(reason: String)
 signal _step_done(exit_name: StringName)
 
 const END := &"END"
@@ -24,6 +27,10 @@ var camera := TECamera.new()
 ## Checkpoints reached this playthrough: { step, title, story }.
 var checkpoints: Array = []
 var running := false
+## True after episode_failed until the next episode or checkpoint starts.
+var failed := false
+## Seconds played in this save, shown in the slot list.
+var playtime := 0.0
 ## Save slot written at each checkpoint. -1 turns saving off.
 var save_slot := 0
 
@@ -40,7 +47,12 @@ func _ready() -> void:
 	if OS.is_debug_build():
 		add_child(TEDebug.new())
 
+func _process(delta: float) -> void:
+	if running:
+		playtime += delta
+
 func new_game(new_episode: TEEpisode) -> void:
+	playtime = 0.0
 	_begin(new_episode, null)
 
 ## Start a season at one of its episodes (the first by default).
@@ -48,25 +60,51 @@ func start_season(new_season: TESeason, index := 0) -> void:
 	if new_season == null or index < 0 or index >= new_season.episodes.size():
 		push_error("Flow: season has no episode %d." % index)
 		return
+	playtime = 0.0
 	_begin(new_season.episodes[index], new_season)
 
 ## True when the season has an episode after the current one.
 func has_next_episode() -> bool:
-	return season != null and episode != null and season.next_after(episode) != null
+	return season != null and episode != null and not failed and season.next_after(episode) != null
 
 ## Move to the next episode of the season, carrying choices and variables.
 ## Call after episode_finished. False if there is none.
 func next_episode() -> bool:
 	if not has_next_episode():
 		return false
+	var carry := _carry()
+	_begin(season.next_after(episode), season, carry[0], carry[1])
+	return true
+
+## What the finished episode hands to the next: [carried variables, choice history].
+func _carry() -> Array:
 	var carried := {}
 	for key: StringName in season.carry_variables:
 		if Story.vars.has(key):
 			carried[key] = Story.vars[key]
 	var history: Dictionary = Story.history.duplicate(true)
 	history[episode.id] = Story.choices.duplicate()
-	_begin(season.next_after(episode), season, carried, history)
-	return true
+	return [carried, history]
+
+## Point the save at the start of the next episode, so finishing an episode is
+## not lost when the game is closed before "Next episode" is chosen.
+func _save_season_progress() -> void:
+	if save_slot < 0 or not has_next_episode():
+		return
+	var next := season.next_after(episode)
+	var carry := _carry()
+	var vars := {}
+	for key in next.manifest.variables:
+		vars[StringName(key)] = next.manifest.variables[key]
+	for key: StringName in carry[0]:
+		if next.manifest.has_variable(key):
+			vars[key] = carry[0][key]
+	var story := {"vars": vars, "choices": {}, "outcomes": {}, "results": {}, "seen": {}, "history": carry[1]}
+	var start := [{"step": next.entry, "title": next.title if next.title != "" else String(next.id), "story": story}]
+	if not TESave.write(save_slot, next.resource_path, start,
+			{"path": season.resource_path, "index": season.index_of(next)}, {"playtime": playtime}):
+		push_warning(TESave.last_error)
+		Screen.notice("Could not save your progress. Check available disk space and permissions.")
 
 func _begin(new_episode: TEEpisode, new_season: TESeason, carried := {}, history := {}) -> void:
 	stop()
@@ -87,7 +125,11 @@ func resume() -> bool:
 	episode = load(data["episode"])
 	season = load(data["season"]["path"]) if data.has("season") else null
 	checkpoints = data["checkpoints"]
+	playtime = float(data.get("meta", {}).get("playtime", 0.0))
+	var recovered := TESave.last_status == TESave.Status.RECOVERED
 	rewind(checkpoints.size() - 1)
+	if recovered:
+		Screen.notice("Your save was updated to match this version of the game.")
 	return true
 
 ## Go back to a checkpoint. Later checkpoints are dropped.
@@ -157,13 +199,14 @@ func _play(step_id: StringName) -> void:
 	_generation += 1
 	var generation := _generation
 	running = true
+	failed = false
 	var last_exit := &""
 	var id := step_id
 	while id != END:
 		step = episode.find(id)
 		if step == null:
-			push_error("Flow: no step '%s'." % id)
-			break
+			_fail("Flow: no step '%s'." % id, generation)
+			return
 		if step.checkpoint:
 			_checkpoint()
 		var moved: bool = await _enter_location(step.location, generation)
@@ -186,10 +229,11 @@ func _play(step_id: StringName) -> void:
 			return
 		id = step.next_for(last_exit)
 		if id == &"":
-			push_error("Flow: step '%s' has no exit for '%s'." % [step.id, last_exit])
-			break
+			_fail("Flow: step '%s' has no exit for '%s'." % [step.id, last_exit], generation)
+			return
 	running = false
 	step = null
+	_save_season_progress()
 	await Screen.fade_out()
 	if generation != _generation:
 		return
@@ -197,6 +241,24 @@ func _play(step_id: StringName) -> void:
 	Screen.clear()
 	Screen.fade_in()
 	episode_finished.emit(last_exit)
+
+## Stop the episode because it cannot continue. The player returns to the menu
+## with their last checkpoint intact; the episode is not treated as finished.
+func _fail(reason: String, generation: int) -> void:
+	TEFault.report(reason)
+	running = false
+	failed = true
+	step = null
+	_step_token += 1
+	_clear_props()
+	await Screen.fade_out()
+	if generation != _generation:
+		return
+	_free_location()
+	Screen.clear()
+	Screen.fade_in()
+	Screen.notice("Something went wrong and this scene could not continue. Your last checkpoint is safe.")
+	episode_failed.emit(reason)
 
 func _launch(current: TEStep, token: int) -> void:
 	await get_tree().process_frame
@@ -284,7 +346,7 @@ func _checkpoint() -> void:
 		checkpoints.append(entry)
 	if save_slot >= 0:
 		var season_info := {} if season == null else {"path": season.resource_path, "index": season.index_of(episode)}
-		if not TESave.write(save_slot, episode.resource_path, checkpoints, season_info):
+		if not TESave.write(save_slot, episode.resource_path, checkpoints, season_info, {"playtime": playtime}):
 			push_warning(TESave.last_error)
 			Screen.notice("Could not save your progress. Check available disk space and permissions.")
 
