@@ -1,0 +1,54 @@
+[gd_resource type="Resource" script_class="TEEpisode" format=3]
+
+[ext_resource type="Script" path="res://addons/tale_engine/te_character.gd" id="1_b3df0"]
+[ext_resource type="Script" path="res://addons/tale_engine/te_cast.gd" id="2_ejeqo"]
+[ext_resource type="Script" path="res://addons/tale_engine/te_story_manifest.gd" id="3_vij04"]
+[ext_resource type="Script" path="res://addons/tale_engine/te_episode.gd" id="4_l7783"]
+[ext_resource type="Script" path="res://addons/tale_engine/te_step.gd" id="5_ky6ni"]
+[ext_resource type="Script" path="res://addons/tale_engine/te_exit.gd" id="6_erxt0"]
+
+[sub_resource type="Resource" id="Resource_ceyhg"]
+script = ExtResource("2_ejeqo")
+
+[sub_resource type="Resource" id="Resource_8cuwj"]
+script = ExtResource("3_vij04")
+variables = {
+&"trusted": false
+}
+choices = {
+&"gift": {
+&"keep": "x"
+}
+}
+
+[sub_resource type="Resource" id="Resource_kf467"]
+script = ExtResource("6_erxt0")
+next = &"END"
+
+[sub_resource type="Resource" id="Resource_x676h"]
+script = ExtResource("5_ky6ni")
+id = &"card"
+kind = 3
+title = ""
+location = ""
+cast = {}
+checkpoint = true
+exits = Array[ExtResource("6_erxt0")]([SubResource("Resource_kf467")])
+cue = ""
+shot = &""
+stage = &""
+roles = {}
+hub = &""
+card = 0
+heading = "two"
+body = ""
+
+[resource]
+script = ExtResource("4_l7783")
+id = &"two"
+title = "two"
+manifest = SubResource("Resource_8cuwj")
+cast = SubResource("Resource_ceyhg")
+player = &""
+entry = &"card"
+steps = Array[ExtResource("5_ky6ni")]([SubResource("Resource_x676h")])

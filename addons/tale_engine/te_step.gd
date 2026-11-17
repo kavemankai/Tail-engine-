@@ -1,8 +1,9 @@
+@tool
 class_name TEStep
 extends Resource
 ## One node of the episode graph.
 
-enum Kind { EXPLORE, DIALOGUE, ENCOUNTER, CARD }
+enum Kind { EXPLORE, DIALOGUE, ENCOUNTER, CARD, CUTSCENE }
 enum Card { TITLE, RECAP }
 
 @export var id: StringName
@@ -34,6 +35,10 @@ enum Card { TITLE, RECAP }
 
 @export_group("Explore")
 @export var hub: StringName
+
+@export_group("Cutscene")
+## Played in order. No input; the step ends with exit "end".
+@export var cues: Array[TEShotCue] = []
 
 @export_group("Card")
 @export var card := Card.TITLE

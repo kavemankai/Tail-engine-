@@ -301,7 +301,7 @@ func director_contract() -> void:
 	expect(not invalid.validation_errors().is_empty(), "typed grade routes are checked against the existing graph")
 
 func lab_contract() -> void:
-	var episode: TEEpisode = load("res://content/qte_lab/episode.tres")
+	var episode: TEEpisode = load("res://examples/last_call/qte_lab/episode.tres")
 	expect(TEValidator.check(episode).is_empty(), "resource-authored lab episode validates")
 	Flow.save_slot = -1
 	Flow.new_game(episode)

@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://examples/last_call/humanoid/demo_capture.gd" id="1"]
+
+[node name="AutomatedQteCapture" type="Node"]
+script = ExtResource("1")

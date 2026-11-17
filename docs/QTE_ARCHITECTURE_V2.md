@@ -51,7 +51,7 @@ This is a **static code assessment**, not a claim that each feature passed a phy
 Evidence files:
 - `addons/cinematic_action_director/{cad_director,cad_gate,cad_option,cad_sequence,cad_beat,cad_stage,cad_prompt,cad_input_device}.gd`
 - `addons/tale_engine/{te_flow,te_story,te_actor,te_balloon,te_settings}.gd`
-- `content/episode_0/encounters/{bar_fight,alley_chase}/encounter.tres`
+- `examples/last_call/episode_0/encounters/{bar_fight,alley_chase}/encounter.tres`
 - `tests/{test_cad,test_flow,test_lifecycle,test_save}.gd`
 
 **Existing CI blocker:** The current default-branch GitHub Actions job fails during Godot's **headless editor import**, with `WARNING: ObjectDB instances leaked at exit`, before Godot suites or Windows export execute. The Python unit tests pass. Diagnose leak with verbose import and preserve strict checks; do not suppress the warning to get a green build without investigating. Run: https://github.com/kavemankai/Tail-engine-/actions/runs/43836715367

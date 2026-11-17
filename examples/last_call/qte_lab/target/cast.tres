@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="TECast" format=3]
+
+[ext_resource type="Script" path="res://addons/tale_engine/te_cast.gd" id="cast"]
+[ext_resource type="Script" path="res://addons/tale_engine/te_character.gd" id="char"]
+
+[ext_resource type="PackedScene" path="res://examples/last_call/qte_lab/target/actor.tscn" id="actor"]
+
+[sub_resource type="Resource" id="player"]
+script = ExtResource("char")
+id = &"player"
+display_name = "You"
+actor_scene = ExtResource("actor")
+colour = Color(0.32, 0.73, 0.78, 1)
+
+[sub_resource type="Resource" id="stranger"]
+script = ExtResource("char")
+id = &"stranger"
+display_name = "Stranger"
+colour = Color(0.84, 0.51, 0.38, 1)
+
+[sub_resource type="Resource" id="bartender"]
+script = ExtResource("char")
+id = &"bartender"
+display_name = "Bartender"
+colour = Color(0.62, 0.6, 0.35, 1)
+
+[resource]
+script = ExtResource("cast")
+characters = Array[ExtResource("char")]([SubResource("player"), SubResource("stranger"), SubResource("bartender")])

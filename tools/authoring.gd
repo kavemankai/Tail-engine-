@@ -9,7 +9,7 @@ func audit() -> void:
 	var paths := OS.get_cmdline_user_args()
 	var defaults := paths.is_empty()
 	if defaults:
-		paths = PackedStringArray(load("res://content/qte_lab/lab.gd").EXAMPLES.values())
+		paths = PackedStringArray(load("res://examples/last_call/qte_lab/lab.gd").EXAMPLES.values())
 	var reports: Array[Dictionary] = []
 	var failures := 0
 	for path in paths:
@@ -20,7 +20,7 @@ func audit() -> void:
 		var resource := load(path)
 		var report := {"path": path, "errors": PackedStringArray(), "warnings": PackedStringArray(), "encounters": []}
 		if resource is TEEpisode or (defaults and resource is CADSequence):
-			var episode: TEEpisode = resource if resource is TEEpisode else load("res://content/qte_lab/lab.gd").episode_for(path)
+			var episode: TEEpisode = resource if resource is TEEpisode else load("res://examples/last_call/qte_lab/lab.gd").episode_for(path)
 			report.errors = TEValidator.check(episode)
 			for step in episode.steps:
 				if step != null and step.kind == TEStep.Kind.ENCOUNTER:

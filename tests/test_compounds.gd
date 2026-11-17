@@ -2,9 +2,9 @@ extends TestSuite
 ## Templates build ordinary CADSequence graphs. Integration tests run the same
 ## Flow, Story, actors and stages used by Episode 0, with bounded suite watchdogs.
 
-const TEMPLATE := preload("res://content/qte_lab/direction/counter.template.tres")
-const EPISODE := preload("res://content/qte_lab/direction/counter_episode.tres")
-const VARIANT := preload("res://content/qte_lab/direction/episode_0_directional.tres")
+const TEMPLATE := preload("res://examples/last_call/qte_lab/direction/counter.template.tres")
+const EPISODE := preload("res://examples/last_call/qte_lab/direction/counter_episode.tres")
+const VARIANT := preload("res://examples/last_call/qte_lab/direction/episode_0_directional.tres")
 
 func run() -> void:
 	template_contract()
@@ -49,7 +49,7 @@ func template_contract() -> void:
 	DirAccess.remove_absolute(path)
 
 func pose_contract() -> void:
-	var library: AnimationLibrary = load("res://content/qte_lab/direction/timelines.tres")
+	var library: AnimationLibrary = load("res://examples/last_call/qte_lab/direction/timelines.tres")
 	for role: String in ["Player", "Aggressor"]:
 		for pair: Array in [["telegraph", "evade"], ["telegraph", "hit"], ["telegraph", "guard"],
 				["evade", "counter_ready"], ["counter_ready", "counter_land"], ["counter_ready", "recover"]]:

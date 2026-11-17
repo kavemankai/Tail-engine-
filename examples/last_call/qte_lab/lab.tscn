@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://examples/last_call/qte_lab/lab.gd" id="1"]
+
+[node name="QTEInteractionLab" type="CanvasLayer"]
+script = ExtResource("1")

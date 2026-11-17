@@ -1,7 +1,7 @@
 extends TestSuite
 ## Checkpoints, resume and rewind.
 
-const EPISODE := preload("res://content/episode_0/episode.tres")
+const EPISODE := preload("res://examples/last_call/episode_0/episode.tres")
 
 func run() -> void:
 	invalid_saves()
@@ -54,7 +54,7 @@ func invalid_saves() -> void:
 		var malformed := valid.duplicate(true)
 		malformed[field] = 7
 		cases.append(malformed)
-	for episode_path: String in ["res://missing.tres", "res://content/main.tscn"]:
+	for episode_path: String in ["res://missing.tres", "res://examples/last_call/main.tscn"]:
 		var malformed := valid.duplicate(true)
 		malformed.episode = episode_path
 		cases.append(malformed)

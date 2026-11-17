@@ -3,7 +3,7 @@ from pathlib import Path
 from build_pattern_examples import ext, names, resource
 
 ROOT = Path(__file__).resolve().parents[1]
-DEST = ROOT / 'content/qte_lab/cinematic'
+DEST = ROOT / 'examples/last_call/qte_lab/cinematic'
 
 
 def build():
@@ -35,17 +35,17 @@ def build():
         text += resource(id,'beat',f'id = &"{id}"\ntimeline = &"{timeline}"\n{fields}')
     text += '\n[resource]\nscript = ExtResource("seq")\nentry = &"opening"\nbeats = Array[ExtResource("beat")]([' + ','.join(f'SubResource("{id}")' for id,_,_ in beats) + '])\noutcomes = Array[StringName]([&"restrained",&"yielded",&"escaped"])\nactor_statuses = Dictionary[StringName,StringName]({&"Player": &"ready", &"Aggressor": &"ready"})\nprop_states = Dictionary[StringName,bool]({&"bottle": true})\n'
     (DEST/'encounter.tres').write_text(text)
-    stage=(ROOT/'content/qte_lab/target/stage.tscn').read_text().replace('target/timelines.tres','cinematic/timelines.tres').replace('TargetStage','CinematicStage')
+    stage=(ROOT/'examples/last_call/qte_lab/target/stage.tscn').read_text().replace('target/timelines.tres','cinematic/timelines.tres').replace('TargetStage','CinematicStage')
     stage=stage.replace('[sub_resource type="CylinderMesh"', ext('Script','addons/cinematic_action_director/cad_bark.gd','bark') + '\n[sub_resource type="CylinderMesh"',1)
     stage=stage.replace('[node name="CinematicStage"', '[sub_resource type="Resource" id="question"]\nscript = ExtResource("bark")\nid = &"question"\nspeaker = &"Aggressor"\ntext = "Enough. Will you let me walk away?"\nseconds = 3.5\n\n[node name="CinematicStage"',1)
     stage=stage.replace('target_registry = NodePath("Targets")','target_registry = NodePath("Targets")\nbarks = Array[ExtResource("bark")]([SubResource("question")])',1)
     (DEST/'stage.tscn').write_text(stage)
-    arena=(ROOT/'content/qte_lab/target/arena.tscn').read_text().replace('target/stage.tscn','cinematic/stage.tscn').replace('Target','Cinematic')
+    arena=(ROOT/'examples/last_call/qte_lab/target/arena.tscn').read_text().replace('target/stage.tscn','cinematic/stage.tscn').replace('Target','Cinematic')
     (DEST/'arena.tscn').write_text(arena)
-    manifest=(ROOT/'content/qte_lab/target/manifest.tres').read_text().replace('&"stool_noticed": false','&"stool_noticed": true')
+    manifest=(ROOT/'examples/last_call/qte_lab/target/manifest.tres').read_text().replace('&"stool_noticed": false','&"stool_noticed": true')
     (DEST/'manifest.tres').write_text(manifest)
-    episode=(ROOT/'content/qte_lab/target/selection_episode.tres').read_text().replace('target/manifest.tres','cinematic/manifest.tres').replace('target/selection.tres','cinematic/encounter.tres').replace('target/arena.tscn','cinematic/arena.tscn').replace('TargetStage','CinematicStage')
-    episode=episode.replace('[sub_resource type="Resource" id="exit"]',ext('DialogueResource','content/qte_lab/cinematic/aftermath.dialogue','dialogue')+'\n[sub_resource type="Resource" id="exit"]',1).replace('next = &"END"','next = &"aftermath"',1).replace('id = &"lab"\nkind = 2','id = &"lab"\nkind = 2\ncheckpoint = true',1)
+    episode=(ROOT/'examples/last_call/qte_lab/target/selection_episode.tres').read_text().replace('target/manifest.tres','cinematic/manifest.tres').replace('target/selection.tres','cinematic/encounter.tres').replace('target/arena.tscn','cinematic/arena.tscn').replace('TargetStage','CinematicStage')
+    episode=episode.replace('[sub_resource type="Resource" id="exit"]',ext('DialogueResource','examples/last_call/qte_lab/cinematic/aftermath.dialogue','dialogue')+'\n[sub_resource type="Resource" id="exit"]',1).replace('next = &"END"','next = &"aftermath"',1).replace('id = &"lab"\nkind = 2','id = &"lab"\nkind = 2\ncheckpoint = true',1)
     episode=episode.replace('[resource]\nscript = ExtResource("ep")','''[sub_resource type="Resource" id="after_exit"]
 script = ExtResource("exit")
 on = &"*"

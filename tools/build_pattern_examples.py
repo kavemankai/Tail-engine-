@@ -2,7 +2,7 @@
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-DEST = ROOT / 'content/qte_lab/pattern'
+DEST = ROOT / 'examples/last_call/qte_lab/pattern'
 
 
 def ext(kind, path, id):
@@ -18,7 +18,7 @@ def resource(id, script, fields):
 
 
 def episode(name, compound=False):
-    source = ROOT / 'content/qte_lab/direction' / ('counter_episode.tres' if compound else 'choice_episode.tres')
+    source = ROOT / 'examples/last_call/qte_lab/direction' / ('counter_episode.tres' if compound else 'choice_episode.tres')
     text = source.read_text().replace('direction/arena.tscn', 'pattern/arena.tscn').replace('DirectionStage', 'PatternStage')
     text = text.replace('direction/counter.template.tres' if compound else 'direction/choice.tres', f'pattern/{name}.tres')
     (DEST / f'{name}_episode.tres').write_text(text)
@@ -51,9 +51,9 @@ def build():
         (DEST / f'{name}.tres').write_text(text)
         episode(name, True)
     # Reuse the stage layout; all movement and cues live in this local library.
-    stage = (ROOT / 'content/qte_lab/direction/stage.tscn').read_text().replace('direction/timelines.tres', 'pattern/timelines.tres').replace('DirectionStage', 'PatternStage')
+    stage = (ROOT / 'examples/last_call/qte_lab/direction/stage.tscn').read_text().replace('direction/timelines.tres', 'pattern/timelines.tres').replace('DirectionStage', 'PatternStage')
     (DEST / 'stage.tscn').write_text(stage)
-    arena = (ROOT / 'content/qte_lab/direction/arena.tscn').read_text().replace('direction/stage.tscn', 'pattern/stage.tscn').replace('Direction', 'Pattern')
+    arena = (ROOT / 'examples/last_call/qte_lab/direction/arena.tscn').read_text().replace('direction/stage.tscn', 'pattern/stage.tscn').replace('Direction', 'Pattern')
     (DEST / 'arena.tscn').write_text(arena)
     clips = {
         'ready': (0.6, True, 'guard', None, 0.0),

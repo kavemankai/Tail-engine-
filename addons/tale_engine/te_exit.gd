@@ -1,3 +1,4 @@
+@tool
 class_name TEExit
 extends Resource
 ## One way out of a step. The first exit that matches wins.

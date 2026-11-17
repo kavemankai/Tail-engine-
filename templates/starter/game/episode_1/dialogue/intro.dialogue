@@ -1,0 +1,14 @@
+~ greeting
+friend: Hey. You made it. [#shot=wide] [ID:s1_001]
+friend: Well? [#timed=6, #shot=wide] [ID:s1_002]
+- Good to see you. [#opt=kind]
+	do Story.choose("greeting", "kind")
+	do Story.remember("was_kind", true, "Your friend will remember that.")
+	friend: Same. Come in. [ID:s1_003]
+- Let us get this over with. [#opt=cold]
+	do Story.choose("greeting", "cold")
+	friend: Right. Okay. [ID:s1_004]
+- ... [#silence, #opt=silent]
+	do Story.choose("greeting", "silent")
+	friend: Not a talker today. [ID:s1_005]
+=> END

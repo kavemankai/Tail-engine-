@@ -242,14 +242,14 @@ func lifecycle_matrix() -> void:
 		expect(owned != null and owned.last_result.grade == &"cancelled", "scene unloading cancels handler")
 
 func demo_contract() -> void:
-	var lab: GDScript = load("res://content/qte_lab/lab.gd")
+	var lab: GDScript = load("res://examples/last_call/qte_lab/lab.gd")
 	var examples: Dictionary = lab.EXAMPLES
 	for path: String in examples.values():
 		var episode: TEEpisode = lab.episode_for(path)
 		expect(episode != null and TEValidator.check(episode).is_empty(), "resource-authored example validates: " + path.get_file())
-	var stage: CADStage = preload("res://content/episode_0/encounters/bar_fight/stage.tscn").instantiate()
+	var stage: CADStage = preload("res://examples/last_call/episode_0/encounters/bar_fight/stage.tscn").instantiate()
 	add_child(stage)
-	var invalid: CADSequence = load("res://content/qte_lab/parry.tres").duplicate(true)
+	var invalid: CADSequence = load("res://examples/last_call/qte_lab/parry.tres").duplicate(true)
 	invalid.beats[0].gate.interaction.timing_marker = &"missing_contact"
 	expect(not stage.validation_errors(invalid).is_empty(), "stage validates authored timing marker references")
 	stage.free()
@@ -264,13 +264,13 @@ func minimal_rig_contract() -> void:
 	npc.setup(character)
 	add_child(actor)
 	add_child(npc)
-	var stage: CADStage = preload("res://content/episode_0/encounters/bar_fight/stage.tscn").instantiate()
+	var stage: CADStage = preload("res://examples/last_call/episode_0/encounters/bar_fight/stage.tscn").instantiate()
 	add_child(stage)
 	stage.bind(&"Player", actor)
 	stage.bind(&"Aggressor", npc)
 	var director := CADDirector.new()
 	add_child(director)
-	expect(director.begin(load("res://content/qte_lab/reaction.tres"), stage), "existing stage accepts AnimationTree actor adapters")
+	expect(director.begin(load("res://examples/last_call/qte_lab/reaction.tres"), stage), "existing stage accepts AnimationTree actor adapters")
 	await frames(3)
 	expect(&"windup" in npc.clips, "timeline drives the corresponding NPC animation through cad_act")
 	stage.act(&"Player", &"dodge")

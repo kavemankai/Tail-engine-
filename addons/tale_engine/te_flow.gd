@@ -14,9 +14,13 @@ const END := &"END"
 const PLACEHOLDER := preload("res://addons/tale_engine/placeholder_actor.tscn")
 
 var episode: TEEpisode
+## The season being played, or null for a standalone episode.
+var season: TESeason
 var step: TEStep
 var location: TELocation
 var actors: Dictionary[StringName, TEActor] = {}
+## Camera direction: cuts, blends, shake.
+var camera := TECamera.new()
 ## Checkpoints reached this playthrough: { step, title, story }.
 var checkpoints: Array = []
 var running := false
@@ -32,14 +36,46 @@ var latest_trace: Dictionary = {}
 var _hub: TEHub
 
 func _ready() -> void:
+	add_child(camera)
 	if OS.is_debug_build():
 		add_child(TEDebug.new())
 
 func new_game(new_episode: TEEpisode) -> void:
+	_begin(new_episode, null)
+
+## Start a season at one of its episodes (the first by default).
+func start_season(new_season: TESeason, index := 0) -> void:
+	if new_season == null or index < 0 or index >= new_season.episodes.size():
+		push_error("Flow: season has no episode %d." % index)
+		return
+	_begin(new_season.episodes[index], new_season)
+
+## True when the season has an episode after the current one.
+func has_next_episode() -> bool:
+	return season != null and episode != null and season.next_after(episode) != null
+
+## Move to the next episode of the season, carrying choices and variables.
+## Call after episode_finished. False if there is none.
+func next_episode() -> bool:
+	if not has_next_episode():
+		return false
+	var carried := {}
+	for key: StringName in season.carry_variables:
+		if Story.vars.has(key):
+			carried[key] = Story.vars[key]
+	var history: Dictionary = Story.history.duplicate(true)
+	history[episode.id] = Story.choices.duplicate()
+	_begin(season.next_after(episode), season, carried, history)
+	return true
+
+func _begin(new_episode: TEEpisode, new_season: TESeason, carried := {}, history := {}) -> void:
 	stop()
 	episode = new_episode
+	season = new_season
 	checkpoints = []
 	Story.reset(episode.manifest)
+	if not carried.is_empty() or not history.is_empty():
+		Story.apply_carry(carried, history)
 	_play(episode.entry)
 
 ## Continue from the newest checkpoint in the save slot. False if there is none.
@@ -49,6 +85,7 @@ func resume() -> bool:
 		return false
 	stop()
 	episode = load(data["episode"])
+	season = load(data["season"]["path"]) if data.has("season") else null
 	checkpoints = data["checkpoints"]
 	rewind(checkpoints.size() - 1)
 	return true
@@ -69,6 +106,7 @@ func stop() -> void:
 	_step_done.emit(&"cancelled")
 	running = false
 	step = null
+	camera.stop()
 	_clear_props()
 	_free_location()
 	Audio.stop_voice()
@@ -172,6 +210,9 @@ func _launch(current: TEStep, token: int) -> void:
 			exit_name = await _encounter(current)
 		TEStep.Kind.EXPLORE:
 			exit_name = await _explore(current)
+		TEStep.Kind.CUTSCENE:
+			await _cutscene(current, token)
+			exit_name = &"end"
 		TEStep.Kind.CARD:
 			var body := current.body
 			if current.card == TEStep.Card.RECAP:
@@ -242,7 +283,8 @@ func _checkpoint() -> void:
 	else:
 		checkpoints.append(entry)
 	if save_slot >= 0:
-		if not TESave.write(save_slot, episode.resource_path, checkpoints):
+		var season_info := {} if season == null else {"path": season.resource_path, "index": season.index_of(episode)}
+		if not TESave.write(save_slot, episode.resource_path, checkpoints, season_info):
 			push_warning(TESave.last_error)
 			Screen.notice("Could not save your progress. Check available disk space and permissions.")
 
@@ -282,16 +324,42 @@ func _place_cast() -> void:
 func _on_line_shown(line: DialogueLine) -> void:
 	for id: StringName in actors:
 		actors[id].speak(id == StringName(line.character))
-	_cut(StringName(line.get_tag_value("shot")))
+	Audio.mouth_target = actors.get(StringName(line.character))
+	_cut(StringName(line.get_tag_value("shot")), line.get_tag_value("blend").to_float())
+	var shake_amount := line.get_tag_value("shake").to_float()
+	if shake_amount > 0.0:
+		camera.shake(shake_amount)
 
-func _cut(shot: StringName) -> void:
+## Go to Shots/<shot>. A blend above zero moves the camera there instead of cutting.
+func _cut(shot: StringName, blend := 0.0) -> void:
 	if shot == &"" or location == null:
 		return
-	var camera := location.shot(shot)
-	if camera != null:
-		camera.make_current()
+	var target := location.shot(shot)
+	if target != null:
+		camera.blend_to(target, blend)
 	else:
 		push_warning("Flow: location has no shot '%s'." % shot)
+
+func _cutscene(current: TEStep, token: int) -> void:
+	for cue in current.cues:
+		if token != _step_token:
+			return
+		_cut(cue.shot, cue.blend)
+		if cue.shake > 0.0:
+			camera.shake(cue.shake)
+		for id: StringName in actors:
+			actors[id].speak(id == cue.speaker)
+		Audio.mouth_target = actors.get(cue.speaker)
+		for id: StringName in cue.clips:
+			if actors.has(id):
+				actors[id].cad_act(cue.clips[id])
+		Screen.caption(cue.caption)
+		var seconds := cue.hold * (Settings.text_hold_scale if cue.caption != "" else 1.0)
+		await get_tree().create_timer(maxf(seconds, 0.0)).timeout
+	if token == _step_token:
+		for actor: TEActor in actors.values():
+			actor.speak(false)
+		Screen.caption("")
 
 func _clear_props() -> void:
 	# Cancelling resumes awaiting functions synchronously; detach first so they

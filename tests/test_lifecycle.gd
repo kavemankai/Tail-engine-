@@ -1,7 +1,7 @@
 extends TestSuite
 ## Interrupt real gameplay modes, including their outstanding async waits.
 
-const EPISODE := preload("res://content/episode_0/episode.tres")
+const EPISODE := preload("res://examples/last_call/episode_0/episode.tres")
 
 func run() -> void:
 	Flow.save_slot = -1

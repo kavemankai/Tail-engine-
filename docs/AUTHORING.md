@@ -1,6 +1,6 @@
 # Authoring an episode
 
-An episode is a folder of data. `content/episode_0` is the working example; copy it to start a new one.
+An episode is a folder of data. `examples/last_call/episode_0` is the working example; copy it to start a new one.
 
 ```
 episode.tres      the step graph
@@ -11,7 +11,7 @@ locations/*.tscn
 encounters/<name>/stage.tscn + encounter.tres
 ```
 
-Point `content/main.gd` at your `episode.tres`. Run `tests/validate.tscn` after every change; it reports missing names before you have to play to find them.
+Point `examples/last_call/main.gd` at your `episode.tres`. Run `tests/validate.tscn` after every change; it reports missing names before you have to play to find them.
 
 ## The step graph
 
@@ -104,7 +104,7 @@ Built with the action layer; [INTEGRATION.md](INTEGRATION.md) is the full refere
 
 ## Testing a route
 
-Choose **Interaction lab** on the title menu, or open `content/qte_lab/lab.tscn`.
+Choose **Interaction lab** on the title menu, or open `examples/last_call/qte_lab/lab.tscn`.
 The reaction, hold, timed-release, chord, parry and restraint `.tres` resources use
 the existing bar stage's windup, dodge, hit and back-off timelines. Parry grades
 have separately named perfect, success, partial and failure routes. `episode.tres`
@@ -125,7 +125,7 @@ Set an encounter step's `compound` to a `CADCounterattackTemplate` resource inst
 of setting `sequence`. Author its defence/counter gates and six timeline names;
 Flow compiles a fresh ordinary CADSequence when entering the encounter. The
 validator checks both the graph and the stage. See
-`content/qte_lab/direction/counter.template.tres` and its episode for the complete
+`examples/last_call/qte_lab/direction/counter.template.tres` and its episode for the complete
 example. Missing the counter follows recovery and preserves the defence result.
 
 Direction specs use four remappable actions, a sector, thresholds and flick/hold/
@@ -134,10 +134,10 @@ Input-relative examples use the same camera geography for both shots; camera-
 relative specs freeze a planar frame when opening the gate. See INTEGRATION.md
 for sector IDs, settling/rearm semantics, and template grade-route constraints.
 
-`content/episode_0/encounters/*/directional.tres` are opt-in variants. The bar uses
+`examples/last_call/episode_0/encounters/*/directional.tres` are opt-in variants. The bar uses
 true directional dodge; the alley's high/low fork uses Direction selection. Their
 original graphs, flag-conditioned stool/bartender consequences and outcomes are
-preserved. `content/qte_lab/direction/episode_0_directional.tres` exercises them
+preserved. `examples/last_call/qte_lab/direction/episode_0_directional.tres` exercises them
 through the full story graph without changing the default episode. Run validation
 and the `compounds` suite after editing these resources.
 
@@ -257,3 +257,52 @@ validation. Engine errors and ObjectDB leaks are still failures. The test harnes
 also rejects a non-instantiable suite immediately instead of waiting for the outer
 timeout. New stories can reuse the examples and templates without changing QTE
 runtime; live simultaneous Dialogue Manager balloons remain a deferred extension.
+
+## Seasons
+
+A season (`TESeason`) is an ordered list of episodes plus the variables that carry forward:
+
+```
+season.tres
+  episodes         [episode_1.tres, episode_2.tres, ...]
+  carry_variables  [&"trusted", ...]
+```
+
+Point the title menu at it (`season = ...` on a `TETitleMenu`) or call `Flow.start_season(season)`. When an episode finishes, `Flow.next_episode()` starts the next one (the menu shows **Next episode**).
+
+- Variables in `carry_variables` copy into the next episode if its manifest declares them too.
+- Major choices of earlier episodes are readable with `Story.prior("episode_1", "gift")`, which returns the option id or an empty string. Use it in dialogue conditions: `if Story.prior("episode_1", "gift") == "keep"`.
+- The next episode's recap starts fresh.
+- Saves record the season, so Continue and rewind return to the right episode with carried state intact. The title menu cycles `slot_count` save slots.
+
+## Camera and cutscenes
+
+Locations supply cameras as `Shots/<name>`. Use `TEShot` instead of a plain `Camera3D` to author a slow move: `drift` (local-space translation), `fov_drift` and `drift_time` play while the shot is active and reset when another takes over.
+
+In dialogue, tags on a line direct the camera:
+
+```
+friend: We need to go. [#shot=close, #blend=0.6, #shake=0.05]
+```
+
+- `shot` cuts to that shot.
+- `blend` (seconds) flies the camera there from the current view instead of cutting.
+- `shake` is an amplitude in metres that fades out over about half a second.
+
+A **Cutscene** step (`kind = 4`) plays a list of `TEShotCue` resources with no input: each cue has a `shot`, `blend`, `hold`, optional `shake`, a `speaker` (marks that actor as talking), a `caption`, and `clips` (character id to logical clip, played as the cue starts). It ends with the exit `end`. The validator checks that every cue's shot, speaker and character exist.
+
+From code, `Flow.camera` (`TECamera`) offers `cut_to`, `blend_to` and `shake`.
+
+## Editor tooling
+
+The Tale Engine plugin (enabled in `project.godot`) adds a **Tale Engine** panel at the bottom of the editor. Select an `episode.tres` and the panel shows its step graph: one node per step, one output per exit, and an END node. Clicking a node selects that step in the inspector. **Add step** appends a step of the chosen kind and saves the episode. **Validate** runs the same validator as `tests/validate.tscn` in a headless game process and lists the problems.
+
+The same check from a terminal: `godot --headless --path . res://addons/tale_engine/editor/validate_cli.tscn -- res://path/to/episode.tres`.
+
+## Voice and lip-sync
+
+Give a character a `voice_dir` and put recordings there named after the dialogue line id: `e0_007.ogg` (or `.wav`, `.mp3`) for `[ID:e0_007]`. Missing files are fine; the line just plays on its reading timer.
+
+- **Recording script:** `godot --headless --path . res://addons/tale_engine/editor/export_voice_cli.tscn -- res://path/episode.tres script.csv` writes one row per line (id, speaker, text, recorded yes/no, expected file).
+- **Coverage:** `TEVoice.coverage(episode)` returns `[recorded, total]`; `tests/validate.tscn` prints it.
+- **Lip-sync:** voice plays on a `Voice` audio bus. While a line plays, its speaker's `set_mouth_open(0..1)` is called every frame with the smoothed loudness. The default `TEActor` drives a mouth blend shape named `jawOpen`, `mouthOpen`, `mouth_open`, `viseme_aa` or similar on any mesh under the actor. Override `set_mouth_open` for jaw bones, texture swaps or sprite mouths.

@@ -3,11 +3,11 @@ from pathlib import Path
 from build_pattern_examples import ext, names, resource
 
 ROOT = Path(__file__).resolve().parents[1]
-DEST = ROOT / 'content/qte_lab/target'
+DEST = ROOT / 'examples/last_call/qte_lab/target'
 
 
 def build():
-    (DEST / 'manifest.tres').write_text((ROOT / 'content/episode_0/manifest.tres').read_text().replace('variables = {', 'variables = {\n&"saw_bottle": true,', 1))
+    (DEST / 'manifest.tres').write_text((ROOT / 'examples/last_call/episode_0/manifest.tres').read_text().replace('variables = {', 'variables = {\n&"saw_bottle": true,', 1))
     common = ''.join(ext('Script', f'addons/cinematic_action_director/{file}.gd', id) for id, file in [
         ('seq', 'cad_sequence'), ('beat', 'cad_beat'), ('gate', 'cad_gate'), ('option', 'cad_option'), ('spec', 'cad_interaction_spec')])
     for name in ['selection', 'tracking', 'grab']:
@@ -30,13 +30,13 @@ def build():
                 text += resource(beat, 'beat', f'id = &"{beat}"\ntimeline = &"{timeline}"\n' + ('gate = SubResource("gate")' if beat == 'input' else f'next = &"{next}"'))
             text += '\n[resource]\nscript = ExtResource("seq")\nentry = &"input"\nbeats = Array[ExtResource("beat")]([SubResource("input"), SubResource("selected"), SubResource("recover")])\noutcomes = Array[StringName]([&"completed", &"interrupted"])\n'
         (DEST / f'{name}.tres').write_text(text)
-        source = ROOT / 'content/qte_lab/direction' / ('counter_episode.tres' if name == 'grab' else 'choice_episode.tres')
+        source = ROOT / 'examples/last_call/qte_lab/direction' / ('counter_episode.tres' if name == 'grab' else 'choice_episode.tres')
         episode = source.read_text().replace('direction/arena.tscn', 'target/arena.tscn').replace('DirectionStage', 'TargetStage').replace('direction/counter.template.tres' if name == 'grab' else 'direction/choice.tres', f'target/{name}.tres')
-        episode = episode.replace('content/episode_0/cast.tres', 'content/qte_lab/target/cast.tres')
+        episode = episode.replace('examples/last_call/episode_0/cast.tres', 'examples/last_call/qte_lab/target/cast.tres')
         # Gate eligibility remains read-only and comes from narrative state.
-        episode = episode.replace('content/episode_0/manifest.tres', 'content/qte_lab/target/manifest.tres')
+        episode = episode.replace('examples/last_call/episode_0/manifest.tres', 'examples/last_call/qte_lab/target/manifest.tres')
         (DEST / f'{name}_episode.tres').write_text(episode)
-    stage = (ROOT / 'content/qte_lab/direction/stage.tscn').read_text().replace('direction/timelines.tres', 'target/timelines.tres').replace('DirectionStage', 'TargetStage')
+    stage = (ROOT / 'examples/last_call/qte_lab/direction/stage.tscn').read_text().replace('direction/timelines.tres', 'target/timelines.tres').replace('DirectionStage', 'TargetStage')
     stage = stage.replace('[node name="TargetStage"', ext('Script', 'addons/cinematic_action_director/cad_target_registry.gd', 'registry') + '\n[sub_resource type="CylinderMesh" id="bottle"]\ntop_radius = 0.06\nbottom_radius = 0.07\nheight = 0.3\n\n[sub_resource type="BoxMesh" id="crate"]\nsize = Vector3(0.3, 0.3, 0.3)\n\n[sub_resource type="SphereMesh" id="orb"]\nradius = 0.12\nheight = 0.24\n\n[node name="TargetStage"',1)
     stage = stage.replace('PackedStringArray("timelines")', 'PackedStringArray("timelines", "target_registry")').replace('timelines = NodePath("Timelines")', 'timelines = NodePath("Timelines")\ntarget_registry = NodePath("Targets")')
     stage += '''
@@ -59,7 +59,7 @@ position = Vector3(0, 1.7, 0)
 mesh = SubResource("orb")
 '''
     (DEST / 'stage.tscn').write_text(stage)
-    arena = (ROOT / 'content/qte_lab/direction/arena.tscn').read_text().replace('direction/stage.tscn', 'target/stage.tscn').replace('Direction', 'Target')
+    arena = (ROOT / 'examples/last_call/qte_lab/direction/arena.tscn').read_text().replace('direction/stage.tscn', 'target/stage.tscn').replace('Direction', 'Target')
     (DEST / 'arena.tscn').write_text(arena)
     pieces = ['[gd_resource type="AnimationLibrary" format=3]\n']
     for name in ['ready', 'tracking', 'selected', 'recover', 'grab']:

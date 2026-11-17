@@ -166,15 +166,15 @@ func pressure_validation_contract() -> void:
 		expect(not value.interaction.validation_errors(value.options, value.window_seconds).is_empty(), "invalid pressure %s is rejected" % change)
 
 func grapple_contract() -> void:
-	var template: CADGrappleTemplate = load("res://content/qte_lab/pressure/grapple.tres")
+	var template: CADGrappleTemplate = load("res://examples/last_call/qte_lab/pressure/grapple.tres")
 	expect(template.build() != null and template.build().beats.size() == 9, "grapple compiles direction/pressure/release into existing chain graph")
 	var invalid: CADGrappleTemplate = template.duplicate(true)
 	invalid.gates.remove_at(1)
 	expect(invalid.build() == null, "grapple rejects absent opposed-pressure component")
 	for name in ["pressure", "grapple"]:
-		expect(TEValidator.check(load("res://content/qte_lab/pressure/%s_episode.tres" % name)).is_empty(), "pressure example %s validates" % name)
+		expect(TEValidator.check(load("res://examples/last_call/qte_lab/pressure/%s_episode.tres" % name)).is_empty(), "pressure example %s validates" % name)
 	Flow.save_slot = -1
-	Flow.new_game(load("res://content/qte_lab/pressure/grapple_episode.tres"))
+	Flow.new_game(load("res://examples/last_call/qte_lab/pressure/grapple_episode.tres"))
 	var director: CADDirector = await Flow.director_started
 	var now_source := [0.0]
 	# Gates acquire after the authored anticipation marker, so the injected
@@ -199,7 +199,7 @@ func grapple_contract() -> void:
 	expect(&"grapple_escape" in clips.player and &"grapple_release" in clips.npc, "escape dispatches player action and paired opponent release")
 	Flow.stop()
 	await frames(3)
-	Flow.new_game(load("res://content/qte_lab/pressure/grapple_episode.tres"))
+	Flow.new_game(load("res://examples/last_call/qte_lab/pressure/grapple_episode.tres"))
 	director = await Flow.director_started
 	var failed: StringName = await Flow.episode_finished
 	expect(failed == &"caught", "missed grapple direction plays authored failure and terminates safely")

@@ -66,6 +66,21 @@ static func check(episode: TEEpisode) -> PackedStringArray:
 				if location != null and step.shot != &"" and location.shot(step.shot) == null:
 					errors.append("%s uses missing shot '%s'." % [where, step.shot])
 				_check_shots(step.dialogue, [step.cue], location, where, errors)
+			TEStep.Kind.CUTSCENE:
+				named_exits = [&"end"]
+				if step.cues.is_empty():
+					errors.append("%s is a cutscene with no cues." % where)
+				for cue in step.cues:
+					if cue == null:
+						errors.append("%s has an empty cue." % where)
+						continue
+					if location != null and location.shot(cue.shot) == null:
+						errors.append("%s cue uses missing shot '%s'." % [where, cue.shot])
+					if cue.speaker != &"" and episode.cast.find(cue.speaker) == null:
+						errors.append("%s cue speaker '%s' is not in the cast." % [where, cue.speaker])
+					for id: StringName in cue.clips:
+						if episode.cast.find(id) == null:
+							errors.append("%s cue animates unknown character '%s'." % [where, id])
 			TEStep.Kind.ENCOUNTER:
 				var stage := location.stage(step.stage) if location != null else null
 				var sequence := step.resolve_sequence()
@@ -215,24 +230,4 @@ static func _reachable_text(resource: DialogueResource, cues: Array) -> String:
 
 ## How many dialogue lines with an [ID:...] have a voice file, as [voiced, total].
 static func voice_coverage(episode: TEEpisode) -> Array:
-	var seen: Dictionary = {}
-	var voiced := 0
-	var total := 0
-	var regex := RegEx.new()
-	regex.compile("^\\s*(\\w+):.*\\[ID:(\\w+)\\]")
-	for step in episode.steps:
-		if step.dialogue == null or seen.has(step.dialogue.resource_path):
-			continue
-		seen[step.dialogue.resource_path] = true
-		for line in FileAccess.get_file_as_string(step.dialogue.resource_path).split("\n"):
-			var found := regex.search(line)
-			if found == null:
-				continue
-			total += 1
-			var character := episode.cast.find(found.get_string(1))
-			if character != null and character.voice_dir != "":
-				for extension: String in ["ogg", "wav", "mp3"]:
-					if ResourceLoader.exists("%s/%s.%s" % [character.voice_dir, found.get_string(2), extension]):
-						voiced += 1
-						break
-	return [voiced, total]
+	return TEVoice.coverage(episode)

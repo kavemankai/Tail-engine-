@@ -1,8 +1,8 @@
 extends TestSuite
 ## Conversations: choices, timeouts to silence, story changes and exits.
 
-const EPISODE := preload("res://content/episode_0/episode.tres")
-const DIALOGUE := preload("res://content/episode_0/dialogue/episode_0.dialogue")
+const EPISODE := preload("res://examples/last_call/episode_0/episode.tres")
+const DIALOGUE := preload("res://examples/last_call/episode_0/dialogue/episode_0.dialogue")
 
 var pick := ""
 var offered := 0

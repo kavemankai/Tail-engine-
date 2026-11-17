@@ -17,6 +17,14 @@ var steps: Array[StringName] = []
 var lines: Array[String] = []
 
 var _target: Node3D
+## Stuck recovery: the walker steers straight at its target, so scenery in the
+## way would hold it forever. After a stall it sidesteps for a moment.
+const STALL_FRAMES := 20
+const SIDESTEP_FRAMES := 40
+var _last_position := Vector3.INF
+var _stalled := 0
+var _sidestep := 0
+var _sidestep_sign := 1.0
 
 func _ready() -> void:
 	Flow.step_started.connect(func(step: TEStep) -> void: steps.append(step.id))
@@ -75,7 +83,18 @@ func _physics_process(_delta: float) -> void:
 	if is_instance_valid(_target) and Flow.actors.has(Flow.episode.player):
 		var to := _target.global_position - Flow.actors[Flow.episode.player].global_position
 		to.y = 0.0
-		_steer(to.normalized())
+		var heading := to.normalized()
+		var here: Vector3 = Flow.actors[Flow.episode.player].global_position
+		_stalled = _stalled + 1 if here.distance_to(_last_position) < 0.01 else 0
+		_last_position = here
+		if _stalled >= STALL_FRAMES and _sidestep <= 0:
+			_sidestep = SIDESTEP_FRAMES
+			_sidestep_sign = -_sidestep_sign
+			_stalled = 0
+		if _sidestep > 0:
+			_sidestep -= 1
+			heading = (heading + Vector3(-heading.z, 0.0, heading.x) * _sidestep_sign * 2.0).normalized()
+		_steer(heading)
 
 func _distance() -> float:
 	var to := _target.global_position - Flow.actors[Flow.episode.player].global_position

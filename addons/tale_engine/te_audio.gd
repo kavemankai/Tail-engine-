@@ -6,6 +6,16 @@ var _voice := AudioStreamPlayer.new()
 var _active := 0
 var _voice_owner: WeakRef
 var _voice_priority := 0
+## Actor whose mouth follows the voice. Set by Flow as lines are shown.
+var mouth_target: TEActor
+var _mouth := 0.0
+
+const VOICE_BUS := &"Voice"
+## Loudness range mapped to mouth 0..1.
+const QUIET_DB := -45.0
+const LOUD_DB := -8.0
+const MOUTH_RISE := 40.0
+const MOUTH_FALL := 14.0
 
 func _ready() -> void:
 	# Pause dialogue audio with the scene tree and its subtitle clock.
@@ -15,9 +25,32 @@ func _ready() -> void:
 		add_child(player)
 		_music.append(player)
 	add_child(_voice)
+	if AudioServer.get_bus_index(VOICE_BUS) < 0:
+		AudioServer.add_bus()
+		var index := AudioServer.bus_count - 1
+		AudioServer.set_bus_name(index, VOICE_BUS)
+		AudioServer.set_bus_send(index, &"Master")
+	_voice.bus = VOICE_BUS
 	_voice.finished.connect(func() -> void:
 		_voice_owner = null
 		_voice_priority = 0)
+
+func _process(delta: float) -> void:
+	var level := 0.0
+	if _voice.playing and not _voice.stream_paused:
+		level = mouth_level(AudioServer.get_bus_peak_volume_left_db(AudioServer.get_bus_index(VOICE_BUS), 0))
+	_mouth = smooth_mouth(_mouth, level, delta)
+	if is_instance_valid(mouth_target):
+		mouth_target.set_mouth_open(_mouth)
+
+## Map a bus peak (dB) to a 0..1 mouth opening.
+static func mouth_level(peak_db: float) -> float:
+	return clampf((peak_db - QUIET_DB) / (LOUD_DB - QUIET_DB), 0.0, 1.0)
+
+## Open fast, close slower, so the mouth does not flutter at every sample.
+static func smooth_mouth(current: float, target: float, delta: float) -> float:
+	var rate := MOUTH_RISE if target > current else MOUTH_FALL
+	return move_toward(current, target, rate * delta)
 
 ## Crossfade to a track. Null fades the music out.
 func music(stream: AudioStream, fade: float = 1.0) -> void:
@@ -45,6 +78,8 @@ func voice(stream: AudioStream) -> float:
 	return stream.get_length()
 
 func stop_voice() -> void:
+	if is_instance_valid(mouth_target):
+		mouth_target.set_mouth_open(0.0)
 	_voice.stop()
 	_voice.stream_paused = false
 	_voice_owner = null

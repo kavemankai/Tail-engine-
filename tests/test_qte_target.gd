@@ -227,7 +227,7 @@ func native_target_contract() -> void:
 		InputMap.action_add_event(&"cad_a", binding)
 
 func stage_target_contract() -> void:
-	var stage: CADStage = load("res://content/qte_lab/target/stage.tscn").instantiate()
+	var stage: CADStage = load("res://examples/last_call/qte_lab/target/stage.tscn").instantiate()
 	add_child(stage)
 	stage.cut(&"Wide")
 	var registry := stage.target_registry
@@ -240,11 +240,11 @@ func stage_target_contract() -> void:
 	registry.target(&"crate").hide()
 	expect(registry.snapshot([&"crate"], {}).is_empty(), "hidden target is not selectable")
 	expect(not registry.validation_errors([&"missing"]).is_empty(), "registry rejects absent target bindings")
-	var graph: CADSequence = load("res://content/qte_lab/target/selection.tres")
+	var graph: CADSequence = load("res://examples/last_call/qte_lab/target/selection.tres")
 	var no_socket := TEActor.new()
 	add_child(no_socket)
 	stage.bind(&"Player", no_socket)
-	var grab: CADGrabTemplate = load("res://content/qte_lab/target/grab.tres")
+	var grab: CADGrabTemplate = load("res://examples/last_call/qte_lab/target/grab.tres")
 	expect("socket" in "\n".join(stage.validation_errors(grab.build())), "runtime stage validation rejects a bound actor missing its authored socket")
 	stage.unbind(&"Player")
 	no_socket.free()
@@ -253,9 +253,9 @@ func stage_target_contract() -> void:
 	stage.free()
 
 func grab_flow_contract() -> void:
-	const EPISODE = preload("res://content/qte_lab/target/grab_episode.tres")
+	const EPISODE = preload("res://examples/last_call/qte_lab/target/grab_episode.tres")
 	for name in ["selection", "tracking", "grab"]:
-		expect(TEValidator.check(load("res://content/qte_lab/target/%s_episode.tres" % name)).is_empty(), "target episode %s validates" % name)
+		expect(TEValidator.check(load("res://examples/last_call/qte_lab/target/%s_episode.tres" % name)).is_empty(), "target episode %s validates" % name)
 	Flow.save_slot = -1
 	Flow.new_game(EPISODE)
 	var director: CADDirector = await Flow.director_started

@@ -12,6 +12,7 @@ var prompt_backdrop := ColorRect.new()
 var _fade := ColorRect.new()
 var _notice := Label.new()
 var _hint := Label.new()
+var _caption := Label.new()
 var _card := ColorRect.new()
 var _card_heading := Label.new()
 var _card_body := Label.new()
@@ -37,6 +38,11 @@ func _ready() -> void:
 	_hint.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	_style(_hint, 24)
 	add_child(_hint)
+	_caption.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	_caption.position.y -= 70
+	_caption.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_style(_caption, Settings.subtitle_size)
+	add_child(_caption)
 	prompt_backdrop.color = Color(0.08, 0.1, 0.17, 0.85)
 	prompt_backdrop.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
 	prompt_backdrop.offset_left = -420
@@ -200,6 +206,10 @@ func notice(text: String) -> void:
 	_notice.text = text
 	_notice_left = 3.5
 
+## Subtitle line for cutscenes. An empty string clears it.
+func caption(text: String) -> void:
+	_caption.text = text
+
 func hint(text: String) -> void:
 	_hint.text = text
 
@@ -238,6 +248,7 @@ func clear() -> void:
 	_cancel_fade()
 	_fade.color.a = 0.0
 	hint("")
+	caption("")
 	_notice.text = ""
 	prompt_backdrop.hide()
 	_pause.hide()

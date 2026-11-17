@@ -1,7 +1,7 @@
 extends TestSuite
 ## The validator passes the real episode and catches seeded mistakes.
 
-const EPISODE := preload("res://content/episode_0/episode.tres")
+const EPISODE := preload("res://examples/last_call/episode_0/episode.tres")
 
 func run() -> void:
 	var errors := TEValidator.check(EPISODE)
