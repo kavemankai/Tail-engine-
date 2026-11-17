@@ -3,7 +3,13 @@ extends CharacterBody3D
 ## Contract for a character scene. The engine only calls these methods, so a
 ## real rig plugs in by extending this and overriding play_clip() and speak().
 
+## Blend shape names tried, in order, by the default mouth driver.
+const MOUTH_SHAPES: PackedStringArray = ["jawOpen", "mouthOpen", "mouth_open", "viseme_aa", "Mouth_Open", "A"]
+
 var character: TECharacter
+
+var _mouth_targets: Array = []
+var _mouth_scanned := false
 
 func setup(new_character: TECharacter) -> void:
 	character = new_character
@@ -21,6 +27,22 @@ func play_clip(clip: StringName) -> void:
 ## Override: start or stop talking.
 func speak(_talking: bool) -> void:
 	pass
+
+## Lip-sync hook. `amount` is 0..1 and follows the voice loudness while this
+## actor speaks. The default drives a mouth blend shape (see MOUTH_SHAPES) on any
+## mesh below this actor; override it for jaw bones, visemes or sprite mouths.
+func set_mouth_open(amount: float) -> void:
+	if not _mouth_scanned:
+		_mouth_scanned = true
+		for node in find_children("*", "MeshInstance3D", true, false):
+			for shape_name in MOUTH_SHAPES:
+				var index: int = node.find_blend_shape_by_name(shape_name)
+				if index >= 0:
+					_mouth_targets.append([node, index])
+					break
+	for target in _mouth_targets:
+		if is_instance_valid(target[0]):
+			target[0].set_blend_shape_value(target[1], clampf(amount, 0.0, 1.0))
 
 func face(point: Vector3) -> void:
 	var flat := Vector3(point.x, global_position.y, point.z)

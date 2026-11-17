@@ -324,6 +324,7 @@ func _place_cast() -> void:
 func _on_line_shown(line: DialogueLine) -> void:
 	for id: StringName in actors:
 		actors[id].speak(id == StringName(line.character))
+	Audio.mouth_target = actors.get(StringName(line.character))
 	_cut(StringName(line.get_tag_value("shot")), line.get_tag_value("blend").to_float())
 	var shake_amount := line.get_tag_value("shake").to_float()
 	if shake_amount > 0.0:
@@ -348,6 +349,7 @@ func _cutscene(current: TEStep, token: int) -> void:
 			camera.shake(cue.shake)
 		for id: StringName in actors:
 			actors[id].speak(id == cue.speaker)
+		Audio.mouth_target = actors.get(cue.speaker)
 		for id: StringName in cue.clips:
 			if actors.has(id):
 				actors[id].cad_act(cue.clips[id])

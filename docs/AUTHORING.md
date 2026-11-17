@@ -298,3 +298,11 @@ From code, `Flow.camera` (`TECamera`) offers `cut_to`, `blend_to` and `shake`.
 The Tale Engine plugin (enabled in `project.godot`) adds a **Tale Engine** panel at the bottom of the editor. Select an `episode.tres` and the panel shows its step graph: one node per step, one output per exit, and an END node. Clicking a node selects that step in the inspector. **Add step** appends a step of the chosen kind and saves the episode. **Validate** runs the same validator as `tests/validate.tscn` in a headless game process and lists the problems.
 
 The same check from a terminal: `godot --headless --path . res://addons/tale_engine/editor/validate_cli.tscn -- res://path/to/episode.tres`.
+
+## Voice and lip-sync
+
+Give a character a `voice_dir` and put recordings there named after the dialogue line id: `e0_007.ogg` (or `.wav`, `.mp3`) for `[ID:e0_007]`. Missing files are fine; the line just plays on its reading timer.
+
+- **Recording script:** `godot --headless --path . res://addons/tale_engine/editor/export_voice_cli.tscn -- res://path/episode.tres script.csv` writes one row per line (id, speaker, text, recorded yes/no, expected file).
+- **Coverage:** `TEVoice.coverage(episode)` returns `[recorded, total]`; `tests/validate.tscn` prints it.
+- **Lip-sync:** voice plays on a `Voice` audio bus. While a line plays, its speaker's `set_mouth_open(0..1)` is called every frame with the smoothed loudness. The default `TEActor` drives a mouth blend shape named `jawOpen`, `mouthOpen`, `mouth_open`, `viseme_aa` or similar on any mesh under the actor. Override `set_mouth_open` for jaw bones, texture swaps or sprite mouths.

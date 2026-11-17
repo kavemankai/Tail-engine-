@@ -230,24 +230,4 @@ static func _reachable_text(resource: DialogueResource, cues: Array) -> String:
 
 ## How many dialogue lines with an [ID:...] have a voice file, as [voiced, total].
 static func voice_coverage(episode: TEEpisode) -> Array:
-	var seen: Dictionary = {}
-	var voiced := 0
-	var total := 0
-	var regex := RegEx.new()
-	regex.compile("^\\s*(\\w+):.*\\[ID:(\\w+)\\]")
-	for step in episode.steps:
-		if step.dialogue == null or seen.has(step.dialogue.resource_path):
-			continue
-		seen[step.dialogue.resource_path] = true
-		for line in FileAccess.get_file_as_string(step.dialogue.resource_path).split("\n"):
-			var found := regex.search(line)
-			if found == null:
-				continue
-			total += 1
-			var character := episode.cast.find(found.get_string(1))
-			if character != null and character.voice_dir != "":
-				for extension: String in ["ogg", "wav", "mp3"]:
-					if ResourceLoader.exists("%s/%s.%s" % [character.voice_dir, found.get_string(2), extension]):
-						voiced += 1
-						break
-	return [voiced, total]
+	return TEVoice.coverage(episode)

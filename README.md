@@ -43,6 +43,15 @@ This copies the three engine addons and a one-scene starter episode into a new
 project that validates and runs. The Last Call demo lives in `examples/last_call`
 and is not needed by the engine.
 
+## Engine and content
+
+The engine is three addons: `tale_engine`, `cinematic_action_director` and
+`dialogue_manager`. Everything else is optional demo content: `examples/last_call`,
+and the `humanoid_kit` and `narrative_characters` packs, which only Last Call's
+`TEActor` adapter uses (their meshes embed material paths, so they stay in
+`addons/` for now). A game supplies its own `TEActor` scenes; see
+[asset swapping](docs/ASSET_SWAP.md).
+
 ## Check it
 
 ```bash
