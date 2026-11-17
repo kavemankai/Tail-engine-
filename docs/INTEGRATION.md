@@ -92,8 +92,9 @@ Set `CADGate.interaction` to a `CADInteractionSpec` to opt into the shared runne
 Leave it null to retain the original press/hold, buffer and frozen-hold-window
 behaviour. Episode 0's existing encounter resources remain unchanged.
 
-Supported families are `GESTURE` (press/hold/timed-release/chord), `CHOICE`, `TIMING`
-and `PASSIVE`. Gesture specs name a stable `id`, `actions` and an `option_id` referencing a gate
+Supported families are `GESTURE` (press/hold/timed-release/chord), `CHOICE`, `TIMING`,
+`PASSIVE`, `DIRECTION`, `PATTERN`, `TARGET` and `PRESSURE`; the last four are described
+in later sections. Gesture specs name a stable `id`, `actions` and an `option_id` referencing a gate
 option. Choice specs use the gate's offered options. `monitored_actions` declares
 additional wrong-input actions; `wrong_input` either ignores them or resolves
 `miss`. Unrelated controls are ignored. `routes` optionally maps a result grade to
@@ -104,8 +105,9 @@ or the gate's `timeout_next` is used. Specs are copied at acquisition.
 gate. Its `resolved(CADResult)` fires once. `CADDirector.interaction_resolved`
 exposes the typed result; `detailed_results[beat_id]` retains the latest detail.
 `result.to_dict()` contains scalar IDs, grade, route, progress and timing error.
-Legacy `director.results` and `Story.results` keep option/timeout strings. Typed
-details are currently encounter-local; no save migration or mid-QTE save exists.
+Legacy `director.results` and `Story.results` keep option/timeout strings. Completed
+typed details are also kept in `Story.interactions` and saved with checkpoints; no
+mid-QTE save exists.
 
 New gates use monotonic **real active seconds**, independent of Engine.time_scale.
 The deadline is exclusive: input at or after it times out, including after a frame

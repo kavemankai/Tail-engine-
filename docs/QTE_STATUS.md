@@ -159,8 +159,8 @@ scripts or a second story graph. All eight planned handler families are present.
 
 - Real Windows controller tests have **not** been performed. Synthetic key/pad
   events do not prove driver, disconnect/reconnect or physical UX behaviour.
-- The humanoid kit and paired contact clips are unavailable. The minimal rig
-  proves interface/playback only; alignment, snapping, foot contact, impacts and
+- Paired contact clips are unavailable. The optional humanoid kit is integrated
+  with stand-in clips, and the minimal rig proves interface/playback only; alignment, snapping, foot contact, impacts and
   variant proportions require real assets and visual review.
 - Counterattack, combo, chain, grab and grapple templates are available. Scoped
   slowdown and action barks/timed replies are integrated. Live simultaneous Dialogue
