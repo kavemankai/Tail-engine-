@@ -54,6 +54,8 @@ def create(target, title):
     (target / "docs").mkdir(exist_ok=True)
     for name in DOCS:
         shutil.copy2(ROOT / "docs" / name, target / "docs" / name)
+    shutil.copy2(ROOT / "LICENSE", target / "TALE_ENGINE_LICENSE")
+    shutil.copy2(ROOT / "docs/ASSET_AND_LICENSE_REGISTRY.md", target / "docs/THIRD_PARTY.md")
     (target / "project.godot").write_text(project_settings(title), encoding="utf-8")
     for path in target.rglob("*"):
         if path.is_file() and path.suffix in TEXT_SUFFIXES and "addons" not in path.parts:
