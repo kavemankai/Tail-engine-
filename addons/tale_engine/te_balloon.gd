@@ -25,7 +25,8 @@ var _picked := -1
 var _advance := false
 var _panel := ColorRect.new()
 var _name := Label.new()
-var _text := Label.new()
+var _text := RichTextLabel.new()
+var _more := Label.new()
 var _choices := VBoxContainer.new()
 var _timer := ProgressBar.new()
 var _cancelled := false
@@ -43,9 +44,16 @@ func _ready() -> void:
 	_panel.add_child(_name)
 	_text.position = Vector2(60, 46)
 	_text.size = Vector2(1160, 90)
-	_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_text.add_theme_font_size_override(&"font_size", Settings.subtitle_size)
+	_text.bbcode_enabled = true
+	_text.scroll_active = false
+	_text.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_panel.add_child(_text)
+	# Shown while a line waits for the player (auto-advance off).
+	_more.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+	_more.position = Vector2(-150, -40)
+	_more.add_theme_font_size_override(&"font_size", 18)
+	_more.hide()
+	_panel.add_child(_more)
 	_choices.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
 	_choices.position = Vector2(60, -330)
 	_choices.grow_vertical = Control.GROW_DIRECTION_BEGIN
@@ -63,7 +71,8 @@ func _ready() -> void:
 
 ## Follow the subtitle options, including while a line is on screen.
 func _restyle() -> void:
-	_text.add_theme_font_size_override(&"font_size", Settings.subtitle_size)
+	for size_name: StringName in [&"normal_font_size", &"bold_font_size", &"italics_font_size", &"bold_italics_font_size"]:
+		_text.add_theme_font_size_override(size_name, Settings.subtitle_size)
 	_panel.visible = Settings.subtitles
 	_panel.color.a = 0.8 if Settings.subtitle_background else 0.0
 
@@ -126,6 +135,7 @@ func _show(line: DialogueLine) -> void:
 	_name.text = character.display_name if character != null else line.character
 	_name.add_theme_color_override(&"font_color", character.colour if character != null else Color.WHITE)
 	_text.text = line.text
+	Screen.log_line(_name.text, line.text, character.colour if character != null else Color.WHITE)
 	line_shown.emit(line)
 
 func _hold(line: DialogueLine) -> void:
@@ -134,10 +144,15 @@ func _hold(line: DialogueLine) -> void:
 	if stream != null:
 		seconds = Audio.voice(stream)
 	_advance = false
-	while seconds > 0.0 and not _advance and not _cancelled:
+	# With auto-advance off the line stays until the player presses advance.
+	while (seconds > 0.0 or not Settings.auto_advance) and not _advance and not _cancelled:
 		await get_tree().process_frame
 		if not get_tree().paused:
 			seconds -= get_process_delta_time()
+		_more.visible = seconds <= 0.0
+		if _more.visible:
+			_more.text = "[%s]" % CADPrompt.glyph(&"te_advance", CADInputDevice.using_pad)
+	_more.hide()
 	if stream != null and not _cancelled:
 		Audio.stop_voice()
 
@@ -175,6 +190,7 @@ func _choose(line: DialogueLine) -> DialogueResponse:
 	if _cancelled:
 		return null
 	var chosen: DialogueResponse = _responses[_picked]
+	Screen.log_line("", chosen.text, Color(0.75, 0.85, 1.0))
 	_responses = []
 	_timer.hide()
 	for button in _choices.get_children():

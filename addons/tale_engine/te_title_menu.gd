@@ -58,6 +58,8 @@ func _rebuild() -> void:
 		_note("The save in this slot could not be read.")
 	elif status == TESave.Status.RECOVERED:
 		_note("This save was updated to match the current version.")
+	if season != null and TEProgress.reached(season) > 0:
+		_add("Episodes", _episodes)
 	_add("Settings", Screen.open_settings)
 	for label: String in extras:
 		_add(label, _open_scene.bind(extras[label]))
@@ -82,6 +84,20 @@ func _confirm(question: String, action: Callable) -> void:
 	_heading(question, 28)
 	_add("Cancel", _rebuild)
 	_add("Yes", action)
+	_focus_first()
+
+## Every episode reached so far. Starting one begins it fresh in this slot.
+func _episodes() -> void:
+	_clear()
+	_heading("Episodes", 32)
+	for index in TEProgress.reached(season) + 1:
+		var entry := season.episodes[index]
+		var start := Flow.start_season.bind(season, index)
+		var name := entry.title if entry.title != "" else String(entry.id)
+		_add("%d. %s" % [index + 1, name], _confirm.bind(
+			"Start \"%s\" from its beginning? The save in slot %d will be replaced, and choices from earlier episodes will not carry in."
+			% [name, Flow.save_slot + 1], start) if TESave.exists(Flow.save_slot) else start)
+	_add("Back", _rebuild)
 	_focus_first()
 
 func _new_game() -> void:

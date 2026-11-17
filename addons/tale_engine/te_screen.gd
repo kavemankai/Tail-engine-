@@ -34,6 +34,22 @@ var _capture: Dictionary = {}
 var _fade_tween: Tween
 var _notice_left := 0.0
 var _card_left := -1.0
+var _card_hint := Label.new()
+var _credits := Label.new()
+## Total seconds of the running credits roll, or 0 when none is running.
+var _credits_seconds := 0.0
+var _loading := Label.new()
+var _history := ColorRect.new()
+var _history_text := RichTextLabel.new()
+var _history_back: Button
+## Lines and chosen responses this session, oldest first: { speaker, text, colour }.
+var _lines: Array[Dictionary] = []
+
+const HISTORY_LIMIT := 200
+const NOTICE_SECONDS := 3.5
+const NOTICE_FADE := 0.3
+## Seconds each line of credits takes to cross the screen's height.
+const CREDITS_SECONDS_PER_LINE := 0.9
 
 func _ready() -> void:
 	layer = 50
@@ -85,6 +101,16 @@ func _ready() -> void:
 	_card_body.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_style(_card_body, 24)
 	_card.add_child(_card_body)
+	_card_hint.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	_card_hint.position.y -= 60
+	_card_hint.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_style(_card_hint, 20)
+	_card.add_child(_card_hint)
+	_credits.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_credits.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	_style(_credits, 26)
+	_card.add_child(_credits)
+	_card.clip_contents = true
 	_card.hide()
 	_pause.color = Color(0, 0, 0, 0.7)
 	var pause_box := _centered_box(_pause)
@@ -92,14 +118,22 @@ func _ready() -> void:
 	_style(_pause_hint, 30)
 	pause_box.add_child(_pause_hint)
 	_pause_resume = _button(pause_box, "Resume", set_paused.bind(false))
+	_button(pause_box, "History", open_history).name = "History"
 	_button(pause_box, "Settings", open_settings)
 	_pause_quit = _button(pause_box, QUIT_LABEL, _quit_pressed)
 	_pause.hide()
 	_build_settings()
 	_settings.hide()
+	_build_history()
 	# Fades stay above menus, while transparent fades never intercept input.
 	move_child(_fade, -1)
 	_fade.color = Color(0, 0, 0, 0)
+	# Shown over the black fade while a location loads.
+	_loading.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+	_loading.position = Vector2(-260, -70)
+	_style(_loading, 24)
+	_loading.hide()
+	add_child(_loading)
 	Story.remembered.connect(notice)
 	InputDevice.changed.connect(_refresh_pause)
 	_refresh_pause()
@@ -115,6 +149,79 @@ func _restyle() -> void:
 	_refresh_pause()
 	if _settings.visible:
 		_refresh_bindings()
+
+func _build_history() -> void:
+	_history.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_history.color = Color(0.03, 0.04, 0.07, 1.0)
+	_history.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(_history)
+	move_child(_history, _settings.get_index())
+	var title := Label.new()
+	title.text = "History"
+	title.position = Vector2(60, 24)
+	_style(title, 32)
+	_history.add_child(title)
+	_history_text.bbcode_enabled = true
+	_history_text.scroll_following = true
+	_history_text.focus_mode = Control.FOCUS_ALL
+	_history_text.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_history_text.offset_left = 60
+	_history_text.offset_right = -60
+	_history_text.offset_top = 80
+	_history_text.offset_bottom = -90
+	_history_text.add_theme_font_size_override(&"normal_font_size", 22)
+	_history.add_child(_history_text)
+	_history_back = _button(_history, "Back", close_history)
+	_history_back.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	_history_back.position.y -= 30
+	_history_back.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_history.hide()
+
+## Record a spoken line, or a chosen response when `speaker` is empty.
+func log_line(speaker: String, text: String, colour := Color.WHITE) -> void:
+	_lines.append({"speaker": speaker, "text": text, "colour": colour})
+	if _lines.size() > HISTORY_LIMIT:
+		_lines.pop_front()
+
+func clear_history() -> void:
+	_lines.clear()
+
+## The session's lines, oldest first. Each is { speaker, text, colour }.
+func history() -> Array[Dictionary]:
+	return _lines.duplicate(true)
+
+func open_history() -> void:
+	if _history.visible:
+		return
+	_history_text.clear()
+	for line in _lines:
+		if line["speaker"] == "":
+			_history_text.push_color(line["colour"])
+			_history_text.add_text("    > " + line["text"])
+			_history_text.pop()
+		else:
+			_history_text.push_color(line["colour"])
+			_history_text.add_text(line["speaker"] + ": ")
+			_history_text.pop()
+			_history_text.append_text(line["text"])
+		_history_text.newline()
+	if _lines.is_empty():
+		_history_text.add_text("Nothing has been said yet.")
+	_history.show()
+	_history_back.grab_focus()
+
+func close_history() -> void:
+	if not _history.visible:
+		return
+	_history.hide()
+	if _pause.visible:
+		_pause_resume.grab_focus()
+
+## Loading indicator: a fraction from 0 to 1 shows it, a negative value hides it.
+func loading(fraction: float) -> void:
+	_loading.visible = fraction >= 0.0
+	if _loading.visible:
+		_loading.text = "Loading…  %d%%" % int(clampf(fraction, 0.0, 1.0) * 100.0)
 
 func _centered_box(parent: Control) -> VBoxContainer:
 	var box := VBoxContainer.new()
@@ -136,7 +243,7 @@ func _button(parent: Node, text: String, action: Callable) -> Button:
 
 func _build_settings() -> void:
 	_settings.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_settings.color = Color(0.03, 0.04, 0.07, 0.98)
+	_settings.color = Color(0.03, 0.04, 0.07, 1.0)
 	_settings.mouse_filter = Control.MOUSE_FILTER_STOP
 	if _settings.get_parent() == null:
 		add_child(_settings)
@@ -163,6 +270,7 @@ func _build_settings() -> void:
 	_setting_toggle(box, "Show subtitles", "subtitles")
 	_setting_toggle(box, "Background behind subtitles", "subtitle_background")
 	_setting_choice(box, "Reading time", "text_hold_scale", [0.75, 1.0, 1.5, 2.0], ["Fast", "Standard", "1.5×", "2×"])
+	_setting_toggle(box, "Advance lines automatically", "auto_advance")
 
 	_heading(box, "Assistance")
 	_setting_choice(box, "Choice time", "choice_time_scale", [1.0, 1.5, 2.0, 0.0], ["Standard", "1.5×", "2×", "Untimed"])
@@ -367,7 +475,8 @@ func _focus_lost() -> void:
 
 func notice(text: String) -> void:
 	_notice.text = text
-	_notice_left = 3.5
+	_notice_left = NOTICE_SECONDS
+	_notice.modulate.a = 0.0
 
 ## Subtitle line for cutscenes. An empty string clears it.
 func caption(text: String) -> void:
@@ -399,12 +508,39 @@ func is_black() -> bool:
 	return _fade.color.a >= 0.99
 
 ## Show a full-screen card until the player advances or `hold` seconds pass.
-func card(heading: String, body: String, hold: float = 4.0) -> void:
+## `prompt` shows which button continues, for cards meant to be read at leisure.
+func card(heading: String, body: String, hold: float = 4.0, prompt := false) -> void:
 	_card_heading.text = heading
 	_card_body.text = body
+	_credits.text = ""
+	_card_hint.text = "[%s]  Continue" % CADPrompt.glyph(&"te_advance", CADInputDevice.using_pad) if prompt else ""
+	_card_hint.reset_size()
+	_card_hint.position.x = (_card.size.x - _card_hint.size.x) * 0.5
 	_card.show()
 	_card_left = hold * Settings.text_hold_scale
 	await card_closed
+	_card.hide()
+
+## Roll `body` up the screen under `heading`. Ends when it has passed, or when
+## the player advances.
+func credits(heading: String, body: String) -> void:
+	_card_heading.text = ""
+	_card_body.text = ""
+	_card_hint.text = "[%s]  Skip" % CADPrompt.glyph(&"te_advance", CADInputDevice.using_pad)
+	# Out of the way of the roll, in the corner.
+	_card_hint.reset_size()
+	_card_hint.position.x = _card.size.x - _card_hint.size.x - 40
+	_credits.text = (heading + "\n\n" + body) if heading != "" else body
+	_credits.reset_size()
+	# Full width, so the centred text sits in the middle of the screen.
+	_credits.position = Vector2(0, _card.size.y)
+	_credits.size.x = _card.size.x
+	_card.show()
+	_credits_seconds = maxf(4.0, (_credits.text.count("\n") + 12) * CREDITS_SECONDS_PER_LINE)
+	_card_left = _credits_seconds
+	await card_closed
+	_credits_seconds = 0.0
+	_credits.text = ""
 	_card.hide()
 
 func clear() -> void:
@@ -416,6 +552,9 @@ func clear() -> void:
 	prompt_backdrop.hide()
 	_pause.hide()
 	_settings.hide()
+	_history.hide()
+	_loading.hide()
+	_capture = {}
 	get_tree().paused = false
 	if _card_left >= 0.0:
 		_card_left = -1.0
@@ -424,10 +563,15 @@ func clear() -> void:
 func _process(delta: float) -> void:
 	if _notice_left > 0.0:
 		_notice_left -= delta
+		# Ease in and out instead of popping.
+		_notice.modulate.a = clampf(minf(NOTICE_SECONDS - _notice_left, _notice_left) / NOTICE_FADE, 0.0, 1.0)
 		if _notice_left <= 0.0:
 			_notice.text = ""
 	if _card_left >= 0.0 and not get_tree().paused:
 		_card_left -= delta
+		if _credits_seconds > 0.0:
+			var travelled := 1.0 - maxf(_card_left, 0.0) / _credits_seconds
+			_credits.position.y = lerpf(_card.size.y, -_credits.size.y, travelled)
 		if _card_left < 0.0:
 			card_closed.emit()
 
@@ -436,6 +580,16 @@ func _input(event: InputEvent) -> void:
 		# Everything goes to the rebinding prompt, including Pause and Back.
 		_capture_input(event)
 		get_viewport().set_input_as_handled()
+		return
+	if _history.visible:
+		if event.is_action_pressed(&"te_pause") or event.is_action_pressed(&"ui_cancel"):
+			get_viewport().set_input_as_handled()
+			close_history()
+		elif event.is_action_pressed(&"ui_up") or event.is_action_pressed(&"ui_down"):
+			# Scroll with the keyboard or d-pad; focus stays on Back.
+			get_viewport().set_input_as_handled()
+			var bar := _history_text.get_v_scroll_bar()
+			bar.value += (-1.0 if event.is_action_pressed(&"ui_up") else 1.0) * 80.0
 		return
 	if _settings.visible:
 		if event.is_action_pressed(&"te_pause") or event.is_action_pressed(&"ui_cancel"):

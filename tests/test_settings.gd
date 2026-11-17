@@ -66,7 +66,7 @@ func settings_menu() -> void:
 	Flow.jump(&"stranger_talk")
 	var balloon: TEBalloon = await Flow.balloon_opened
 	await balloon.choices_shown
-	expect(balloon._text.get_theme_font_size(&"font_size") == 36 and not balloon._timer.visible,
+	expect(balloon._text.get_theme_font_size(&"normal_font_size") == 36 and not balloon._timer.visible,
 		"new dialogue uses subtitle size and untimed-choice setting")
 	Flow.stop()
 	await frames(3)
