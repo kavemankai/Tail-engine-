@@ -12,14 +12,14 @@ The goal is an engine a real game can be built and released on, for Windows and 
 - Checkpoint saves with atomic writes, Continue, rewind, save slots.
 - Settings for subtitle size, reading time, timing assistance and master volume; device-aware prompts.
 - Editor panel with a step-graph view and validation; headless validator and authoring audit.
-- `tools/new_project.py` starter generator; `tools/verify.py` and CI (25 suites) that fail on errors and leaks; Windows export.
+- `tools/new_project.py` starter generator; `tools/verify.py` and CI (26 suites) that fail on errors and leaks; Windows export.
 
 ## Remaining phases
 
 Each phase lands as its own pull request with tests first.
 
-1. **Legal and hygiene.** Licence, third-party notices, removing unused content from exports, generator fixes, doc corrections.
-2. **Saves and failure handling.** Save versioning and migration, restore that survives content patches, backups, slot details, season progress kept across restarts, runtime faults shown as errors instead of endings, pause on controller disconnect, confirmations.
+1. ~~Legal and hygiene.~~ Done.
+2. ~~Saves and failure handling.~~ Done, except episode select (moved to phase 3).
 3. **UI, input and settings.** Themed UI scenes, display and per-bus audio options, rebinding, icon glyphs for Xbox, PlayStation and Steam Deck, focus-navigable choices, backlog, auto-advance and skip, end-of-episode screen, credits, loading screen.
 4. **Localisation.** Translatable engine and content strings, string extraction, pseudo-locale check.
 5. **Audio.** Bus layout, per-step music and ambience, pooled and positional effects.
@@ -33,6 +33,6 @@ Each phase lands as its own pull request with tests first.
 
 - No real controller, GPU or exported executable has been tested; automated tests inject input and use the headless renderer.
 - The bundled characters have stand-in fight clips and no facial rig. Paired contact animation is content work for each game.
-- The repository has no licence yet, and the rights to the `narrative_characters` clothing are not recorded.
+- The rights to the `narrative_characters` clothing are not recorded; confirm them before shipping a game that includes that addon.
 
 The documents in `research/` describe earlier experiments. Their phase numbers and estimates are historical.
