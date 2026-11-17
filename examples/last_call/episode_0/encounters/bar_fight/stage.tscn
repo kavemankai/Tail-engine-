@@ -1,7 +1,6 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://addons/cinematic_action_director/cad_stage.gd" id="1"]
-[ext_resource type="ArrayMesh" path="res://assets/furniture/BarStool_mesh.res" id="real_stool"]
 
 [sub_resource type="Animation" id="a_approach"]
 resource_name = "approach"
@@ -574,6 +573,12 @@ tracks/2/keys = {
 }]
 }
 
+[sub_resource type="BoxMesh" id="m_Stool"]
+size = Vector3(0.4, 0.6, 0.4)
+
+[sub_resource type="StandardMaterial3D" id="c_Stool"]
+albedo_color = Color(0.58, 0.49, 0.47, 1)
+
 [sub_resource type="AnimationLibrary" id="lib"]
 _data = {
 &"approach": SubResource("a_approach"),
@@ -607,10 +612,8 @@ rotation = Vector3(0, 0.0, 0)
 
 [node name="Stool" type="MeshInstance3D" parent="."]
 position = Vector3(-2.0, 0.3, 0.7)
-
-[node name="StoolMesh" type="MeshInstance3D" parent="Stool"]
-position = Vector3(0, -0.3, 0)
-mesh = ExtResource("real_stool")
+mesh = SubResource("m_Stool")
+surface_material_override/0 = SubResource("c_Stool")
 
 [node name="Wide" type="Camera3D" parent="."]
 position = Vector3(0, 1.7, 5.5)

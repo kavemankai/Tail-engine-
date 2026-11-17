@@ -6,7 +6,6 @@
 [ext_resource type="Script" path="res://addons/tale_engine/te_hotspot.gd" id="hot"]
 [ext_resource type="Resource" path="res://examples/last_call/episode_0/dialogue/episode_0.dialogue" id="dlg"]
 [ext_resource type="Script" path="res://addons/tale_engine/te_camera_zone.gd" id="zone"]
-[ext_resource type="PackedScene" path="res://examples/last_call/humanoid/halogen_no_stools.tscn" id="real_bar"]
 
 [sub_resource type="Environment" id="env"]
 background_mode = 1
@@ -53,14 +52,12 @@ script = ExtResource("loc")
 
 [node name="Sun" type="DirectionalLight3D" parent="."]
 rotation = Vector3(-0.9, -0.5, 0)
-light_energy = 0.25
+light_energy = 1.2
 
 [node name="World" type="WorldEnvironment" parent="."]
+environment = SubResource("env")
 
 [node name="Set" type="Node3D" parent="."]
-
-[node name="Halogen" parent="Set" instance=ExtResource("real_bar")]
-position = Vector3(-8.2, 0, -4.18)
 
 [node name="Marks" type="Node3D" parent="."]
 
@@ -72,9 +69,6 @@ position = Vector3(-8.2, 0, -4.18)
 
 [node name="Floor" type="StaticBody3D" parent="Set"]
 position = Vector3(0, -0.1, 0)
-visible = false
-collision_layer = 0
-collision_mask = 0
 
 [node name="Mesh" type="MeshInstance3D" parent="Set/Floor"]
 mesh = SubResource("m_Floor")
@@ -85,9 +79,6 @@ shape = SubResource("s_Floor")
 
 [node name="Counter" type="StaticBody3D" parent="Set"]
 position = Vector3(0, 0.55, -1.5)
-visible = false
-collision_layer = 0
-collision_mask = 0
 
 [node name="Mesh" type="MeshInstance3D" parent="Set/Counter"]
 mesh = SubResource("m_Counter")
@@ -98,9 +89,6 @@ shape = SubResource("s_Counter")
 
 [node name="BackWall" type="StaticBody3D" parent="Set"]
 position = Vector3(0, 1.6, -3.2)
-visible = false
-collision_layer = 0
-collision_mask = 0
 
 [node name="Mesh" type="MeshInstance3D" parent="Set/BackWall"]
 mesh = SubResource("m_BackWall")
@@ -111,7 +99,6 @@ shape = SubResource("s_BackWall")
 
 [node name="Sign" type="MeshInstance3D" parent="Set"]
 position = Vector3(0, 2.5, -3.05)
-visible = false
 mesh = SubResource("m_Sign")
 surface_material_override/0 = SubResource("c_Sign")
 
