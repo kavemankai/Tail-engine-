@@ -11,6 +11,8 @@ var mouth_target: TEActor
 var _mouth := 0.0
 
 const VOICE_BUS := &"Voice"
+const MUSIC_BUS := &"Music"
+const SFX_BUS := &"SFX"
 ## Loudness range mapped to mouth 0..1.
 const QUIET_DB := -45.0
 const LOUD_DB := -8.0
@@ -22,14 +24,13 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_PAUSABLE
 	for i in 2:
 		var player := AudioStreamPlayer.new()
+		Settings.bus_index(MUSIC_BUS)
+		player.bus = MUSIC_BUS
 		add_child(player)
 		_music.append(player)
 	add_child(_voice)
-	if AudioServer.get_bus_index(VOICE_BUS) < 0:
-		AudioServer.add_bus()
-		var index := AudioServer.bus_count - 1
-		AudioServer.set_bus_name(index, VOICE_BUS)
-		AudioServer.set_bus_send(index, &"Master")
+	Settings.bus_index(VOICE_BUS)
+	Settings.bus_index(SFX_BUS)
 	_voice.bus = VOICE_BUS
 	_voice.finished.connect(func() -> void:
 		_voice_owner = null
@@ -107,6 +108,7 @@ func pause_owned_voice(owner: Object, paused: bool) -> void:
 func effect(stream: AudioStream) -> void:
 	var player := AudioStreamPlayer.new()
 	player.stream = stream
+	player.bus = SFX_BUS
 	add_child(player)
 	player.finished.connect(player.queue_free)
 	player.play()

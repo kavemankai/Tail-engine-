@@ -27,6 +27,10 @@ var _settings := ColorRect.new()
 var _settings_focus: Control
 var _settings_return_focus: Control
 var _settings_was_paused := false
+## Rebinding rows: [action, is_pad, button].
+var _binding_buttons: Array = []
+## Non-empty while the settings menu waits for an input to bind.
+var _capture: Dictionary = {}
 var _fade_tween: Tween
 var _notice_left := 0.0
 var _card_left := -1.0
@@ -92,6 +96,7 @@ func _ready() -> void:
 	_pause_quit = _button(pause_box, QUIT_LABEL, _quit_pressed)
 	_pause.hide()
 	_build_settings()
+	_settings.hide()
 	# Fades stay above menus, while transparent fades never intercept input.
 	move_child(_fade, -1)
 	_fade.color = Color(0, 0, 0, 0)
@@ -99,7 +104,17 @@ func _ready() -> void:
 	InputDevice.changed.connect(_refresh_pause)
 	_refresh_pause()
 	get_tree().root.focus_exited.connect(_focus_lost)
+	Settings.changed.connect(_restyle)
+	_restyle()
 	Input.joy_connection_changed.connect(_on_joy_connection_changed)
+
+## Follow options that change how this layer looks, without a restart.
+func _restyle() -> void:
+	_caption.add_theme_font_size_override(&"font_size", Settings.subtitle_size)
+	_caption.visible = Settings.subtitles
+	_refresh_pause()
+	if _settings.visible:
+		_refresh_bindings()
 
 func _centered_box(parent: Control) -> VBoxContainer:
 	var box := VBoxContainer.new()
@@ -123,32 +138,85 @@ func _build_settings() -> void:
 	_settings.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_settings.color = Color(0.03, 0.04, 0.07, 0.98)
 	_settings.mouse_filter = Control.MOUSE_FILTER_STOP
-	add_child(_settings)
-	var box := _centered_box(_settings)
-	var title := Label.new()
-	title.text = "Settings"
-	_style(title, 32)
-	box.add_child(title)
-	_settings_focus = _setting_choice(box, "Subtitles", "subtitle_size", [20, 24, 30, 36], ["Small", "Medium", "Large", "Extra large"])
+	if _settings.get_parent() == null:
+		add_child(_settings)
+	_binding_buttons.clear()
+	# One scrolling column: it follows focus, so a controller reaches every row.
+	var scroll := ScrollContainer.new()
+	scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	scroll.offset_top = 30
+	scroll.offset_bottom = -30
+	scroll.follow_focus = true
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_settings.add_child(scroll)
+	var centre := CenterContainer.new()
+	centre.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(centre)
+	var box := VBoxContainer.new()
+	box.custom_minimum_size.x = 560
+	box.add_theme_constant_override(&"separation", 10)
+	centre.add_child(box)
+	_heading(box, "Settings", 32)
+
+	_heading(box, "Subtitles")
+	_settings_focus = _setting_choice(box, "Size", "subtitle_size", [20, 24, 30, 36], ["Small", "Medium", "Large", "Extra large"])
+	_setting_toggle(box, "Show subtitles", "subtitles")
+	_setting_toggle(box, "Background behind subtitles", "subtitle_background")
+	_setting_choice(box, "Reading time", "text_hold_scale", [0.75, 1.0, 1.5, 2.0], ["Fast", "Standard", "1.5×", "2×"])
+
+	_heading(box, "Assistance")
 	_setting_choice(box, "Choice time", "choice_time_scale", [1.0, 1.5, 2.0, 0.0], ["Standard", "1.5×", "2×", "Untimed"])
 	_setting_choice(box, "Action prompt time", "qte_window_scale", [1.0, 1.5, 2.0, 3.0], ["Standard", "1.5×", "2×", "3×"])
-	_setting_choice(box, "Reading time", "text_hold_scale", [0.75, 1.0, 1.5, 2.0], ["Fast", "Standard", "1.5×", "2×"])
-	var volume_label := Label.new()
-	volume_label.text = "Master volume"
-	_style(volume_label, 22)
-	box.add_child(volume_label)
-	var volume := HSlider.new()
-	volume.name = "MasterVolume"
-	volume.max_value = 1.0
-	volume.step = 0.05
-	volume.value = Settings.master_volume
-	volume.custom_minimum_size.y = 28
-	volume.value_changed.connect(func(value: float) -> void:
-		Settings.master_volume = value
-		_save_settings())
-	box.add_child(volume)
-	_button(box, "Back", close_settings)
-	_settings.hide()
+	_setting_toggle(box, "Highlight and confirm responses", "choice_highlight")
+
+	_heading(box, "Audio")
+	_setting_slider(box, "Master volume", "master_volume", "MasterVolume")
+	_setting_slider(box, "Music", "music_volume", "MusicVolume")
+	_setting_slider(box, "Effects", "sfx_volume", "SfxVolume")
+	_setting_slider(box, "Voices", "voice_volume", "VoiceVolume")
+
+	_heading(box, "Display")
+	_setting_toggle(box, "Fullscreen", "fullscreen")
+	_setting_toggle(box, "Vertical sync", "vsync")
+	_setting_choice(box, "3D resolution", "render_scale", [1.0, 0.85, 0.7, 0.5], ["Full", "High", "Medium", "Low"])
+	var locales := TranslationServer.get_loaded_locales()
+	if locales.size() > 1:
+		var codes: Array = [""]
+		var names: Array = ["System"]
+		for code in locales:
+			codes.append(code)
+			names.append(TranslationServer.get_locale_name(code))
+		_setting_choice(box, "Language", "language", codes, names)
+
+	_heading(box, "Controls")
+	_setting_choice(box, "Controller button names", "prompt_style", ["", "xbox", "playstation", "nintendo"], ["Automatic", "Xbox", "PlayStation", "Nintendo"])
+	for action in TEBindings.actions():
+		var row := HBoxContainer.new()
+		row.name = "bind_" + String(action)
+		box.add_child(row)
+		var label := Label.new()
+		label.text = TEBindings.label(action)
+		label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_style(label, 20)
+		row.add_child(label)
+		for pad: bool in [false, true]:
+			var button := Button.new()
+			button.name = "pad" if pad else "keys"
+			button.custom_minimum_size.x = 150
+			button.add_theme_font_size_override(&"font_size", 20)
+			button.pressed.connect(_begin_capture.bind(action, pad, button))
+			row.add_child(button)
+			_binding_buttons.append([action, pad, button])
+	_refresh_bindings()
+	var reset := _button(box, "Reset everything to defaults", _reset_settings)
+	reset.name = "Reset"
+	_button(box, "Back", close_settings).name = "Back"
+
+func _heading(parent: Node, text: String, size := 26) -> void:
+	var label := Label.new()
+	label.text = text
+	_style(label, size)
+	parent.add_child(label)
 
 func _setting_choice(parent: Node, caption: String, key: String, values: Array, labels: Array) -> OptionButton:
 	var row := HBoxContainer.new()
@@ -171,6 +239,78 @@ func _setting_choice(parent: Node, caption: String, key: String, values: Array, 
 	row.add_child(options)
 	return options
 
+func _setting_toggle(parent: Node, caption: String, key: String) -> CheckButton:
+	var toggle := CheckButton.new()
+	toggle.name = key
+	toggle.text = caption
+	toggle.add_theme_font_size_override(&"font_size", 22)
+	toggle.button_pressed = Settings.get(key)
+	toggle.toggled.connect(func(on: bool) -> void:
+		Settings.set(key, on)
+		_save_settings())
+	parent.add_child(toggle)
+	return toggle
+
+func _setting_slider(parent: Node, caption: String, key: String, node_name: String) -> HSlider:
+	var row := HBoxContainer.new()
+	parent.add_child(row)
+	var label := Label.new()
+	label.text = caption
+	label.custom_minimum_size.x = 200
+	_style(label, 22)
+	row.add_child(label)
+	var slider := HSlider.new()
+	slider.name = node_name
+	slider.max_value = 1.0
+	slider.step = 0.05
+	slider.value = Settings.get(key)
+	slider.custom_minimum_size.y = 28
+	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	slider.value_changed.connect(func(value: float) -> void:
+		Settings.set(key, value)
+		_save_settings())
+	row.add_child(slider)
+	return slider
+
+## Wait for the next key (or controller input) and bind it to `action`.
+func _begin_capture(action: StringName, pad: bool, button: Button) -> void:
+	_capture = {"action": action, "pad": pad}
+	button.text = "Press a button…" if pad else "Press a key…"
+
+func _capture_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and event.physical_keycode == KEY_ESCAPE:
+		_capture = {}
+		_refresh_bindings()
+		return
+	var wanted: bool = _capture["pad"]
+	if not TEBindings.bindable(event) or TEBindings.is_pad(event) != wanted or event is InputEventMouseButton:
+		return
+	var swapped := TEBindings.rebind(_capture["action"], event)
+	_capture = {}
+	_save_settings()
+	_refresh_bindings()
+	if swapped != &"":
+		notice("%s now uses the previous binding." % TEBindings.label(swapped))
+
+func _refresh_bindings() -> void:
+	for entry: Array in _binding_buttons:
+		var event := TEBindings.current(entry[0], entry[1])
+		var button: Button = entry[2]
+		if is_instance_valid(button):
+			button.text = CADPrompt.event_name(event) if event != null else "Unbound"
+
+func _reset_settings() -> void:
+	Settings.reset()
+	_save_settings()
+	var was_visible := _settings.visible
+	for child in _settings.get_children():
+		_settings.remove_child(child)
+		child.queue_free()
+	_build_settings()
+	_settings.visible = was_visible
+	if was_visible:
+		_settings_focus.grab_focus()
+
 func _save_settings() -> void:
 	if not Settings.save():
 		notice("Could not save settings. Check available disk space and permissions.")
@@ -187,6 +327,7 @@ func open_settings() -> void:
 func close_settings() -> void:
 	if not _settings.visible:
 		return
+	_capture = {}
 	_settings.hide()
 	get_tree().paused = _settings_was_paused
 	if is_instance_valid(_settings_return_focus) and _settings_return_focus.is_visible_in_tree():
@@ -291,6 +432,11 @@ func _process(delta: float) -> void:
 			card_closed.emit()
 
 func _input(event: InputEvent) -> void:
+	if _settings.visible and not _capture.is_empty():
+		# Everything goes to the rebinding prompt, including Pause and Back.
+		_capture_input(event)
+		get_viewport().set_input_as_handled()
+		return
 	if _settings.visible:
 		if event.is_action_pressed(&"te_pause") or event.is_action_pressed(&"ui_cancel"):
 			get_viewport().set_input_as_handled()

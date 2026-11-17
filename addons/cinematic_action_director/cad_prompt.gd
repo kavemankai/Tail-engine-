@@ -8,8 +8,57 @@ const PAD := {
 	JOY_BUTTON_LEFT_SHOULDER: "LB", JOY_BUTTON_RIGHT_SHOULDER: "RB",
 	JOY_BUTTON_DPAD_UP: "D-pad Up", JOY_BUTTON_DPAD_DOWN: "D-pad Down",
 	JOY_BUTTON_DPAD_LEFT: "D-pad Left", JOY_BUTTON_DPAD_RIGHT: "D-pad Right",
-	JOY_BUTTON_START: "Start",
+	JOY_BUTTON_START: "Start", JOY_BUTTON_BACK: "View", JOY_BUTTON_GUIDE: "Guide",
+	JOY_BUTTON_LEFT_STICK: "L3", JOY_BUTTON_RIGHT_STICK: "R3",
 }
+## Names that differ from PAD for other controller families. Positions are the
+## same; only what is printed on the button changes.
+const STYLES := {
+	&"playstation": {
+		JOY_BUTTON_A: "Cross", JOY_BUTTON_B: "Circle", JOY_BUTTON_X: "Square", JOY_BUTTON_Y: "Triangle",
+		JOY_BUTTON_LEFT_SHOULDER: "L1", JOY_BUTTON_RIGHT_SHOULDER: "R1",
+		JOY_BUTTON_START: "Options", JOY_BUTTON_BACK: "Create", JOY_BUTTON_GUIDE: "PS",
+	},
+	&"nintendo": {
+		JOY_BUTTON_A: "B", JOY_BUTTON_B: "A", JOY_BUTTON_X: "Y", JOY_BUTTON_Y: "X",
+		JOY_BUTTON_LEFT_SHOULDER: "L", JOY_BUTTON_RIGHT_SHOULDER: "R",
+		JOY_BUTTON_START: "+", JOY_BUTTON_BACK: "-", JOY_BUTTON_GUIDE: "Home",
+	},
+}
+const AXES := {
+	JOY_AXIS_LEFT_X: "Left stick", JOY_AXIS_LEFT_Y: "Left stick",
+	JOY_AXIS_RIGHT_X: "Right stick", JOY_AXIS_RIGHT_Y: "Right stick",
+	JOY_AXIS_TRIGGER_LEFT: "LT", JOY_AXIS_TRIGGER_RIGHT: "RT",
+}
+const AXIS_STYLES := {
+	&"playstation": {JOY_AXIS_TRIGGER_LEFT: "L2", JOY_AXIS_TRIGGER_RIGHT: "R2"},
+	&"nintendo": {JOY_AXIS_TRIGGER_LEFT: "ZL", JOY_AXIS_TRIGGER_RIGHT: "ZR"},
+}
+
+## What is printed on a controller button for the controller in use.
+static func pad_name(button: int) -> String:
+	var names: Dictionary = STYLES.get(CADInputDevice.style(), {})
+	return names.get(button, PAD.get(button, "Pad %d" % button))
+
+static func axis_name(axis: int) -> String:
+	var names: Dictionary = AXIS_STYLES.get(CADInputDevice.style(), {})
+	return names.get(axis, AXES.get(axis, "Axis %d" % axis))
+
+## The name of any single input event, for prompts and the rebinding menu.
+static func event_name(event: InputEvent) -> String:
+	if event is InputEventJoypadButton:
+		return pad_name(event.button_index)
+	if event is InputEventJoypadMotion:
+		var name := axis_name(event.axis)
+		if not name.ends_with("stick"):
+			return name
+		var arrows := ["←", "→"] if event.axis % 2 == 0 else ["↑", "↓"]
+		return "%s %s" % [name, arrows[0] if event.axis_value < 0.0 else arrows[1]]
+	if event is InputEventKey:
+		return OS.get_keycode_string(event.physical_keycode if event.physical_keycode != KEY_NONE else event.keycode)
+	if event is InputEventMouseButton:
+		return "Mouse %d" % event.button_index
+	return ""
 
 static func bind(director: CADDirector, label: Label, progress: Range, backdrop: Control = null) -> void:
 	CADTargetOverlay.install(director)
@@ -143,7 +192,7 @@ static func direction_controls(spec: CADInteractionSpec, sector: int, pad: bool)
 				axis = Vector2(signf(binding.axis_value), 0) if binding.axis % 2 == 0 else Vector2(0, signf(binding.axis_value))
 			elif binding is InputEventJoypadButton:
 				group = "buttons"
-				text = PAD.get(binding.button_index, "Pad %d" % binding.button_index)
+				text = pad_name(binding.button_index)
 				var dpad := {JOY_BUTTON_DPAD_UP: Vector2.UP, JOY_BUTTON_DPAD_RIGHT: Vector2.RIGHT,
 					JOY_BUTTON_DPAD_DOWN: Vector2.DOWN, JOY_BUTTON_DPAD_LEFT: Vector2.LEFT}
 				axis = dpad.get(binding.button_index, Vector2.ZERO)
@@ -186,9 +235,12 @@ static func glyph(action: StringName, pad: bool) -> String:
 		var text := ""
 		var is_pad := event is InputEventJoypadButton or event is InputEventJoypadMotion
 		if event is InputEventJoypadButton:
-			text = PAD.get(event.button_index, "Pad %d" % event.button_index)
+			text = pad_name(event.button_index)
 		elif event is InputEventJoypadMotion:
-			text = "Stick"
+			# A stick is named without its direction; a trigger by its own name.
+			text = axis_name(event.axis)
+			if text.ends_with("stick"):
+				text = "Stick"
 		elif event is InputEventKey:
 			text = OS.get_keycode_string(event.physical_keycode if event.physical_keycode != KEY_NONE else event.keycode)
 		if text != "" and is_pad == pad:
