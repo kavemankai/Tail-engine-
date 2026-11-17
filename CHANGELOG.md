@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Settings: Music/Effects/Voice volumes, fullscreen, vsync, 3D resolution, subtitles on/off and background, language, auto-advance, reset. Keyboard and controller rebinding. Xbox, PlayStation and Nintendo button names. Highlight-and-confirm responses.
+- History of lines in the pause menu, rich-text subtitles, recap that waits for the player, credits card, background location loading with an indicator, episode select, fading notices.
 - Proprietary LICENSE added. Unused bar environment (`assets/`, `scenes/`, `scripts/environment/`) removed; exports are about 22 MB smaller.
 - Saves: version 2, repair after content patches, rename maps, backups, slot details, season progress kept across restarts.
 - Faults stop the episode with `Flow.episode_failed` instead of passing for an ending; wildcard exits no longer match `error` or `cancelled`.

@@ -18,7 +18,7 @@ Authoring reference: [AUTHORING.md](AUTHORING.md) for episodes, [INTEGRATION.md]
 | # | Mechanic | How to author | Status | Slice |
 |---|---|---|---|---|
 | 1.1 | Title card step | `TEStep.kind = CARD`, `card = TITLE`, `heading`, `body` | Now | [ ] |
-| 1.2 | Recap card step | `kind = CARD`, `card = RECAP`; text from manifest recap sentences | Now, changes in P3 (becomes a choices screen) | [ ] |
+| 1.2 | Recap card step | `kind = CARD`, `card = RECAP`; text from manifest recap sentences | Now (PR #15: waits for the player) | [ ] |
 | 1.3 | Dialogue step | `kind = DIALOGUE`, `dialogue`, `cue`, optional `shot` | Now | [ ] |
 | 1.4 | Explore step | `kind = EXPLORE`, `hub` names `Hubs/<name>` | Now, changes in P7 | [ ] |
 | 1.5 | Encounter step with a sequence | `kind = ENCOUNTER`, `sequence`, `stage`, `roles` | Now | [ ] |
@@ -28,7 +28,7 @@ Authoring reference: [AUTHORING.md](AUTHORING.md) for episodes, [INTEGRATION.md]
 | 1.9 | Named exits | `TEExit.on` matches the step's exit name; `next` is a step id or `END` | Now | [ ] |
 | 1.10 | Conditional exit | `TEExit.when = "flag and not other"`; conditional exits listed before the catch-all | Now | [ ] |
 | 1.11 | Wildcard exit | `on = "*"` | Now (PR #12: `error`/`cancelled` no longer fall through it) | [ ] |
-| 1.12 | Location change with fade | `TEStep.location` set to a different scene | Now, changes in P3 (loading screen) | [ ] |
+| 1.12 | Location change with fade | `TEStep.location` set to a different scene | Now (PR #15: background load with indicator) | [ ] |
 | 1.13 | Staying in the current location | `location` left empty | Now | [ ] |
 | 1.14 | Cast placement on marks | `TEStep.cast = {character_id: mark_name}` | Now | [ ] |
 | 1.15 | Actor left where it stands | empty mark name in `cast` | Now | [ ] |
@@ -45,7 +45,7 @@ Authoring reference: [AUTHORING.md](AUTHORING.md) for episodes, [INTEGRATION.md]
 | 2.3 | Carried variables | `TESeason.carry_variables`, declared in both manifests | Now | [ ] |
 | 2.4 | Reading an earlier episode's choice | `Story.prior("episode_1", "choice_id")` in dialogue or a condition | Now | [ ] |
 | 2.5 | Next episode still offered after quitting and relaunching | none (engine behaviour) | Now (PR #12) | [ ] |
-| 2.6 | Episode select | title menu | New in P3 | [ ] |
+| 2.6 | Episode select | title menu, after reaching episode 2 | Now (PR #15) | [ ] |
 
 ## 3. Story state
 
@@ -54,7 +54,7 @@ Authoring reference: [AUTHORING.md](AUTHORING.md) for episodes, [INTEGRATION.md]
 | 3.1 | Declared variables with defaults | `manifest.tres` variables | Now | [ ] |
 | 3.2 | Set a variable | `do Story.put("name", value)` | Now (PR #12: undeclared names rejected) | [ ] |
 | 3.3 | Add to a number | `do Story.add("name", 1)` | Now | [ ] |
-| 3.4 | Remember with a notice | `do Story.remember("name", true, "They will remember that.")` | Now, changes in P3 (animated notice) | [ ] |
+| 3.4 | Remember with a notice | `do Story.remember("name", true, "They will remember that.")` | Now (PR #15: fades in and out) | [ ] |
 | 3.5 | Major choice for the recap | `do Story.choose("choice_id", "option_id")`, declared in the manifest | Now | [ ] |
 | 3.6 | Read a flag or value in dialogue | `if Story.flag("name")`, `Story.value("name")` | Now | [ ] |
 | 3.7 | Read how a step ended | `Story.outcome("step_id")` | Now | [ ] |
@@ -67,7 +67,7 @@ Authoring reference: [AUTHORING.md](AUTHORING.md) for episodes, [INTEGRATION.md]
 | # | Mechanic | How to author | Status | Slice |
 |---|---|---|---|---|
 | 4.1 | Spoken line with a cast speaker | `character_id: text` | Now | [ ] |
-| 4.2 | Untimed choice, 2 to 4 responses | Dialogue Manager responses | Now, changes in P3 (focus navigation) | [ ] |
+| 4.2 | Untimed choice, 2 to 4 responses | Dialogue Manager responses | Now (PR #14: optional highlight-and-confirm mode in Settings) | [ ] |
 | 4.3 | Timed choice | `[#timed=6]` on the line before the responses | Now | [ ] |
 | 4.4 | Silence as an answer | `[#silence]` on one response | Now | [ ] |
 | 4.5 | Timer with no silence option | timed line, no `#silence`; first response is taken | Now | [ ] |
@@ -82,9 +82,9 @@ Authoring reference: [AUTHORING.md](AUTHORING.md) for episodes, [INTEGRATION.md]
 | 4.14 | Look-at on a line | `[#look=character_or_mark]` | New in P6 | [ ] |
 | 4.15 | Animation clip on a line | `[#clip=name]` | New in P6 | [ ] |
 | 4.16 | Skip the current line | advance input | Now | [ ] |
-| 4.17 | Auto-advance toggle and skip-seen | settings and input | New in P3 | [ ] |
-| 4.18 | Backlog | pause menu or input | New in P3 | [ ] |
-| 4.19 | Rich text in subtitles | BBCode in a line | New in P3 | [ ] |
+| 4.17 | Auto-advance toggle (lines wait for a press when off) | Settings | Now (PR #15) | [ ] |
+| 4.18 | History of lines and responses | pause menu | Now (PR #15) | [ ] |
+| 4.19 | Rich text in subtitles | `[b]`, `[i]`, `[color]` in a line | Now (PR #15) | [ ] |
 
 ## 5. Exploration
 
@@ -169,7 +169,7 @@ Interaction families are set on `CADGate.interaction` (`CADInteractionSpec`). Ea
 | 8.4 | Music | `do Audio.music(load("res://path.ogg"))` from dialogue | Now, changes in P5 (per-step field, restored on resume) | [ ] |
 | 8.5 | Ambience per location or step | step field | New in P5 | [ ] |
 | 8.6 | Sound effect | `do Audio.effect(load("res://path.wav"))` | Now, changes in P5 (SFX bus, positional) | [ ] |
-| 8.7 | Separate Music / SFX / Voice volume | Settings | New in P5 (buses) and P3 (sliders) | [ ] |
+| 8.7 | Separate Music / Effects / Voice volume | Settings | Now (PR #14) | [ ] |
 
 ## 9. Saving
 
@@ -177,7 +177,7 @@ Interaction families are set on `CADGate.interaction` (`CADInteractionSpec`). Ea
 |---|---|---|---|---|
 | 9.1 | Continue | quit at any point after a checkpoint, relaunch, Continue | Now | [ ] |
 | 9.2 | Rewind to an earlier checkpoint | title menu | Now (PR #12: asks first) | [ ] |
-| 9.3 | Several save slots | title menu slot button | Now, changes in P3 (slot screen with details) | [ ] |
+| 9.3 | Several save slots | title menu slot button | Now; slot screen with details still to come in P3 | [ ] |
 | 9.4 | New game over an existing save asks first | title menu | Now (PR #12) | [ ] |
 | 9.5 | Save survives a content patch | rename a step or variable (add it to `renamed_steps` / `renamed_variables`), then Continue | Now (PR #12) | [ ] |
 | 9.6 | Damaged save is reported, backup used | corrupt the file in `user://saves` | Now (PR #12) | [ ] |
@@ -194,16 +194,16 @@ Interaction families are set on `CADGate.interaction` (`CADInteractionSpec`). Ea
 | 10.5 | Reading time | Settings | Now | [ ] |
 | 10.6 | Untimed choices | Settings | Now | [ ] |
 | 10.7 | Master volume | Settings | Now | [ ] |
-| 10.8 | Window mode, resolution scale, vsync | Settings | New in P3 | [ ] |
-| 10.9 | Subtitles on/off and background | Settings | New in P3 | [ ] |
+| 10.8 | Fullscreen, 3D resolution, vsync | Settings | Now (PR #14) | [ ] |
+| 10.9 | Subtitles on/off and background | Settings | Now (PR #14) | [ ] |
 | 10.10 | Language | Settings | New in P3 / P4 | [ ] |
-| 10.11 | Keyboard and controller rebinding | Settings | New in P3 | [ ] |
-| 10.12 | Prompts follow the last-used device | switch between keyboard and pad | Now, changes in P3 (icon glyphs, PlayStation and Steam Deck sets) | [ ] |
+| 10.11 | Keyboard and controller rebinding | Settings, Controls | Now (PR #14) | [ ] |
+| 10.12 | Prompts follow the last-used device | switch between keyboard and pad | Now (PR #14: Xbox, PlayStation and Nintendo button names; icons still to come) | [ ] |
 | 10.13 | Whole game playable on a controller alone | play without touching the keyboard | Now, changes in P3 | [ ] |
 | 10.14 | Own UI look | swap the theme | New in P3 | [ ] |
-| 10.15 | End-of-episode choices screen | automatic at episode end | New in P3 | [ ] |
-| 10.16 | Credits | card or step | New in P3 | [ ] |
-| 10.17 | Loading screen between locations | automatic | New in P3 | [ ] |
+| 10.15 | End-of-episode choices screen | a Recap card as the last step | Now (PR #15) | [ ] |
+| 10.16 | Credits | Card step with `card = CREDITS` | Now (PR #15) | [ ] |
+| 10.17 | Loading indicator between locations | automatic | Now (PR #15) | [ ] |
 | 10.18 | Translated text everywhere | pseudo-locale run | New in P4 | [ ] |
 
 ## 11. Tools

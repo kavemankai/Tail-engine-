@@ -14,6 +14,10 @@ signal episode_failed(reason: String)
 signal _step_done(exit_name: StringName)
 
 const END := &"END"
+## Longest a recap stays up if the player does not dismiss it.
+const RECAP_SECONDS := 45.0
+## A load shorter than this never shows the loading indicator.
+const LOADING_GRACE := 0.4
 const PLACEHOLDER := preload("res://addons/tale_engine/placeholder_actor.tscn")
 
 var episode: TEEpisode
@@ -111,6 +115,9 @@ func _begin(new_episode: TEEpisode, new_season: TESeason, carried := {}, history
 	episode = new_episode
 	season = new_season
 	checkpoints = []
+	Screen.clear_history()
+	if season != null:
+		TEProgress.mark(season, season.index_of(episode))
 	Story.reset(episode.manifest)
 	if not carried.is_empty() or not history.is_empty():
 		Story.apply_carry(carried, history)
@@ -126,6 +133,9 @@ func resume() -> bool:
 	season = load(data["season"]["path"]) if data.has("season") else null
 	checkpoints = data["checkpoints"]
 	playtime = float(data.get("meta", {}).get("playtime", 0.0))
+	Screen.clear_history()
+	if season != null:
+		TEProgress.mark(season, season.index_of(episode))
 	var recovered := TESave.last_status == TESave.Status.RECOVERED
 	rewind(checkpoints.size() - 1)
 	if recovered:
@@ -212,6 +222,9 @@ func _play(step_id: StringName) -> void:
 		var moved: bool = await _enter_location(step.location, generation)
 		if generation != _generation:
 			return
+		if step.location != "" and location == null:
+			_fail("Flow: step '%s' could not load location '%s'." % [step.id, step.location], generation)
+			return
 		_place_cast()
 		if moved or Screen.is_black():
 			Screen.fade_in()
@@ -277,9 +290,13 @@ func _launch(current: TEStep, token: int) -> void:
 			exit_name = &"end"
 		TEStep.Kind.CARD:
 			var body := current.body
-			if current.card == TEStep.Card.RECAP:
-				body = "\n".join(Story.recap())
-			await Screen.card(current.heading, body, 6.0 if current.card == TEStep.Card.RECAP else 3.0)
+			if current.card == TEStep.Card.CREDITS:
+				await Screen.credits(current.heading, body)
+			elif current.card == TEStep.Card.RECAP:
+				# The player's choices stay up until they move on.
+				await Screen.card(current.heading, "\n".join(Story.recap()), RECAP_SECONDS, true)
+			else:
+				await Screen.card(current.heading, body, 3.0)
 			exit_name = &"end"
 	if token == _step_token:
 		_step_done.emit(exit_name)
@@ -358,10 +375,37 @@ func _enter_location(path: String, generation: int) -> bool:
 	if generation != _generation:
 		return false
 	_free_location()
-	location = (load(path) as PackedScene).instantiate()
+	var scene := await _load_scene(path)
+	if generation != _generation:
+		return false
+	var root := scene.instantiate() if scene != null else null
+	if root is not TELocation:
+		if root != null:
+			root.free()
+		return false
+	location = root
 	_location_path = path
 	add_child(location)
 	return true
+
+## Load a scene off the main thread so the game keeps drawing, with a loading
+## indicator once it has taken long enough to notice. Null if it cannot load.
+func _load_scene(path: String) -> PackedScene:
+	if not ResourceLoader.exists(path):
+		return null
+	if ResourceLoader.has_cached(path) or ResourceLoader.load_threaded_request(path) != OK:
+		return load(path) as PackedScene
+	var progress: Array = []
+	var waited := 0.0
+	while ResourceLoader.load_threaded_get_status(path, progress) == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
+		await get_tree().process_frame
+		waited += get_process_delta_time()
+		if waited > LOADING_GRACE:
+			Screen.loading(float(progress[0]) if not progress.is_empty() else 0.0)
+	Screen.loading(-1.0)
+	if ResourceLoader.load_threaded_get_status(path) != ResourceLoader.THREAD_LOAD_LOADED:
+		return null
+	return ResourceLoader.load_threaded_get(path) as PackedScene
 
 func _place_cast() -> void:
 	if location == null:

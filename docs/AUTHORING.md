@@ -22,7 +22,7 @@ Set `episode` (or `season`) on your `TETitleMenu` scene to your `episode.tres`. 
 | Explore | A hub in the location. The player walks and uses hotspots. | The `exit` of the hotspot that ended it. |
 | Dialogue | One cue from a dialogue file. | `end`, or the name passed to `exit("...")` in the file. |
 | Encounter | A `CADSequence` on a stage in the location. | The sequence's outcome. |
-| Card | A title card, or the recap of choices. | `end`. |
+| Card | A title card, the recap of choices, or rolling credits. | `end`. |
 | Cutscene | A list of camera cues with no input. See [Camera and cutscenes](#camera-and-cutscenes). | `end`. |
 
 An exit (`TEExit`) has `on` (a name, or `*` for any), an optional `when` condition, and `next` (a step id or `END`). The first match wins, so put conditional exits before the catch-all.
@@ -275,6 +275,22 @@ Point the title menu at it (`season = ...` on a `TETitleMenu`) or call `Flow.sta
 - Major choices of earlier episodes are readable with `Story.prior("episode_1", "gift")`, which returns the option id or an empty string. Use it in dialogue conditions: `if Story.prior("episode_1", "gift") == "keep"`.
 - The next episode's recap starts fresh.
 - Saves record the season, so Continue and rewind return to the right episode with carried state intact. The title menu cycles `slot_count` save slots.
+
+## Cards, history and waiting for the player
+
+A Card step has three forms, set by `card`:
+
+- **Title** (`0`): `heading` and `body` for about three seconds, or until the player advances.
+- **Recap** (`1`): the recap sentence of every major choice made, from the manifest. It stays until the player advances.
+- **Credits** (`2`): `heading` and `body` roll up the screen. One name or role per line; the player can skip.
+
+Every spoken line and chosen response is kept for the session and shown under **History** in the pause menu. `Screen.history()` returns the same list.
+
+Subtitle text is rich text: `[b]`, `[i]` and `[color=...]` work in dialogue lines.
+
+Players can turn off **Advance lines automatically**; each line then waits for the advance button. Do not rely on a line disappearing by itself to time a scene: use a Cutscene or Encounter step for timing.
+
+Locations load in the background. A loading indicator appears if a load takes longer than a moment. With a season, the title menu offers **Episodes** once the player has reached a second episode.
 
 ## When a step breaks
 

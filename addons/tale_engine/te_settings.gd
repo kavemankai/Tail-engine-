@@ -31,6 +31,7 @@ const DEFAULTS := {
 	"subtitles": true,
 	"subtitle_background": true,
 	"choice_highlight": false,
+	"auto_advance": true,
 	"fullscreen": false,
 	"vsync": true,
 	"language": "",
@@ -64,6 +65,8 @@ var subtitle_background := true
 ## Choose dialogue responses by moving a highlight and confirming, instead of
 ## one button per response. Also reaches a fifth response and beyond.
 var choice_highlight := false
+## Lines move on by themselves after their reading time. Off waits for a press.
+var auto_advance := true
 var fullscreen := false
 var vsync := true
 ## Locale code such as "fr"; empty follows the system language.

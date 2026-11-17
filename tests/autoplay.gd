@@ -28,9 +28,19 @@ var _sidestep_sign := 1.0
 
 func _ready() -> void:
 	Flow.step_started.connect(func(step: TEStep) -> void: steps.append(step.id))
+	Flow.step_started.connect(_on_card)
 	Flow.balloon_opened.connect(_on_balloon)
 	Flow.director_started.connect(_on_director)
 	Flow.hub_entered.connect(_on_hub)
+
+## Recap and credits wait for the player; press advance once they are up.
+func _on_card(step: TEStep) -> void:
+	if step.kind != TEStep.Kind.CARD or step.card == TEStep.Card.TITLE:
+		return
+	await get_tree().create_timer(maxf(delay * 3.0, 0.2)).timeout
+	if Flow.step == step:
+		_send("te_advance", true)
+		_send("te_advance", false)
 
 func _exit_tree() -> void:
 	_steer(Vector3.ZERO)

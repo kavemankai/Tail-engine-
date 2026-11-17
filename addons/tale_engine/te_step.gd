@@ -4,7 +4,7 @@ extends Resource
 ## One node of the episode graph.
 
 enum Kind { EXPLORE, DIALOGUE, ENCOUNTER, CARD, CUTSCENE }
-enum Card { TITLE, RECAP }
+enum Card { TITLE, RECAP, CREDITS }
 ## Exit names that mean the step broke. "*" does not match them; route one
 ## explicitly (on = "error") only if the story has a real fallback.
 const FAULT_EXITS: Array[StringName] = [&"error", &"cancelled"]
