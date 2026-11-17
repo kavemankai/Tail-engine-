@@ -58,6 +58,14 @@ func _ready() -> void:
 	_timer.hide()
 	add_child(_timer)
 	InputDevice.changed.connect(_refresh_choices)
+	Settings.changed.connect(_restyle)
+	_restyle()
+
+## Follow the subtitle options, including while a line is on screen.
+func _restyle() -> void:
+	_text.add_theme_font_size_override(&"font_size", Settings.subtitle_size)
+	_panel.visible = Settings.subtitles
+	_panel.color.a = 0.8 if Settings.subtitle_background else 0.0
 
 ## Called from dialogue files: the conversation's result for the episode graph.
 func exit(exit_name: String) -> void:
@@ -137,11 +145,13 @@ func _choose(line: DialogueLine) -> DialogueResponse:
 	for i in _responses.size():
 		var button := Button.new()
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		button.focus_mode = Control.FOCUS_NONE
+		button.focus_mode = Control.FOCUS_ALL if Settings.choice_highlight else Control.FOCUS_NONE
 		button.add_theme_font_size_override(&"font_size", 22)
 		button.pressed.connect(pick.bind(i))
 		_choices.add_child(button)
 	_refresh_choices()
+	if Settings.choice_highlight and _choices.get_child_count() > 0:
+		_choices.get_child(0).grab_focus.call_deferred()
 	var window := line.get_tag_value("timed").to_float() * Settings.choice_time_scale
 	var left := window
 	_timer.visible = window > 0.0
@@ -174,12 +184,18 @@ func _choose(line: DialogueLine) -> DialogueResponse:
 func _refresh_choices(_using_pad: bool = false) -> void:
 	for i in mini(_choices.get_child_count(), _responses.size()):
 		var key := CADPrompt.glyph(CHOICE_ACTIONS[i], CADInputDevice.using_pad) if i < CHOICE_ACTIONS.size() else ""
-		_choices.get_child(i).text = "[%s]  %s" % [key, _responses[i].text]
+		# Highlight mode has no per-response button, and a response past the
+		# fourth has none either.
+		var plain := Settings.choice_highlight or key == ""
+		_choices.get_child(i).text = _responses[i].text if plain else "[%s]  %s" % [key, _responses[i].text]
 
 func _input(event: InputEvent) -> void:
 	if _cancelled or get_viewport().has_meta(CADDirector.VIEWPORT_OWNER):
 		return
 	if choosing():
+		if Settings.choice_highlight:
+			# The focused button takes ui_accept; arrows and the d-pad move focus.
+			return
 		for i in mini(_responses.size(), CHOICE_ACTIONS.size()):
 			if event.is_action_pressed(CHOICE_ACTIONS[i]):
 				get_viewport().set_input_as_handled()
