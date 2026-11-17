@@ -40,5 +40,15 @@ func frames(count: int) -> void:
 func wait(seconds: float) -> void:
 	await get_tree().create_timer(seconds).timeout
 
+## Collect reported faults instead of logging them as errors, for tests that
+## provoke one on purpose. Returns the live list; call release_faults() after.
+func capture_faults() -> Array[String]:
+	var faults: Array[String] = []
+	TEFault.handler = func(message: String) -> void: faults.append(message)
+	return faults
+
+func release_faults() -> void:
+	TEFault.handler = Callable()
+
 func joined(ids: Array) -> String:
 	return ",".join(ids)

@@ -276,6 +276,26 @@ Point the title menu at it (`season = ...` on a `TETitleMenu`) or call `Flow.sta
 - The next episode's recap starts fresh.
 - Saves record the season, so Continue and rewind return to the right episode with carried state intact. The title menu cycles `slot_count` save slots.
 
+## When a step breaks
+
+A step that cannot run (missing stage, hub or sequence) ends with the exit `error`; an encounter that is cancelled ends with `cancelled`. `*` does not match these two names. If nothing routes them, or an exit points at a step that does not exist, the episode stops: the player sees a short message and returns to the menu with their last checkpoint intact, and `Flow.episode_failed(reason)` is emitted instead of `episode_finished`. Add an exit with `on = "error"` only where the story has a real fallback.
+
+Faults are reported through `TEFault.report`. Set `TEFault.handler` to a callable to log or upload them.
+
+Using a variable or choice option that the manifest does not declare is a fault, and the value is not stored.
+
+## Patching a released episode
+
+Saves are repaired to match the episode as it is now, so a patch does not cost players their progress:
+
+- A checkpoint whose step was removed is dropped; the newest surviving checkpoint is used. If none survive, the episode restarts with the story state intact.
+- A removed variable or choice option is dropped. A variable whose type changed goes back to its default.
+- If you rename a checkpoint step, add `old_id -> new_id` to `TEEpisode.renamed_steps`. If you rename a variable, add `old_name -> new_name` to `TEStoryManifest.renamed_variables`. Saves follow the rename.
+
+Each write keeps the previous save as `slot_N.json.bak`; a damaged save falls back to it. `TESave.last_status` after a read says whether the slot was empty, fine, recovered or unreadable, and `TESave.info(slot)` returns the checkpoint title, save time and playtime for a slot list.
+
+Finishing an episode of a season moves the save to the start of the next one, so Continue after closing the game starts the next episode with carried state.
+
 ## Camera and cutscenes
 
 Locations supply cameras as `Shots/<name>`. Use `TEShot` instead of a plain `Camera3D` to author a slow move: `drift` (local-space translation), `fov_drift` and `drift_time` play while the shot is active and reset when another takes over.

@@ -281,8 +281,12 @@ func director_contract() -> void:
 	director._input(pad_press)
 	director._on_joy_connection_changed(5, false)
 	expect(director.active(), "unrelated controller disconnect does not cancel owned input")
+	var lost: Array[int] = []
+	director.controller_lost.connect(func(device: int) -> void: lost.append(device))
 	director._on_joy_connection_changed(4, false)
-	expect(not director.active() and outcomes.back() == &"cancelled", "owning controller disconnect cancels safely")
+	expect(director.active() and lost == [4], "owning controller disconnect keeps the prompt open and reports it")
+	expect(director.interaction_runner.router.controller == -1, "another device may take the prompt over")
+	director.cancel()
 	now[0] = 0.0
 	director.begin(sequence(gate()))
 	director.interaction_resolved.connect(func(_result: CADResult) -> void: director.cancel(), CONNECT_ONE_SHOT)

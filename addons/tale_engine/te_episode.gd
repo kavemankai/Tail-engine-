@@ -10,6 +10,9 @@ extends Resource
 @export var player: StringName
 @export var entry: StringName
 @export var steps: Array[TEStep] = []
+## Old step id -> new id. Add an entry when a patch renames a checkpoint step,
+## so saves made before the patch resume at the right place.
+@export var renamed_steps: Dictionary = {}
 
 func find(step_id: StringName) -> TEStep:
 	for step in steps:
