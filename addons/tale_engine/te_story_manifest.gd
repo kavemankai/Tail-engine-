@@ -1,3 +1,4 @@
+@tool
 class_name TEStoryManifest
 extends Resource
 ## Declares every story variable and major choice in an episode. Names that

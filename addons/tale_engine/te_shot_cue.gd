@@ -1,3 +1,4 @@
+@tool
 class_name TEShotCue
 extends Resource
 ## One beat of a cutscene step: where the camera is, who moves, what is said.

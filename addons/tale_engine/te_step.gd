@@ -1,3 +1,4 @@
+@tool
 class_name TEStep
 extends Resource
 ## One node of the episode graph.

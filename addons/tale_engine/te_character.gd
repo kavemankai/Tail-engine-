@@ -1,3 +1,4 @@
+@tool
 class_name TECharacter
 extends Resource
 ## A character in the cast. Swap `actor_scene` to replace the placeholder.

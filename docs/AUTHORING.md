@@ -292,3 +292,9 @@ friend: We need to go. [#shot=close, #blend=0.6, #shake=0.05]
 A **Cutscene** step (`kind = 4`) plays a list of `TEShotCue` resources with no input: each cue has a `shot`, `blend`, `hold`, optional `shake`, a `speaker` (marks that actor as talking), a `caption`, and `clips` (character id to logical clip, played as the cue starts). It ends with the exit `end`. The validator checks that every cue's shot, speaker and character exist.
 
 From code, `Flow.camera` (`TECamera`) offers `cut_to`, `blend_to` and `shake`.
+
+## Editor tooling
+
+The Tale Engine plugin (enabled in `project.godot`) adds a **Tale Engine** panel at the bottom of the editor. Select an `episode.tres` and the panel shows its step graph: one node per step, one output per exit, and an END node. Clicking a node selects that step in the inspector. **Add step** appends a step of the chosen kind and saves the episode. **Validate** runs the same validator as `tests/validate.tscn` in a headless game process and lists the problems.
+
+The same check from a terminal: `godot --headless --path . res://addons/tale_engine/editor/validate_cli.tscn -- res://path/to/episode.tres`.
