@@ -5,8 +5,6 @@ extends CanvasLayer
 
 signal card_closed
 
-const QUIT_LABEL := "Quit to menu"
-const QUIT_CONFIRM := "Quit? Progress since the last checkpoint is lost."
 
 var prompt_label := Label.new()
 var prompt_bar := ProgressBar.new()
@@ -20,7 +18,10 @@ var _card := ColorRect.new()
 var _card_heading := Label.new()
 var _card_body := Label.new()
 var _pause := ColorRect.new()
-var _pause_hint := Label.new()
+var _pause_hint: Label
+## True after the first press of Quit, until the menu closes.
+var _quit_armed := false
+var _locale := ""
 var _pause_resume: Button
 var _pause_quit: Button
 var _settings := ColorRect.new()
@@ -40,7 +41,7 @@ var _credits := Label.new()
 var _credits_seconds := 0.0
 var _loading := Label.new()
 var _history := ColorRect.new()
-var _history_text := RichTextLabel.new()
+var _history_text: RichTextLabel
 var _history_back: Button
 ## Lines and chosen responses this session, oldest first: { speaker, text, colour }.
 var _lines: Array[Dictionary] = []
@@ -112,19 +113,22 @@ func _ready() -> void:
 	_card.add_child(_credits)
 	_card.clip_contents = true
 	_card.hide()
+	# Text here is translated when built, never by the controls themselves, so
+	# dialogue and names are not looked up a second time.
+	auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	_pause.color = Color(0, 0, 0, 0.7)
-	var pause_box := _centered_box(_pause)
-	_pause_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_style(_pause_hint, 30)
-	pause_box.add_child(_pause_hint)
-	_pause_resume = _button(pause_box, "Resume", set_paused.bind(false))
-	_button(pause_box, "History", open_history).name = "History"
-	_button(pause_box, "Settings", open_settings)
-	_pause_quit = _button(pause_box, QUIT_LABEL, _quit_pressed)
+	_build_pause()
 	_pause.hide()
 	_build_settings()
 	_settings.hide()
+	_history.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_history.color = Color(0.03, 0.04, 0.07, 1.0)
+	_history.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(_history)
+	move_child(_history, _settings.get_index())
 	_build_history()
+	_history.hide()
+	_locale = TranslationServer.get_locale()
 	# Fades stay above menus, while transparent fades never intercept input.
 	move_child(_fade, -1)
 	_fade.color = Color(0, 0, 0, 0)
@@ -146,18 +150,41 @@ func _ready() -> void:
 func _restyle() -> void:
 	_caption.add_theme_font_size_override(&"font_size", Settings.subtitle_size)
 	_caption.visible = Settings.subtitles
+	if TranslationServer.get_locale() != _locale:
+		_retranslate()
 	_refresh_pause()
 	if _settings.visible:
 		_refresh_bindings()
 
+func _build_pause() -> void:
+	var pause_box := _centered_box(_pause)
+	_pause_hint = Label.new()
+	_pause_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_style(_pause_hint, 30)
+	pause_box.add_child(_pause_hint)
+	_pause_resume = _button(pause_box, tr("Resume"), set_paused.bind(false))
+	_button(pause_box, tr("History"), open_history).name = "History"
+	_button(pause_box, tr("Settings"), open_settings)
+	_pause_quit = _button(pause_box, tr("Quit to menu"), _quit_pressed)
+	_refresh_pause()
+
+## Rebuild every menu in the current language. Open menus stay open.
+func _retranslate() -> void:
+	_locale = TranslationServer.get_locale()
+	for panel: Control in [_pause, _history, _settings]:
+		for child in panel.get_children():
+			panel.remove_child(child)
+			child.queue_free()
+	_build_pause()
+	_build_history()
+	_build_settings()
+	if _settings.visible:
+		_settings_focus.grab_focus()
+
 func _build_history() -> void:
-	_history.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_history.color = Color(0.03, 0.04, 0.07, 1.0)
-	_history.mouse_filter = Control.MOUSE_FILTER_STOP
-	add_child(_history)
-	move_child(_history, _settings.get_index())
+	_history_text = RichTextLabel.new()
 	var title := Label.new()
-	title.text = "History"
+	title.text = tr("History")
 	title.position = Vector2(60, 24)
 	_style(title, 32)
 	_history.add_child(title)
@@ -171,11 +198,10 @@ func _build_history() -> void:
 	_history_text.offset_bottom = -90
 	_history_text.add_theme_font_size_override(&"normal_font_size", 22)
 	_history.add_child(_history_text)
-	_history_back = _button(_history, "Back", close_history)
+	_history_back = _button(_history, tr("Back"), close_history)
 	_history_back.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
 	_history_back.position.y -= 30
 	_history_back.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	_history.hide()
 
 ## Record a spoken line, or a chosen response when `speaker` is empty.
 func log_line(speaker: String, text: String, colour := Color.WHITE) -> void:
@@ -206,7 +232,7 @@ func open_history() -> void:
 			_history_text.append_text(line["text"])
 		_history_text.newline()
 	if _lines.is_empty():
-		_history_text.add_text("Nothing has been said yet.")
+		_history_text.add_text(tr("Nothing has been said yet."))
 	_history.show()
 	_history_back.grab_focus()
 
@@ -221,7 +247,7 @@ func close_history() -> void:
 func loading(fraction: float) -> void:
 	_loading.visible = fraction >= 0.0
 	if _loading.visible:
-		_loading.text = "Loading…  %d%%" % int(clampf(fraction, 0.0, 1.0) * 100.0)
+		_loading.text = tr("Loading…  %d%%") % int(clampf(fraction, 0.0, 1.0) * 100.0)
 
 func _centered_box(parent: Control) -> VBoxContainer:
 	var box := VBoxContainer.new()
@@ -263,41 +289,42 @@ func _build_settings() -> void:
 	box.custom_minimum_size.x = 560
 	box.add_theme_constant_override(&"separation", 10)
 	centre.add_child(box)
-	_heading(box, "Settings", 32)
+	_heading(box, tr("Settings"), 32)
 
-	_heading(box, "Subtitles")
-	_settings_focus = _setting_choice(box, "Size", "subtitle_size", [20, 24, 30, 36], ["Small", "Medium", "Large", "Extra large"])
-	_setting_toggle(box, "Show subtitles", "subtitles")
-	_setting_toggle(box, "Background behind subtitles", "subtitle_background")
-	_setting_choice(box, "Reading time", "text_hold_scale", [0.75, 1.0, 1.5, 2.0], ["Fast", "Standard", "1.5×", "2×"])
-	_setting_toggle(box, "Advance lines automatically", "auto_advance")
+	_heading(box, tr("Subtitles"))
+	_settings_focus = _setting_choice(box, tr("Size"), "subtitle_size", [20, 24, 30, 36], [tr("Small"), tr("Medium"), tr("Large"), tr("Extra large")])
+	_setting_toggle(box, tr("Show subtitles"), "subtitles")
+	_setting_toggle(box, tr("Background behind subtitles"), "subtitle_background")
+	_setting_choice(box, tr("Reading time"), "text_hold_scale", [0.75, 1.0, 1.5, 2.0], [tr("Fast"), tr("Standard"), "1.5×", "2×"])
+	_setting_toggle(box, tr("Advance lines automatically"), "auto_advance")
 
-	_heading(box, "Assistance")
-	_setting_choice(box, "Choice time", "choice_time_scale", [1.0, 1.5, 2.0, 0.0], ["Standard", "1.5×", "2×", "Untimed"])
-	_setting_choice(box, "Action prompt time", "qte_window_scale", [1.0, 1.5, 2.0, 3.0], ["Standard", "1.5×", "2×", "3×"])
-	_setting_toggle(box, "Highlight and confirm responses", "choice_highlight")
+	_heading(box, tr("Assistance"))
+	_setting_choice(box, tr("Choice time"), "choice_time_scale", [1.0, 1.5, 2.0, 0.0], [tr("Standard"), "1.5×", "2×", tr("Untimed")])
+	_setting_choice(box, tr("Action prompt time"), "qte_window_scale", [1.0, 1.5, 2.0, 3.0], [tr("Standard"), "1.5×", "2×", "3×"])
+	_setting_toggle(box, tr("Highlight and confirm responses"), "choice_highlight")
 
-	_heading(box, "Audio")
-	_setting_slider(box, "Master volume", "master_volume", "MasterVolume")
-	_setting_slider(box, "Music", "music_volume", "MusicVolume")
-	_setting_slider(box, "Effects", "sfx_volume", "SfxVolume")
-	_setting_slider(box, "Voices", "voice_volume", "VoiceVolume")
+	_heading(box, tr("Audio"))
+	_setting_slider(box, tr("Master volume"), "master_volume", "MasterVolume")
+	_setting_slider(box, tr("Music"), "music_volume", "MusicVolume")
+	_setting_slider(box, tr("Effects"), "sfx_volume", "SfxVolume")
+	_setting_slider(box, tr("Voices"), "voice_volume", "VoiceVolume")
 
-	_heading(box, "Display")
-	_setting_toggle(box, "Fullscreen", "fullscreen")
-	_setting_toggle(box, "Vertical sync", "vsync")
-	_setting_choice(box, "3D resolution", "render_scale", [1.0, 0.85, 0.7, 0.5], ["Full", "High", "Medium", "Low"])
-	var locales := TranslationServer.get_loaded_locales()
+	_heading(box, tr("Display"))
+	_setting_toggle(box, tr("Fullscreen"), "fullscreen")
+	_setting_toggle(box, tr("Vertical sync"), "vsync")
+	_setting_choice(box, tr("3D resolution"), "render_scale", [1.0, 0.85, 0.7, 0.5], [tr("Full"), tr("High"), tr("Medium"), tr("Low")])
+	# The game's own language plus every translation that is loaded.
+	var locales := Settings.languages()
 	if locales.size() > 1:
 		var codes: Array = [""]
-		var names: Array = ["System"]
+		var names: Array = [tr("System")]
 		for code in locales:
 			codes.append(code)
 			names.append(TranslationServer.get_locale_name(code))
-		_setting_choice(box, "Language", "language", codes, names)
+		_setting_choice(box, tr("Language"), "language", codes, names)
 
-	_heading(box, "Controls")
-	_setting_choice(box, "Controller button names", "prompt_style", ["", "xbox", "playstation", "nintendo"], ["Automatic", "Xbox", "PlayStation", "Nintendo"])
+	_heading(box, tr("Controls"))
+	_setting_choice(box, tr("Controller button names"), "prompt_style", ["", "xbox", "playstation", "nintendo"], [tr("Automatic"), "Xbox", "PlayStation", "Nintendo"])
 	for action in TEBindings.actions():
 		var row := HBoxContainer.new()
 		row.name = "bind_" + String(action)
@@ -316,9 +343,9 @@ func _build_settings() -> void:
 			row.add_child(button)
 			_binding_buttons.append([action, pad, button])
 	_refresh_bindings()
-	var reset := _button(box, "Reset everything to defaults", _reset_settings)
+	var reset := _button(box, tr("Reset everything to defaults"), _reset_settings)
 	reset.name = "Reset"
-	_button(box, "Back", close_settings).name = "Back"
+	_button(box, tr("Back"), close_settings).name = "Back"
 
 func _heading(parent: Node, text: String, size := 26) -> void:
 	var label := Label.new()
@@ -383,7 +410,7 @@ func _setting_slider(parent: Node, caption: String, key: String, node_name: Stri
 ## Wait for the next key (or controller input) and bind it to `action`.
 func _begin_capture(action: StringName, pad: bool, button: Button) -> void:
 	_capture = {"action": action, "pad": pad}
-	button.text = "Press a button…" if pad else "Press a key…"
+	button.text = tr("Press a button…") if pad else tr("Press a key…")
 
 func _capture_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and event.physical_keycode == KEY_ESCAPE:
@@ -398,30 +425,23 @@ func _capture_input(event: InputEvent) -> void:
 	_save_settings()
 	_refresh_bindings()
 	if swapped != &"":
-		notice("%s now uses the previous binding." % TEBindings.label(swapped))
+		notice(tr("%s now uses the previous binding.") % TEBindings.label(swapped))
 
 func _refresh_bindings() -> void:
 	for entry: Array in _binding_buttons:
 		var event := TEBindings.current(entry[0], entry[1])
 		var button: Button = entry[2]
 		if is_instance_valid(button):
-			button.text = CADPrompt.event_name(event) if event != null else "Unbound"
+			button.text = CADPrompt.event_name(event) if event != null else tr("Unbound")
 
 func _reset_settings() -> void:
 	Settings.reset()
 	_save_settings()
-	var was_visible := _settings.visible
-	for child in _settings.get_children():
-		_settings.remove_child(child)
-		child.queue_free()
-	_build_settings()
-	_settings.visible = was_visible
-	if was_visible:
-		_settings_focus.grab_focus()
+	_retranslate()
 
 func _save_settings() -> void:
 	if not Settings.save():
-		notice("Could not save settings. Check available disk space and permissions.")
+		notice(tr("Could not save settings. Check available disk space and permissions."))
 
 func open_settings() -> void:
 	if _settings.visible:
@@ -443,8 +463,9 @@ func close_settings() -> void:
 
 ## The first press asks; the second, while still paused, quits.
 func _quit_pressed() -> void:
-	if _pause_quit.text == QUIT_LABEL:
-		_pause_quit.text = QUIT_CONFIRM
+	if not _quit_armed:
+		_quit_armed = true
+		_pause_quit.text = tr("Quit? Progress since the last checkpoint is lost.")
 		return
 	Flow.stop()
 
@@ -455,32 +476,34 @@ func _on_joy_connection_changed(_device: int, connected: bool) -> void:
 		return
 	if not get_tree().paused:
 		set_paused(true)
-	notice("Controller disconnected.")
+	notice(tr("Controller disconnected."))
 
 func set_paused(paused: bool) -> void:
 	get_tree().paused = paused
 	_pause.visible = paused
-	_pause_quit.text = QUIT_LABEL
+	_quit_armed = false
+	_pause_quit.text = tr("Quit to menu")
 	if paused:
 		_pause_resume.grab_focus()
 	else:
 		_pause_resume.release_focus()
 
 func _refresh_pause(_using_pad: bool = false) -> void:
-	_pause_hint.text = "PAUSED\n[%s] resume" % CADPrompt.glyph(&"te_pause", CADInputDevice.using_pad)
+	if is_instance_valid(_pause_hint):
+		_pause_hint.text = tr("PAUSED\n[%s] resume") % CADPrompt.glyph(&"te_pause", CADInputDevice.using_pad)
 
 func _focus_lost() -> void:
 	if Flow.running and not get_tree().paused:
 		set_paused(true)
 
 func notice(text: String) -> void:
-	_notice.text = text
+	_notice.text = tr(text) if text != "" else ""
 	_notice_left = NOTICE_SECONDS
 	_notice.modulate.a = 0.0
 
 ## Subtitle line for cutscenes. An empty string clears it.
 func caption(text: String) -> void:
-	_caption.text = text
+	_caption.text = tr(text) if text != "" else ""
 
 func hint(text: String) -> void:
 	_hint.text = text
@@ -510,10 +533,10 @@ func is_black() -> bool:
 ## Show a full-screen card until the player advances or `hold` seconds pass.
 ## `prompt` shows which button continues, for cards meant to be read at leisure.
 func card(heading: String, body: String, hold: float = 4.0, prompt := false) -> void:
-	_card_heading.text = heading
-	_card_body.text = body
+	_card_heading.text = tr(heading) if heading != "" else ""
+	_card_body.text = tr(body) if body != "" else ""
 	_credits.text = ""
-	_card_hint.text = "[%s]  Continue" % CADPrompt.glyph(&"te_advance", CADInputDevice.using_pad) if prompt else ""
+	_card_hint.text = "[%s]  %s" % [CADPrompt.glyph(&"te_advance", CADInputDevice.using_pad), tr("Continue")] if prompt else ""
 	_card_hint.reset_size()
 	_card_hint.position.x = (_card.size.x - _card_hint.size.x) * 0.5
 	_card.show()
@@ -526,7 +549,9 @@ func card(heading: String, body: String, hold: float = 4.0, prompt := false) -> 
 func credits(heading: String, body: String) -> void:
 	_card_heading.text = ""
 	_card_body.text = ""
-	_card_hint.text = "[%s]  Skip" % CADPrompt.glyph(&"te_advance", CADInputDevice.using_pad)
+	_card_hint.text = "[%s]  %s" % [CADPrompt.glyph(&"te_advance", CADInputDevice.using_pad), tr("Skip")]
+	heading = tr(heading) if heading != "" else ""
+	body = tr(body) if body != "" else ""
 	# Out of the way of the roll, in the corner.
 	_card_hint.reset_size()
 	_card_hint.position.x = _card.size.x - _card_hint.size.x - 40

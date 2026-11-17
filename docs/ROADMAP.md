@@ -12,7 +12,7 @@ The goal is an engine a real game can be built and released on, for Windows and 
 - Checkpoint saves with atomic writes, Continue, rewind, save slots.
 - Settings for subtitle size, reading time, timing assistance and master volume; device-aware prompts.
 - Editor panel with a step-graph view and validation; headless validator and authoring audit.
-- `tools/new_project.py` starter generator; `tools/verify.py` and CI (26 suites) that fail on errors and leaks; Windows export.
+- `tools/new_project.py` starter generator; `tools/verify.py` and CI (29 suites) that fail on errors and leaks; Windows export.
 
 ## Remaining phases
 
@@ -20,8 +20,8 @@ Each phase lands as its own pull request with tests first.
 
 1. ~~Legal and hygiene.~~ Done.
 2. ~~Saves and failure handling.~~ Done, except episode select (moved to phase 3).
-3. **UI, input and settings.** Themed UI scenes, display and per-bus audio options, rebinding, icon glyphs for Xbox, PlayStation and Steam Deck, focus-navigable choices, backlog, auto-advance and skip, end-of-episode screen, credits, loading screen.
-4. **Localisation.** Translatable engine and content strings, string extraction, pseudo-locale check.
+3. **UI, input and settings.** Done: options, rebinding, controller button names, history, credits, recap, loading, episode select. Remaining: themed UI scenes that restyle without code, a save-slot screen with details, icon glyphs.
+4. ~~Localisation.~~ Done, except per-language voice files.
 5. **Audio.** Bus layout, per-step music and ambience, pooled and positional effects.
 6. **Direction.** Timeline step driven by an AnimationPlayer, voice and sound in cutscene cues, skipping, emotion/gesture/look-at tags in dialogue, more action-prompt assists.
 7. **Exploration.** Camera-relative movement with walk and idle animation, follow camera with collision, hotspot highlighting, examine view, inventory.

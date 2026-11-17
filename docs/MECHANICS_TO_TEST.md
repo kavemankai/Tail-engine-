@@ -196,7 +196,7 @@ Interaction families are set on `CADGate.interaction` (`CADInteractionSpec`). Ea
 | 10.7 | Master volume | Settings | Now | [ ] |
 | 10.8 | Fullscreen, 3D resolution, vsync | Settings | Now (PR #14) | [ ] |
 | 10.9 | Subtitles on/off and background | Settings | Now (PR #14) | [ ] |
-| 10.10 | Language | Settings | New in P3 / P4 | [ ] |
+| 10.10 | Language | Settings, once a translation is loaded | Now (PR #16) | [ ] |
 | 10.11 | Keyboard and controller rebinding | Settings, Controls | Now (PR #14) | [ ] |
 | 10.12 | Prompts follow the last-used device | switch between keyboard and pad | Now (PR #14: Xbox, PlayStation and Nintendo button names; icons still to come) | [ ] |
 | 10.13 | Whole game playable on a controller alone | play without touching the keyboard | Now, changes in P3 | [ ] |
@@ -204,7 +204,7 @@ Interaction families are set on `CADGate.interaction` (`CADInteractionSpec`). Ea
 | 10.15 | End-of-episode choices screen | a Recap card as the last step | Now (PR #15) | [ ] |
 | 10.16 | Credits | Card step with `card = CREDITS` | Now (PR #15) | [ ] |
 | 10.17 | Loading indicator between locations | automatic | Now (PR #15) | [ ] |
-| 10.18 | Translated text everywhere | pseudo-locale run | New in P4 | [ ] |
+| 10.18 | Translated text everywhere | export a template with `export_strings_cli.tscn`, load a `.po`, switch language | Now (PR #16) | [ ] |
 
 ## 11. Tools
 

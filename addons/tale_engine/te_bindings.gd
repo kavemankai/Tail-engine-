@@ -46,7 +46,7 @@ static func actions() -> Array[StringName]:
 	return found
 
 static func label(action: StringName) -> String:
-	return LABELS.get(action, String(action))
+	return String(TranslationServer.translate(LABELS[action])) if LABELS.has(action) else String(action)
 
 static func is_pad(event: InputEvent) -> bool:
 	return event is InputEventJoypadButton or event is InputEventJoypadMotion

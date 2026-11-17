@@ -92,7 +92,7 @@ func recap() -> PackedStringArray:
 	var lines := PackedStringArray()
 	for choice_id: StringName in choices:
 		var text := manifest.recap_text(choice_id, choices[choice_id]) if manifest != null else ""
-		lines.append(text if text != "" else "%s: %s" % [choice_id, choices[choice_id]])
+		lines.append(tr(text) if text != "" else "%s: %s" % [choice_id, choices[choice_id]])
 	return lines
 
 func to_dict() -> Dictionary:

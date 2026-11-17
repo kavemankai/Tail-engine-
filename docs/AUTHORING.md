@@ -292,6 +292,22 @@ Players can turn off **Advance lines automatically**; each line then waits for t
 
 Locations load in the background. A loading indicator appears if a load takes longer than a moment. With a season, the title menu offers **Episodes** once the player has reached a second episode.
 
+## Translating a game
+
+Write the game in one language; that text is the key for every other language.
+
+1. Export a template of everything outside dialogue files:
+   `godot --headless --path . res://addons/tale_engine/editor/export_strings_cli.tscn -- strings.pot res://game/season.tres`
+   Pass a season or any number of episodes. The template holds the engine's own interface text plus episode titles, card headings and bodies, cutscene captions, hotspot verbs, recap sentences, character names, action prompt labels and barks.
+2. For dialogue lines, give each line an `[ID:...]` and add the `.dialogue` files under Project Settings > Localization > POT Generation; Godot's **Generate POT** writes them.
+3. Translate both templates into `.po` files and add them under Project Settings > Localization > Translations.
+
+Once a translation is loaded, Settings shows a **Language** option. It lists the game's own language (`internationalization/locale/fallback`, `en` by default) and every loaded translation; "System" follows the player's machine. The choice is saved and menus redraw at once.
+
+In your own scripts, pass text through `tr()` before showing it; `Screen.notice`, `Screen.caption` and `Screen.card` already do. Button letters and key names are never translated.
+
+Voice files are not yet switched by language.
+
 ## When a step breaks
 
 A step that cannot run (missing stage, hub or sequence) ends with the exit `error`; an encounter that is cancelled ends with `cancelled`. `*` does not match these two names. If nothing routes them, or an exit points at a step that does not exist, the episode stops: the player sees a short message and returns to the menu with their last checkpoint intact, and `Flow.episode_failed(reason)` is emitted instead of `episode_finished`. Add an exit with `on = "error"` only where the story has a real fallback.

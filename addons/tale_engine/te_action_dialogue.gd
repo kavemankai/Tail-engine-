@@ -56,8 +56,8 @@ func show_bark(value: CADBark) -> bool:
 	cue = value.duplicate(true)
 	var actor := stage.actor(cue.speaker) as TEActor
 	_speaker = weakref(actor) if actor != null else null
-	_name.text = actor.character.display_name if actor != null and actor.character != null else String(cue.speaker)
-	_text.text = cue.text
+	_name.text = tr(actor.character.display_name) if actor != null and actor.character != null else String(cue.speaker)
+	_text.text = tr(cue.text)
 	var height := _text.get_theme_font(&"font").get_height(Settings.subtitle_size)
 	var lines := mini(4, maxi(1, _text.get_line_count()))
 	_text.size.y = height * lines + 12
