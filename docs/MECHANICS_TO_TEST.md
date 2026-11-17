@@ -7,6 +7,7 @@ Every mechanic a slice episode should exercise before the engine is called ready
 - **Now** — works as described.
 - **Now, changes in P*n*** — works, but phase *n* of the plan changes how it behaves or is authored. Usable now; re-test after that phase.
 - **New in P*n*** — does not exist yet. Leave room for it; it is added in phase *n*.
+- **Now (PR #*n*)** — done, and available once that pull request is merged.
 
 Phases: P2 saves and failure handling, P3 UI/input/settings, P4 localisation, P5 audio, P6 direction, P7 exploration, P8 editor, P9 platform. This file is updated at the end of every phase.
 
@@ -26,14 +27,14 @@ Authoring reference: [AUTHORING.md](AUTHORING.md) for episodes, [INTEGRATION.md]
 | 1.8 | Timeline step (authored AnimationPlayer cutscene) | new step kind | New in P6 | [ ] |
 | 1.9 | Named exits | `TEExit.on` matches the step's exit name; `next` is a step id or `END` | Now | [ ] |
 | 1.10 | Conditional exit | `TEExit.when = "flag and not other"`; conditional exits listed before the catch-all | Now | [ ] |
-| 1.11 | Wildcard exit | `on = "*"` | Now, changes in P2 (`error`/`cancelled` no longer fall through it) | [ ] |
+| 1.11 | Wildcard exit | `on = "*"` | Now (PR #12: `error`/`cancelled` no longer fall through it) | [ ] |
 | 1.12 | Location change with fade | `TEStep.location` set to a different scene | Now, changes in P3 (loading screen) | [ ] |
 | 1.13 | Staying in the current location | `location` left empty | Now | [ ] |
 | 1.14 | Cast placement on marks | `TEStep.cast = {character_id: mark_name}` | Now | [ ] |
 | 1.15 | Actor left where it stands | empty mark name in `cast` | Now | [ ] |
 | 1.16 | Checkpoint | `TEStep.checkpoint = true`, `title` shown in the menu | Now | [ ] |
 | 1.17 | Episode end | exit with `next = END` | Now | [ ] |
-| 1.18 | Runtime fault shows an error, not an ending | missing step or unrouted exit | New in P2 | [ ] |
+| 1.18 | Runtime fault shows an error, not an ending | missing step or unrouted exit; `Flow.episode_failed` | Now (PR #12) | [ ] |
 
 ## 2. Seasons
 
@@ -43,15 +44,15 @@ Authoring reference: [AUTHORING.md](AUTHORING.md) for episodes, [INTEGRATION.md]
 | 2.2 | Next episode from the menu | automatic when the season has another episode | Now | [ ] |
 | 2.3 | Carried variables | `TESeason.carry_variables`, declared in both manifests | Now | [ ] |
 | 2.4 | Reading an earlier episode's choice | `Story.prior("episode_1", "choice_id")` in dialogue or a condition | Now | [ ] |
-| 2.5 | Next episode still offered after quitting and relaunching | none (engine behaviour) | New in P2 | [ ] |
-| 2.6 | Episode select | title menu | New in P2 | [ ] |
+| 2.5 | Next episode still offered after quitting and relaunching | none (engine behaviour) | Now (PR #12) | [ ] |
+| 2.6 | Episode select | title menu | New in P3 | [ ] |
 
 ## 3. Story state
 
 | # | Mechanic | How to author | Status | Slice |
 |---|---|---|---|---|
 | 3.1 | Declared variables with defaults | `manifest.tres` variables | Now | [ ] |
-| 3.2 | Set a variable | `do Story.put("name", value)` | Now, changes in P2 (undeclared names rejected) | [ ] |
+| 3.2 | Set a variable | `do Story.put("name", value)` | Now (PR #12: undeclared names rejected) | [ ] |
 | 3.3 | Add to a number | `do Story.add("name", 1)` | Now | [ ] |
 | 3.4 | Remember with a notice | `do Story.remember("name", true, "They will remember that.")` | Now, changes in P3 (animated notice) | [ ] |
 | 3.5 | Major choice for the recap | `do Story.choose("choice_id", "option_id")`, declared in the manifest | Now | [ ] |
@@ -142,7 +143,7 @@ Interaction families are set on `CADGate.interaction` (`CADInteractionSpec`). Ea
 | 6.32 | Missing a prompt fails forward | timeout route to a recovery beat | Now | [ ] |
 | 6.33 | Longer windows assist | Settings: extended action prompts | Now | [ ] |
 | 6.34 | Auto-complete and hold-toggle assists | Settings | New in P6 | [ ] |
-| 6.35 | Controller unplugged mid-prompt pauses | none (engine behaviour) | New in P2 | [ ] |
+| 6.35 | Controller unplugged mid-prompt pauses | none (engine behaviour) | Now (PR #12) | [ ] |
 
 ## 7. Camera and performance
 
@@ -175,11 +176,11 @@ Interaction families are set on `CADGate.interaction` (`CADInteractionSpec`). Ea
 | # | Mechanic | How to test | Status | Slice |
 |---|---|---|---|---|
 | 9.1 | Continue | quit at any point after a checkpoint, relaunch, Continue | Now | [ ] |
-| 9.2 | Rewind to an earlier checkpoint | title menu | Now, changes in P2 (confirmation) | [ ] |
+| 9.2 | Rewind to an earlier checkpoint | title menu | Now (PR #12: asks first) | [ ] |
 | 9.3 | Several save slots | title menu slot button | Now, changes in P3 (slot screen with details) | [ ] |
-| 9.4 | New game over an existing save asks first | title menu | New in P2 | [ ] |
-| 9.5 | Save survives a content patch | rename a step or variable, then Continue | New in P2 | [ ] |
-| 9.6 | Damaged save is reported, backup used | corrupt the file in `user://saves` | New in P2 | [ ] |
+| 9.4 | New game over an existing save asks first | title menu | Now (PR #12) | [ ] |
+| 9.5 | Save survives a content patch | rename a step or variable (add it to `renamed_steps` / `renamed_variables`), then Continue | Now (PR #12) | [ ] |
+| 9.6 | Damaged save is reported, backup used | corrupt the file in `user://saves` | Now (PR #12) | [ ] |
 | 9.7 | Story state restored exactly | make choices, Continue, check later branches | Now | [ ] |
 
 ## 10. Menus, settings and input
