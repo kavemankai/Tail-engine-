@@ -1,6 +1,6 @@
 # Authoring an episode
 
-An episode is a folder of data. `examples/last_call/episode_0` is the working example; copy it to start a new one.
+An episode is a folder of data. `python tools/new_project.py ../my_game "Title"` creates a new game with a one-scene starter episode; `examples/last_call/episode_0` is the fuller working example.
 
 ```
 episode.tres      the step graph
@@ -11,7 +11,7 @@ locations/*.tscn
 encounters/<name>/stage.tscn + encounter.tres
 ```
 
-Point `examples/last_call/main.gd` at your `episode.tres`. Run `tests/validate.tscn` after every change; it reports missing names before you have to play to find them.
+Set `episode` (or `season`) on your `TETitleMenu` scene to your `episode.tres`. Run `tests/validate.tscn` after every change; it reports missing names before you have to play to find them.
 
 ## The step graph
 
@@ -23,6 +23,7 @@ Point `examples/last_call/main.gd` at your `episode.tres`. Run `tests/validate.t
 | Dialogue | One cue from a dialogue file. | `end`, or the name passed to `exit("...")` in the file. |
 | Encounter | A `CADSequence` on a stage in the location. | The sequence's outcome. |
 | Card | A title card, or the recap of choices. | `end`. |
+| Cutscene | A list of camera cues with no input. See [Camera and cutscenes](#camera-and-cutscenes). | `end`. |
 
 An exit (`TEExit`) has `on` (a name, or `*` for any), an optional `when` condition, and `next` (a step id or `END`). The first match wins, so put conditional exits before the catch-all.
 
@@ -32,7 +33,7 @@ Other step fields:
 - `cast`: character id to mark name. Actors are created on first use and stay in the location. An empty mark leaves the actor where it stands.
 - `checkpoint`: saves when the step starts. The player can resume or rewind to it. `title` is the name shown in the menu.
 
-A non-interactive cutscene is an Encounter whose sequence has no gates.
+For a non-interactive scene, use a Cutscene step for camera cues and captions, or an Encounter whose sequence has no gates when it needs choreographed stage timelines.
 
 ## Story state
 

@@ -1,60 +1,38 @@
-# Current demo roadmap
+# Roadmap to a shippable engine
 
-The milestone is a dependable Windows desktop greybox demo of Episode 0.
-Keep the existing episode/resource APIs and single menu save slot. Real assets
-are a later milestone, with selection and licensing decided before integration.
+The goal is an engine a real game can be built and released on, for Windows and Steam Deck. [MECHANICS_TO_TEST.md](MECHANICS_TO_TEST.md) lists every mechanic and whether it works today.
 
-## Implemented
+## Working today
 
-- Exploration, timed dialogue, story choices, branching bar fight and alley chase,
-  recap, checkpoints, Continue and rewind, backed by route tests.
-- Pinned Godot 4.6.3 verification and restored upstream Dialogue Manager SVG import
-  metadata. Clean checkout imports without relying on an existing UID cache.
-- Save shape/resource/checkpoint validation, atomic file replacement and failure
-  notices. Invalid saves do not interrupt an active session; version-1 saves stay
-  supported. New manifest variables retain their defaults when restoring a save.
-- Explicit conversation/exploration cancellation, generation-scoped flow cleanup,
-  fade cancellation, paused dialogue clocks/audio and interruption regressions.
-- Shared device-aware prompts and title/pause settings for subtitles, volume,
-  reading speed and timing assistance, with persistent configuration.
-- Windows x86_64 export preset and GitHub Actions verification/artifact workflow.
-- QTE v2 optional interaction seam, monotonic pausable input clock, typed results,
-  remapping/rearm and exclusive action input. Legacy Episode 0 gates are preserved.
-- Shared Gesture, Choice, Timing and Passive evaluators, six resource-authored lab
-  encounters and a skeletal AnimationTree adapter fixture. See [QTE_STATUS.md](QTE_STATUS.md)
-  for the implemented subset and later phases; this is not all 30 mechanics.
+- Episode step graph (Explore, Dialogue, Encounter, Card, Cutscene), conditional exits, seasons with carried variables and earlier-episode choices.
+- Dialogue with timed choices and a silence option, story state declared in a manifest, notices and recap.
+- Walk-around hubs with hotspots and camera zones.
+- Action layer: eight interaction families and five compound templates, with barks, slow motion, momentum and intent.
+- Camera cuts, blends, shake, drifting shots, voice playback with loudness-driven mouth movement, recording-script export.
+- Checkpoint saves with atomic writes, Continue, rewind, save slots.
+- Settings for subtitle size, reading time, timing assistance and master volume; device-aware prompts.
+- Editor panel with a step-graph view and validation; headless validator and authoring audit.
+- `tools/new_project.py` starter generator; `tools/verify.py` and CI (25 suites) that fail on errors and leaks; Windows export.
 
-- Directional flick/block/selection, camera-frame snapshots and input rearm, plus
-  a reusable counterattack template and opt-in Episode 0 directional variants.
-- Pattern sequences and shared combo/attack-defence chain templates, with separate
-  per-input paired reactions and recovery timelines.
-- Target selection/tracking, selected-result grab markers, socket ownership and
-  cancellation restoration, with registry/projection and skeletal socket tests.
-- Opposed Pressure and a directional/pressure/release grapple template, with
-  sustained alternate input and resource-authored lab examples. Scoped playback, action barks/timed replies, semantic intent, momentum, typed
-  adaptive context and safe-boundary consequence history now have an integrated
-  example. Bounded traces, the F3 context view/export and a headless authoring audit are
-  integrated. Real Windows/controller and production asset quality gates remain.
+## Remaining phases
 
-## Before sharing the demo
+Each phase lands as its own pull request with tests first.
 
-1. Run `python tools/verify.py --export-windows` on the final revision. Confirm
-   clean import, all twenty-one suites, episode validation and Windows packaging.
-2. Complete [the Windows smoke test](WINDOWS_SMOKE_TEST.md) on a real PC and
-   physical controller. Record the build commit and device details. This includes
-   all four routes, relaunch/Continue, rewind, focus loss, device switching and
-   settings. Automated input injection does not establish hardware compatibility.
-3. Review the captured playthrough and text layout at both specified resolutions.
-   Resolve any graphics, input or readability issues before calling it tested.
+1. **Legal and hygiene.** Licence, third-party notices, removing unused content from exports, generator fixes, doc corrections.
+2. **Saves and failure handling.** Save versioning and migration, restore that survives content patches, backups, slot details, season progress kept across restarts, runtime faults shown as errors instead of endings, pause on controller disconnect, confirmations.
+3. **UI, input and settings.** Themed UI scenes, display and per-bus audio options, rebinding, icon glyphs for Xbox, PlayStation and Steam Deck, focus-navigable choices, backlog, auto-advance and skip, end-of-episode screen, credits, loading screen.
+4. **Localisation.** Translatable engine and content strings, string extraction, pseudo-locale check.
+5. **Audio.** Bus layout, per-step music and ambience, pooled and positional effects.
+6. **Direction.** Timeline step driven by an AnimationPlayer, voice and sound in cutscene cues, skipping, emotion/gesture/look-at tags in dialogue, more action-prompt assists.
+7. **Exploration.** Camera-relative movement with walk and idle animation, follow camera with collision, hotspot highlighting, examine view, inventory.
+8. **Editor.** Editing exits and deleting steps in the graph panel, non-blocking validation, stronger validator.
+9. **Platform.** Linux / Steam Deck export, running the exported build in CI, Steam achievements and cloud saves, crash logs, renderer and performance budget.
+10. **Hardware sign-off.** A slice episode that ticks every row of the mechanics list, played on a Windows PC and a Steam Deck with physical controllers ([WINDOWS_SMOKE_TEST.md](WINDOWS_SMOKE_TEST.md)).
 
-## After the greybox milestone
+## Known open risks
 
-- Select licensed character rigs and a minimal compatible animation set. Prove
-  one paired wind-up/dodge/hit sequence through `TEActor` before restaging the
-  whole encounter; review contact and branch poses at full speed and frame-step.
-- Then add environment art, sound, voice and a consistent UI treatment. Facial
-  animation, lip-sync, multiple menu save slots and a custom authoring editor stay
-  deferred until the sample demonstrates a need.
+- No real controller, GPU or exported executable has been tested; automated tests inject input and use the headless renderer.
+- The bundled characters have stand-in fight clips and no facial rig. Paired contact animation is content work for each game.
+- The repository has no licence yet, and the rights to the `narrative_characters` clothing are not recorded.
 
-The documents in `research/` describe earlier experiments and initial proposals.
-Their phase numbers and estimates are historical, not the current task backlog.
+The documents in `research/` describe earlier experiments. Their phase numbers and estimates are historical.
