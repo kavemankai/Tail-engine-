@@ -17,6 +17,7 @@ class NewProjectTest(unittest.TestCase):
             self.assertIn('config/name="My Game"', settings)
             self.assertIn('run/main_scene="res://game/main.tscn"', settings)
             self.assertNotIn("examples/last_call", settings)
+            self.assertTrue((target / "icon.svg").exists())
             self.assertTrue((target / "addons/tale_engine/te_flow.gd").exists())
             self.assertFalse((target / "addons/humanoid_kit").exists())
             episode = (target / "game/episode_1/episode.tres").read_text(encoding="utf-8")

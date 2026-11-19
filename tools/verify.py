@@ -5,6 +5,7 @@ import argparse
 import os
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -38,6 +39,8 @@ def main():
     parser.add_argument("--godot", default=os.environ.get("GODOT", "godot"))
     parser.add_argument("--suites", nargs="+", help="Optional suite subset")
     parser.add_argument("--export-windows", action="store_true")
+    parser.add_argument("--export-linux", action="store_true",
+                        help="export the Linux build and play Episode 0 with the exported binary")
     args = parser.parse_args()
     (ROOT / "build/logs").mkdir(parents=True, exist_ok=True)
     version = subprocess.check_output([args.godot, "--version"], text=True).strip()
@@ -78,6 +81,52 @@ def main():
                     archive.write(file, f"LastCall/{file.name}")
             archive.write(ROOT / "docs/WINDOWS_SMOKE_TEST.md", "LastCall/README.md")
         print("Built build/LastCall-windows-greybox.zip; Windows smoke test still required.")
+    if args.export_linux:
+        export_linux(args.godot)
+
+
+def smoke(binary, extra=(), timeout=300, wrapper=(), env=None):
+    """Run an exported build's unattended play-through; it must print SMOKE OK."""
+    name = "smoke-" + binary.stem + ("-rendered" if wrapper else "")
+    command = [*wrapper, str(binary), *extra, "--", "--te-smoke"]
+    try:
+        result = subprocess.run(command, cwd=binary.parent, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                text=True, timeout=timeout, env=env)
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeError(f"{name} timed out after {timeout}s") from exc
+    (ROOT / "build/logs" / f"{name}.log").write_text(result.stdout, encoding="utf-8")
+    print("\n".join(line for line in result.stdout.splitlines() if line.startswith("SMOKE")), flush=True)
+    if result.returncode or "SMOKE OK" not in result.stdout or re.search(r"SCRIPT ERROR:", result.stdout):
+        raise RuntimeError(f"{name} failed; see build/logs/{name}.log")
+
+
+def export_linux(godot):
+    destination = ROOT / "build/linux"
+    destination.mkdir(parents=True, exist_ok=True)
+    binary = destination / "LastCall.x86_64"
+    run(godot, "export-linux", ["--export-release", "Linux", str(binary)])
+    if not binary.is_file() or not binary.with_suffix(".pck").is_file():
+        raise RuntimeError("Linux export did not produce both executable and resource pack")
+    # Copy out of the source tree, so nothing but the export can satisfy a load.
+    with tempfile.TemporaryDirectory(prefix="last-call-linux-") as directory:
+        for file in destination.iterdir():
+            shutil.copy2(file, directory)
+        copied = Path(directory) / binary.name
+        smoke(copied, ["--headless"])
+        # With a virtual display the real renderer runs too (software OpenGL).
+        if shutil.which("xvfb-run"):
+            env = os.environ.copy()
+            env["LIBGL_ALWAYS_SOFTWARE"] = "1"
+            smoke(copied, ["--resolution", "1280x800"], wrapper=("xvfb-run", "-a", "-s", "-screen 0 1280x800x24"), env=env)
+        else:
+            print("xvfb-run not found; rendered smoke run skipped.")
+    with zipfile.ZipFile(ROOT / "build/LastCall-linux-greybox.zip", "w", zipfile.ZIP_DEFLATED) as archive:
+        for file in sorted(destination.iterdir()):
+            if file.is_file():
+                info = zipfile.ZipInfo(f"LastCall/{file.name}")
+                info.external_attr = (0o755 if file.suffix == ".x86_64" else 0o644) << 16
+                archive.writestr(info, file.read_bytes(), zipfile.ZIP_DEFLATED)
+    print("Built build/LastCall-linux-greybox.zip; the exported binary played Episode 0.")
 
 
 if __name__ == "__main__":
