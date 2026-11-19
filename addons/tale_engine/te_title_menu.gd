@@ -14,6 +14,8 @@ extends Control
 @export var window_title := "Tale Engine"
 ## Extra buttons: label -> scene path opened with change_scene_to_file.
 @export var extras: Dictionary = {}
+## Played while the menu is showing; an episode fades it out as it starts.
+@export var music: AudioStream
 
 var _box := VBoxContainer.new()
 var _locale := ""
@@ -35,12 +37,18 @@ func _ready() -> void:
 		if TranslationServer.get_locale() != _locale and visible:
 			_rebuild())
 	_rebuild()
+	_play_music()
+
+func _play_music() -> void:
+	if music != null and not Flow.running:
+		Audio.music(music, 1.0)
 
 func _process(_delta: float) -> void:
 	if visible == Flow.running:
 		visible = not Flow.running
 		if visible:
 			_rebuild()
+			_play_music()
 
 func _rebuild() -> void:
 	_clear()

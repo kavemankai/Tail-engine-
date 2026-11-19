@@ -302,6 +302,8 @@ func _build_settings() -> void:
 	_setting_choice(box, tr("Choice time"), "choice_time_scale", [1.0, 1.5, 2.0, 0.0], [tr("Standard"), "1.5×", "2×", tr("Untimed")])
 	_setting_choice(box, tr("Action prompt time"), "qte_window_scale", [1.0, 1.5, 2.0, 3.0], [tr("Standard"), "1.5×", "2×", "3×"])
 	_setting_toggle(box, tr("Highlight and confirm responses"), "choice_highlight")
+	_setting_toggle(box, tr("Complete action prompts automatically"), "qte_auto_complete")
+	_setting_toggle(box, tr("Press once instead of holding"), "qte_hold_toggle")
 
 	_heading(box, tr("Audio"))
 	_setting_slider(box, tr("Master volume"), "master_volume", "MasterVolume")

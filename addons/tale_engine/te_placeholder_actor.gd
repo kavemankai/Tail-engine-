@@ -54,6 +54,16 @@ func play_clip(clip: StringName) -> void:
 	if clip == &"hit_react":
 		_material.albedo_color = Color(1, 0.25, 0.25)
 
+func clip_playing() -> bool:
+	return _clip_timer > 0.0
+
+func emote(name: StringName) -> void:
+	super(name)
+	_label.text = "%s\n(%s)" % [character.display_name, name]
+
+func gesture(name: StringName) -> void:
+	play_clip(StringName("gesture_%s" % name))
+
 func speak(talking: bool) -> void:
 	_talking = talking
 

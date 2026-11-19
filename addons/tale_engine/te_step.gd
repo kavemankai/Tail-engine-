@@ -3,7 +3,9 @@ class_name TEStep
 extends Resource
 ## One node of the episode graph.
 
-enum Kind { EXPLORE, DIALOGUE, ENCOUNTER, CARD, CUTSCENE }
+## Stored in resources as numbers: append new kinds, never reorder.
+enum Kind { EXPLORE, DIALOGUE, ENCOUNTER, CARD, CUTSCENE, TIMELINE }
+## Stored in resources as numbers: append new cards, never reorder.
 enum Card { TITLE, RECAP, CREDITS }
 ## Exit names that mean the step broke. "*" does not match them; route one
 ## explicitly (on = "error") only if the story has a real fallback.
@@ -20,6 +22,18 @@ const FAULT_EXITS: Array[StringName] = [&"error", &"cancelled"]
 ## Save here, so the player can resume or rewind to this step.
 @export var checkpoint := false
 @export var exits: Array[TEExit] = []
+
+@export_group("Audio")
+## Music from this step on. Empty keeps whatever is playing.
+@export var music: AudioStream
+## Ambience loop from this step on. Empty keeps whatever is playing.
+@export var ambience: AudioStream
+## Fade the music out as this step starts.
+@export var stop_music := false
+## Fade the ambience out as this step starts.
+@export var stop_ambience := false
+## Crossfade length in seconds for this step's music and ambience changes.
+@export_range(0.0, 10.0, 0.1) var audio_fade := 1.5
 
 @export_group("Dialogue")
 @export var dialogue: DialogueResource
@@ -42,6 +56,15 @@ const FAULT_EXITS: Array[StringName] = [&"error", &"cancelled"]
 @export_group("Cutscene")
 ## Played in order. No input; the step ends with exit "end".
 @export var cues: Array[TEShotCue] = []
+
+@export_group("Timeline")
+## AnimationPlayer in the location, relative to its root.
+@export var timeline_player: NodePath = ^"Timeline"
+## Animation to play. Its method tracks call a TETimelineCues node for shots,
+## clips, voice, sound and captions. The step ends with exit "end".
+@export var timeline: StringName
+## The player can skip with the advance button (pressed twice).
+@export var skippable := true
 
 @export_group("Card")
 @export var card := Card.TITLE

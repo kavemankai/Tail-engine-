@@ -41,6 +41,10 @@ static func check(episode: TEEpisode) -> PackedStringArray:
 			var problem := TECondition.error(exit.when, variables)
 			if problem != "":
 				errors.append("%s exit condition '%s': %s" % [where, exit.when, problem])
+		if step.music != null and step.stop_music:
+			errors.append("%s both sets and stops the music." % where)
+		if step.ambience != null and step.stop_ambience:
+			errors.append("%s both sets and stops the ambience." % where)
 		# Location and cast.
 		var path: String = current_location.get(step.id, "")
 		var location: TELocation = null
@@ -81,6 +85,22 @@ static func check(episode: TEEpisode) -> PackedStringArray:
 					for id: StringName in cue.clips:
 						if episode.cast.find(id) == null:
 							errors.append("%s cue animates unknown character '%s'." % [where, id])
+					for id: StringName in cue.emotes:
+						if episode.cast.find(id) == null:
+							errors.append("%s cue sets the emotion of unknown character '%s'." % [where, id])
+					if cue.wait_for_clip != &"" and episode.cast.find(cue.wait_for_clip) == null:
+						errors.append("%s cue waits for unknown character '%s'." % [where, cue.wait_for_clip])
+					if cue.voice != null and cue.speaker == &"":
+						errors.append("%s cue has a voice but no speaker." % where)
+			TEStep.Kind.TIMELINE:
+				named_exits = [&"end"]
+				var player := location.get_node_or_null(step.timeline_player) as AnimationPlayer if location != null else null
+				if player == null:
+					errors.append("%s needs an AnimationPlayer at '%s' in its location." % [where, step.timeline_player])
+				elif not player.has_animation(step.timeline):
+					errors.append("%s: the AnimationPlayer has no animation '%s'." % [where, step.timeline])
+				else:
+					_check_timeline(player, player.get_animation(step.timeline), location, episode, where, errors)
 			TEStep.Kind.ENCOUNTER:
 				var stage := location.stage(step.stage) if location != null else null
 				var sequence := step.resolve_sequence()
@@ -138,6 +158,31 @@ static func check(episode: TEEpisode) -> PackedStringArray:
 		if location != null:
 			location.free()
 	return errors
+
+## Method tracks aimed at a TETimelineCues node must call its methods, and
+## name shots and characters that exist.
+static func _check_timeline(player: AnimationPlayer, animation: Animation, location: TELocation, episode: TEEpisode,
+		where: String, errors: PackedStringArray) -> void:
+	var root := player.get_node_or_null(player.root_node)
+	var with_character := ["clip", "voice", "emote", "gesture", "look"]
+	for track in animation.get_track_count():
+		if animation.track_get_type(track) != Animation.TYPE_METHOD:
+			continue
+		var target := root.get_node_or_null(animation.track_get_path(track)) if root != null else null
+		if target == null:
+			errors.append("%s: timeline method track points at missing node '%s'." % [where, animation.track_get_path(track)])
+			continue
+		if target is not TETimelineCues:
+			continue
+		for key in animation.track_get_key_count(track):
+			var method := String(animation.method_track_get_name(track, key))
+			var args := animation.method_track_get_params(track, key)
+			if not target.has_method(method) or method.begins_with("_"):
+				errors.append("%s: timeline calls unknown cue '%s'." % [where, method])
+			elif method == "shot" and (args.is_empty() or location.shot(StringName(str(args[0]))) == null):
+				errors.append("%s: timeline cuts to missing shot '%s'." % [where, args[0] if not args.is_empty() else ""])
+			elif method in with_character and (args.is_empty() or episode.cast.find(StringName(str(args[0]))) == null):
+				errors.append("%s: timeline cue '%s' names unknown character '%s'." % [where, method, args[0] if not args.is_empty() else ""])
 
 ## Walk the graph from the entry, recording which location each step runs in.
 static func _assign_locations(episode: TEEpisode, ids: Dictionary, found: Dictionary) -> void:

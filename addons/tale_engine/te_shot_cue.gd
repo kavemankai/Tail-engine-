@@ -16,3 +16,11 @@ extends Resource
 @export_multiline var caption := ""
 ## Character id -> logical clip name, played as the cue starts.
 @export var clips: Dictionary = {}
+## Spoken by `speaker`; the cue lasts at least as long as the recording.
+@export var voice: AudioStream
+## A one-shot effect played as the cue starts.
+@export var sound: AudioStream
+## Character id whose clip must finish before the next cue (after `hold`).
+@export var wait_for_clip: StringName
+## Character id -> emotion name, applied as the cue starts.
+@export var emotes: Dictionary = {}

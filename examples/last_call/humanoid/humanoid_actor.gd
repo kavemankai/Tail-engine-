@@ -45,6 +45,29 @@ func play_clip(clip: StringName) -> void:
 	if is_instance_valid(body):
 		body.play_action(CLIPS.get(clip, clip))
 
+func clip_playing() -> bool:
+	return is_instance_valid(body) and body.animator.action != &"" and body.animator.player.is_playing() \
+		and body.animator.player.current_animation == String(body.animator.action)
+
+func emote(name: StringName) -> void:
+	super(name)
+	if is_instance_valid(body):
+		body.conversation.set_emotion(name)
+
+func gesture(name: StringName) -> void:
+	if is_instance_valid(body) and not body.conversation.play_gesture(name):
+		super(name)
+
+func look_at_point(point: Vector3) -> void:
+	look_target = point
+	if is_instance_valid(body):
+		body.conversation.look_at_point(point)
+
+func clear_look() -> void:
+	super()
+	if is_instance_valid(body):
+		body.conversation.clear_look_target()
+
 func speak(talking: bool) -> void:
 	if is_instance_valid(body):
 		body.conversation.set_conversation_mode(talking)

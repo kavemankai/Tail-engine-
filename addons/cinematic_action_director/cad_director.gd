@@ -29,6 +29,15 @@ const WATCHDOG_MARGIN := 5.0
 var flags: Dictionary = {}
 ## Accessibility: multiplies every gate window.
 var window_scale := 1.0
+## Accessibility: skill prompts (one option, or a v2 skill family) succeed by
+## themselves shortly after opening. Choices between options still wait.
+var auto_complete := false
+## Accessibility: a hold prompt latches on the first press and lets go on the
+## second, so nothing needs to be held down.
+var hold_toggle := false
+## Seconds after a gate opens before auto-complete resolves it, at most half
+## the window.
+const AUTO_SECONDS := 0.35
 ## True when the last real input came from a gamepad.
 var using_pad: bool:
 	get:
@@ -70,6 +79,8 @@ var _gate := Gate.NONE
 var _gate_elapsed := 0.0
 var _options: Array[CADOption] = []
 var _held: Dictionary[StringName, float] = {}
+## Hold options latched on by hold_toggle.
+var _latched: Dictionary[StringName, bool] = {}
 var _buffered: Dictionary[StringName, float] = {}
 var _pending_next: StringName
 var _goto: StringName
@@ -242,6 +253,9 @@ func _input(event: InputEvent) -> void:
 				get_viewport().set_input_as_handled()
 				_resolve(option.id, option.next)
 				return
+			if option.hold_seconds > 0.0 and hold_toggle and event.is_action_pressed(option.action) and not event.is_echo():
+				get_viewport().set_input_as_handled()
+				_latched[option.id] = not _latched.get(option.id, false)
 
 func _process(delta: float) -> void:
 	if _display_pad != using_pad:
@@ -272,11 +286,17 @@ func _tick_gate(delta: float) -> void:
 		if _active and _gate == Gate.OPEN and runner == interaction_runner:
 			gate_progress.emit(runner.remaining(), runner.progress())
 		return
+	if auto_complete and _options.size() == 1:
+		var at := minf(AUTO_SECONDS, _beat.gate.window_seconds * window_scale * 0.5)
+		if _gate_elapsed + delta >= at:
+			_resolve(_options[0].id, _options[0].next)
+			return
 	var hold := 0.0
 	for option in _options:
 		if option.hold_seconds <= 0.0:
 			continue
-		if Input.is_action_pressed(option.action):
+		var down: bool = _latched.get(option.id, false) if hold_toggle else Input.is_action_pressed(option.action)
+		if down:
 			_held[option.id] = _held.get(option.id, 0.0) + delta
 			if _held[option.id] >= option.hold_seconds:
 				_resolve(option.id, option.next)
@@ -338,6 +358,7 @@ func _open_gate() -> void:
 	var gate := _beat.gate
 	_gate = Gate.OPEN
 	_gate_elapsed = 0.0
+	_latched.clear()
 	_options = []
 	for option in gate.options:
 		if flag_holds(option.requires):
@@ -348,6 +369,8 @@ func _open_gate() -> void:
 		return
 	if gate.interaction != null:
 		interaction_runner = CADInteractionRunner.new(clock_source, input_snapshot)
+		interaction_runner.auto_complete = auto_complete
+		interaction_runner.hold_toggle = hold_toggle
 		interaction_runner.resolved.connect(_on_interaction_resolved)
 		if not interaction_runner.begin(gate, _options, window_scale, _run_id, _visit, _beat.id, _interaction_context()):
 			push_warning(interaction_runner.last_error)

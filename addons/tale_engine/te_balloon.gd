@@ -18,6 +18,8 @@ const CHOICE_ACTIONS: Array[StringName] = [&"te_choice_1", &"te_choice_2", &"te_
 const DEFAULT_EXIT := &"end"
 
 var cast: TECast
+## Character id -> TEActor, so a voiced line moves the speaker's mouth.
+var actors: Dictionary = {}
 
 var _exit := DEFAULT_EXIT
 var _responses: Array = []
@@ -144,7 +146,7 @@ func _hold(line: DialogueLine) -> void:
 	var seconds := maxf(1.2, line.text.length() * 0.055) * Settings.text_hold_scale
 	var stream := _voice_for(line)
 	if stream != null:
-		seconds = Audio.voice(stream)
+		seconds = Audio.voice(stream, actors.get(StringName(line.character)) as TEActor)
 	_advance = false
 	# With auto-advance off the line stays until the player presses advance.
 	while (seconds > 0.0 or not Settings.auto_advance) and not _advance and not _cancelled:

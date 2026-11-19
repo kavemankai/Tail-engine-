@@ -19,6 +19,14 @@ const RECAP_SECONDS := 45.0
 ## A load shorter than this never shows the loading indicator.
 const LOADING_GRACE := 0.4
 const PLACEHOLDER := preload("res://addons/tale_engine/placeholder_actor.tscn")
+## Dialogue tags that direct the cast: [#emote=], [#gesture=], [#clip=], [#look=].
+const DIRECTION_TAGS: PackedStringArray = ["emote", "gesture", "clip", "look"]
+## Height above an actor's origin or a mark that [#look=] aims at.
+const EYE_HEIGHT := 1.6
+## Longest a cutscene cue waits for a clip to finish.
+const CLIP_WAIT_LIMIT := 10.0
+## Second advance press within this long skips a timeline.
+const SKIP_CONFIRM_SECONDS := 2.0
 
 var episode: TEEpisode
 ## The season being played, or null for a standalone episode.
@@ -45,6 +53,10 @@ var _props: Array[Node] = []
 ## Bounded diagnostic snapshot, separate from saved narrative consequences.
 var latest_trace: Dictionary = {}
 var _hub: TEHub
+## True while a timeline is being skipped; TETimelineCues ignores calls then.
+var timeline_skipping := false
+var _timeline_step: TEStep
+var _skip_armed := 0.0
 
 func _ready() -> void:
 	add_child(camera)
@@ -150,9 +162,12 @@ func rewind(index: int) -> void:
 	checkpoints.resize(index + 1)
 	Story.reset(episode.manifest)
 	Story.from_dict(checkpoints[index]["story"])
+	_restore_audio(checkpoints[index].get("audio", {}))
 	_play(checkpoints[index]["step"])
 
 func stop() -> void:
+	_timeline_step = null
+	timeline_skipping = false
 	_generation += 1
 	_step_token += 1
 	_step_done.emit(&"cancelled")
@@ -162,6 +177,8 @@ func stop() -> void:
 	_clear_props()
 	_free_location()
 	Audio.stop_voice()
+	Audio.stop_effects()
+	Audio.stop_beds()
 	Screen.clear()
 
 ## Run one conversation over the current location. Returns its exit name.
@@ -171,10 +188,11 @@ func converse(resource: DialogueResource, cue: String, first_shot: StringName = 
 		return &"cancelled"
 	var balloon := TEBalloon.new()
 	balloon.cast = episode.cast if episode != null else null
+	balloon.actors = actors
 	balloon.line_shown.connect(_on_line_shown)
 	add_child(balloon)
 	_props.append(balloon)
-	_cut(first_shot)
+	cut(first_shot)
 	balloon_opened.emit(balloon)
 	if not balloon._finished:
 		balloon.start(resource, cue)
@@ -226,6 +244,7 @@ func _play(step_id: StringName) -> void:
 			_fail("Flow: step '%s' could not load location '%s'." % [step.id, step.location], generation)
 			return
 		_place_cast()
+		_apply_audio(step)
 		if moved or Screen.is_black():
 			Screen.fade_in()
 		step_started.emit(step)
@@ -247,6 +266,7 @@ func _play(step_id: StringName) -> void:
 	running = false
 	step = null
 	_save_season_progress()
+	Audio.stop_beds(0.35)
 	await Screen.fade_out()
 	if generation != _generation:
 		return
@@ -259,6 +279,7 @@ func _play(step_id: StringName) -> void:
 ## with their last checkpoint intact; the episode is not treated as finished.
 func _fail(reason: String, generation: int) -> void:
 	TEFault.report(reason)
+	Audio.stop_beds()
 	running = false
 	failed = true
 	step = null
@@ -288,6 +309,8 @@ func _launch(current: TEStep, token: int) -> void:
 		TEStep.Kind.CUTSCENE:
 			await _cutscene(current, token)
 			exit_name = &"end"
+		TEStep.Kind.TIMELINE:
+			exit_name = await _timeline(current, token)
 		TEStep.Kind.CARD:
 			var body := current.body
 			if current.card == TEStep.Card.CREDITS:
@@ -317,6 +340,8 @@ func _encounter(current: TEStep) -> StringName:
 	director.trace.enabled = OS.is_debug_build()
 	director.flags = Story.vars
 	director.window_scale = Settings.qte_window_scale
+	director.auto_complete = Settings.qte_auto_complete
+	director.hold_toggle = Settings.qte_hold_toggle
 	add_child(director)
 	_props.append(director)
 	var action_dialogue := TEActionDialogue.new()
@@ -356,7 +381,8 @@ func _explore(current: TEStep) -> StringName:
 	return exit_name
 
 func _checkpoint() -> void:
-	var entry := {"step": step.id, "title": step.title if step.title != "" else String(step.id), "story": Story.to_dict()}
+	var entry := {"step": step.id, "title": step.title if step.title != "" else String(step.id), "story": Story.to_dict(),
+		"audio": {"music": _stream_path(Audio.current_music()), "ambience": _stream_path(Audio.current_ambience())}}
 	if not checkpoints.is_empty() and checkpoints.back()["step"] == step.id:
 		checkpoints[-1] = entry
 	else:
@@ -430,14 +456,17 @@ func _place_cast() -> void:
 func _on_line_shown(line: DialogueLine) -> void:
 	for id: StringName in actors:
 		actors[id].speak(id == StringName(line.character))
-	Audio.mouth_target = actors.get(StringName(line.character))
-	_cut(StringName(line.get_tag_value("shot")), line.get_tag_value("blend").to_float())
+	for tag: String in DIRECTION_TAGS:
+		var value := line.get_tag_value(tag)
+		if value != "":
+			direct(tag, StringName(line.character), value)
+	cut(StringName(line.get_tag_value("shot")), line.get_tag_value("blend").to_float())
 	var shake_amount := line.get_tag_value("shake").to_float()
 	if shake_amount > 0.0:
 		camera.shake(shake_amount)
 
 ## Go to Shots/<shot>. A blend above zero moves the camera there instead of cutting.
-func _cut(shot: StringName, blend := 0.0) -> void:
+func cut(shot: StringName, blend := 0.0) -> void:
 	if shot == &"" or location == null:
 		return
 	var target := location.shot(shot)
@@ -450,22 +479,151 @@ func _cutscene(current: TEStep, token: int) -> void:
 	for cue in current.cues:
 		if token != _step_token:
 			return
-		_cut(cue.shot, cue.blend)
+		cut(cue.shot, cue.blend)
 		if cue.shake > 0.0:
 			camera.shake(cue.shake)
 		for id: StringName in actors:
 			actors[id].speak(id == cue.speaker)
-		Audio.mouth_target = actors.get(cue.speaker)
 		for id: StringName in cue.clips:
 			if actors.has(id):
 				actors[id].cad_act(cue.clips[id])
+		for id: StringName in cue.emotes:
+			if actors.has(id):
+				actors[id].emote(StringName(cue.emotes[id]))
+		if cue.sound != null:
+			Audio.effect(cue.sound)
 		Screen.caption(cue.caption)
 		var seconds := cue.hold * (Settings.text_hold_scale if cue.caption != "" else 1.0)
+		if cue.voice != null:
+			seconds = maxf(seconds, Audio.voice(cue.voice, actors.get(cue.speaker) as TEActor))
 		await get_tree().create_timer(maxf(seconds, 0.0)).timeout
+		if cue.voice != null:
+			Audio.stop_voice()
+		if cue.wait_for_clip != &"" and actors.has(cue.wait_for_clip):
+			var left := CLIP_WAIT_LIMIT
+			while token == _step_token and left > 0.0 and is_instance_valid(actors.get(cue.wait_for_clip)) \
+					and actors[cue.wait_for_clip].clip_playing():
+				await get_tree().process_frame
+				left -= get_process_delta_time()
 	if token == _step_token:
 		for actor: TEActor in actors.values():
 			actor.speak(false)
 		Screen.caption("")
+
+## Start, change or stop the music and ambience a step asks for.
+func _apply_audio(current: TEStep) -> void:
+	if current.stop_music:
+		Audio.music(null, current.audio_fade)
+	elif current.music != null:
+		Audio.music(current.music, current.audio_fade)
+	if current.stop_ambience:
+		Audio.ambience(null, current.audio_fade)
+	elif current.ambience != null:
+		Audio.ambience(current.ambience, current.audio_fade)
+
+## Put back the beds that were playing when a checkpoint was reached.
+func _restore_audio(saved: Variant) -> void:
+	if saved is not Dictionary:
+		return
+	for key: String in ["music", "ambience"]:
+		var path: Variant = saved.get(key, "")
+		var stream: AudioStream = null
+		if path is String and path != "" and ResourceLoader.exists(path):
+			stream = load(path) as AudioStream
+		if key == "music":
+			Audio.music(stream, 0.5)
+		else:
+			Audio.ambience(stream, 0.5)
+
+static func _stream_path(stream: AudioStream) -> String:
+	return stream.resource_path if stream != null and stream.resource_path.begins_with("res://") else ""
+
+## Act on one direction tag for a character: emote, gesture, clip or look.
+## `value` may name another character first ("stranger:angry"), and look takes
+## a character id, a mark name, or "none".
+func direct(tag: String, speaker: StringName, value: String) -> void:
+	var who := speaker
+	var what := value
+	if value.contains(":"):
+		who = StringName(value.get_slice(":", 0))
+		what = value.get_slice(":", 1)
+	var actor: TEActor = actors.get(who)
+	if actor == null:
+		push_warning("Flow: [#%s=%s] names no actor in this scene." % [tag, value])
+		return
+	match tag:
+		"emote":
+			actor.emote(StringName(what))
+		"gesture":
+			actor.gesture(StringName(what))
+		"clip":
+			actor.cad_act(StringName(what))
+		"look":
+			var point: Variant = _look_point(StringName(what))
+			if what == "none":
+				actor.clear_look()
+			elif point != null:
+				actor.look_at_point(point)
+			else:
+				push_warning("Flow: [#look=%s] is neither a character here nor a mark." % what)
+
+## Eye height of a cast member, or a mark's position; null if neither exists.
+func _look_point(target: StringName) -> Variant:
+	if actors.has(target):
+		return actors[target].global_position + Vector3.UP * EYE_HEIGHT
+	var spot := location.mark(target) if location != null else null
+	return spot.global_position + Vector3.UP * EYE_HEIGHT if spot != null else null
+
+## Play the step's AnimationPlayer animation; method tracks drive the scene
+## through a TETimelineCues node. Advance pressed twice skips to the end.
+func _timeline(current: TEStep, token: int) -> StringName:
+	var player := location.get_node_or_null(current.timeline_player) as AnimationPlayer if location != null else null
+	if player == null or not player.has_animation(current.timeline):
+		push_error("Flow: step '%s' needs an AnimationPlayer at '%s' with animation '%s'." % [current.id, current.timeline_player, current.timeline])
+		return &"error"
+	timeline_skipping = false
+	_skip_armed = 0.0
+	_timeline_step = current
+	player.play(current.timeline)
+	while token == _step_token and is_instance_valid(player) and player.is_playing():
+		if _skip_armed > 0.0:
+			_skip_armed -= get_process_delta_time()
+			if _skip_armed <= 0.0:
+				Screen.hint("")
+		await get_tree().process_frame
+	_timeline_step = null
+	if token == _step_token:
+		for actor: TEActor in actors.values():
+			actor.speak(false)
+		Screen.caption("")
+		Screen.hint("")
+	timeline_skipping = false
+	return &"end"
+
+## Skip the playing timeline: cues stop firing, voice stops, and the animation
+## jumps to its last frame so the scene is left in its final pose.
+func skip_timeline() -> void:
+	if _timeline_step == null or not _timeline_step.skippable or location == null:
+		return
+	var player := location.get_node_or_null(_timeline_step.timeline_player) as AnimationPlayer
+	if player == null or not player.is_playing():
+		return
+	timeline_skipping = true
+	Audio.stop_voice()
+	Screen.caption("")
+	Screen.hint("")
+	player.seek(player.current_animation_length, true)
+
+func _unhandled_input(event: InputEvent) -> void:
+	if _timeline_step == null or not _timeline_step.skippable or get_tree().paused:
+		return
+	if event.is_action_pressed(&"te_advance") and not event.is_echo():
+		get_viewport().set_input_as_handled()
+		if _skip_armed > 0.0:
+			skip_timeline()
+		else:
+			_skip_armed = SKIP_CONFIRM_SECONDS
+			Screen.hint(tr("Press %s again to skip") % CADPrompt.glyph(&"te_advance", CADInputDevice.using_pad))
 
 func _clear_props() -> void:
 	# Cancelling resumes awaiting functions synchronously; detach first so they
