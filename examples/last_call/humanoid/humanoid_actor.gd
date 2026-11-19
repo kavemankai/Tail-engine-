@@ -45,6 +45,10 @@ func play_clip(clip: StringName) -> void:
 	if is_instance_valid(body):
 		body.play_action(CLIPS.get(clip, clip))
 
+## The kit blends walk and idle from velocity in _physics_process.
+func locomotion(_moving: bool) -> void:
+	pass
+
 func clip_playing() -> bool:
 	return is_instance_valid(body) and body.animator.action != &"" and body.animator.player.is_playing() \
 		and body.animator.player.current_animation == String(body.animator.action)

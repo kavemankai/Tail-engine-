@@ -77,6 +77,12 @@ func look_at_point(point: Vector3) -> void:
 func clear_look() -> void:
 	look_target = null
 
+## Called by the walk-around controller when the player starts or stops
+## moving. The default plays the logical clips "walk" and "idle" if mapped;
+## rigs that blend on velocity can ignore it.
+func locomotion(moving: bool) -> void:
+	_logical_clip(&"walk" if moving else &"idle")
+
 func _logical_clip(clip: StringName) -> void:
 	if character != null and character.clips.has(clip):
 		cad_act(clip)

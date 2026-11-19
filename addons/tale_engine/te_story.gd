@@ -20,6 +20,8 @@ var results: Dictionary = {}
 var seen: Dictionary = {}
 ## Optional versioned scalar QTE history, committed only after completed encounters.
 var interactions: Dictionary = {}
+## Item id -> how many are held. Only ids declared in the manifest.
+var items: Dictionary = {}
 ## Earlier episodes of a season: episode id -> { choice id -> option id }.
 var history: Dictionary = {}
 
@@ -37,6 +39,7 @@ func reset(new_manifest: TEStoryManifest = null, keep_history := false) -> void:
 	results = {}
 	seen = {}
 	interactions = {}
+	items = {}
 
 func flag(key: StringName) -> bool:
 	return true if vars.get(key, false) else false
@@ -70,6 +73,45 @@ func choose(choice_id: StringName, option_id: StringName, notice: String = "") -
 	if notice != "":
 		remembered.emit(notice)
 
+## Give the player an item declared in the manifest.
+func give(item: StringName, count: int = 1) -> void:
+	if manifest != null and not manifest.has_item(item):
+		TEFault.report("Story: item '%s' is not declared in the manifest; not given." % item)
+		return
+	if count <= 0:
+		return
+	items[item] = item_count(item) + count
+	changed.emit(item, items[item])
+
+## Take items away. False, and nothing changes, if not enough are held.
+func take(item: StringName, count: int = 1) -> bool:
+	if count <= 0 or item_count(item) < count:
+		return false
+	var left := item_count(item) - count
+	if left > 0:
+		items[item] = left
+	else:
+		items.erase(item)
+	changed.emit(item, left)
+	return true
+
+func has_item(item: StringName) -> bool:
+	return item_count(item) > 0
+
+func item_count(item: StringName) -> int:
+	return int(items.get(item, 0))
+
+## The name shown for an item id.
+func item_name(item: StringName) -> String:
+	return tr(manifest.item_name(item)) if manifest != null else String(item)
+
+## Names of the items held, in the order they were first given.
+func inventory() -> PackedStringArray:
+	var names := PackedStringArray()
+	for item: StringName in items:
+		names.append(item_name(item))
+	return names
+
 ## What the player chose in an earlier episode of this season, or "".
 func prior(episode_id: StringName, choice_id: StringName) -> String:
 	return String(history.get(episode_id, {}).get(choice_id, ""))
@@ -100,12 +142,14 @@ func to_dict() -> Dictionary:
 		"results": results.duplicate(true), "seen": seen.duplicate(true)}
 	if not interactions.is_empty():
 		data["interactions"] = interactions.duplicate(true)
+	if not items.is_empty():
+		data["items"] = items.duplicate(true)
 	if not history.is_empty():
 		data["history"] = history.duplicate(true)
 	return data
 
 func from_dict(data: Dictionary) -> void:
-	for field: String in ["vars", "choices", "outcomes", "results", "seen", "interactions"]:
+	for field: String in ["vars", "choices", "outcomes", "results", "seen", "interactions", "items"]:
 		# A later episode revision may add variables absent in an older save.
 		var restored: Dictionary = vars.duplicate(true) if field == "vars" else {}
 		var saved: Dictionary = data.get(field, {})

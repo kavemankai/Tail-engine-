@@ -41,6 +41,7 @@ static func check(episode: TEEpisode) -> PackedStringArray:
 			var problem := TECondition.error(exit.when, variables)
 			if problem != "":
 				errors.append("%s exit condition '%s': %s" % [where, exit.when, problem])
+			check_items(exit.when, episode.manifest, "%s exit condition" % where, errors)
 		if step.music != null and step.stop_music:
 			errors.append("%s both sets and stops the music." % where)
 		if step.ambience != null and step.stop_ambience:
@@ -130,6 +131,16 @@ static func check(episode: TEEpisode) -> PackedStringArray:
 						var problem := TECondition.error(hotspot.when, variables)
 						if problem != "":
 							errors.append("%s hotspot %s condition: %s" % [where, hotspot.name, problem])
+						check_items(hotspot.when, episode.manifest, "%s hotspot %s" % [where, hotspot.name], errors)
+						if hotspot.requires_item != &"" and not episode.manifest.has_item(hotspot.requires_item):
+							errors.append("%s hotspot %s needs undeclared item '%s'." % [where, hotspot.name, hotspot.requires_item])
+						if hotspot.missing_item_cue != "":
+							cues.append(hotspot.missing_item_cue)
+						if hotspot.examine_scene != null:
+							var model := hotspot.examine_scene.instantiate()
+							if model is not Node3D:
+								errors.append("%s hotspot %s: examine scene root must be a Node3D." % [where, hotspot.name])
+							model.free()
 						if hotspot.cue != "":
 							cues.append(hotspot.cue)
 						if hotspot.exit != &"":
@@ -158,6 +169,14 @@ static func check(episode: TEEpisode) -> PackedStringArray:
 		if location != null:
 			location.free()
 	return errors
+
+## Item ids named by give/take/has_item/item_count must be declared.
+static func check_items(text: String, manifest: TEStoryManifest, where: String, errors: PackedStringArray) -> void:
+	var regex := RegEx.new()
+	regex.compile("\\b(?:give|take|has_item|item_count)\\(\\s*[\"']([^\"']+)[\"']")
+	for found in regex.search_all(text):
+		if not manifest.has_item(found.get_string(1)):
+			errors.append("%s: uses undeclared item '%s'." % [where, found.get_string(1)])
 
 ## Method tracks aimed at a TETimelineCues node must call its methods, and
 ## name shots and characters that exist.
@@ -220,6 +239,7 @@ static func _check_dialogue(resource: DialogueResource, cues: Array, episode: TE
 	for found in regex.search_all(text):
 		if not episode.manifest.has_variable(found.get_string(2)):
 			errors.append("%s: dialogue uses undeclared variable '%s'." % [resource.resource_path, found.get_string(2)])
+	check_items(text, episode.manifest, resource.resource_path, errors)
 	regex.compile("Story\\.choose\\(\\s*\"([^\"]+)\"\\s*,\\s*\"([^\"]+)\"")
 	for found in regex.search_all(text):
 		if not episode.manifest.has_option(found.get_string(1), found.get_string(2)):
