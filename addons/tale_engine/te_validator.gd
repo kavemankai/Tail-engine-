@@ -84,8 +84,9 @@ static func check(episode: TEEpisode) -> PackedStringArray:
 					if cue.speaker != &"" and episode.cast.find(cue.speaker) == null:
 						errors.append("%s cue speaker '%s' is not in the cast." % [where, cue.speaker])
 					for id: StringName in cue.clips:
-						if episode.cast.find(id) == null:
-							errors.append("%s cue animates unknown character '%s'." % [where, id])
+						var clip_issue := clip_problem(episode, id, StringName(cue.clips[id]))
+						if clip_issue != "":
+							errors.append("%s cue %s" % [where, clip_issue])
 					for id: StringName in cue.emotes:
 						if episode.cast.find(id) == null:
 							errors.append("%s cue sets the emotion of unknown character '%s'." % [where, id])
@@ -168,7 +169,54 @@ static func check(episode: TEEpisode) -> PackedStringArray:
 	for location: Variant in locations.values():
 		if location != null:
 			location.free()
-	return errors
+	# A dialogue file shared by several steps reports each problem once.
+	var unique := PackedStringArray()
+	for problem in errors:
+		if problem not in unique:
+			unique.append(problem)
+	return unique
+
+## Checks that read Dialogue Manager's compiled lines rather than the source
+## text: speakers, response counts, and the values of #timed and #clip tags.
+static func _check_lines(resource: DialogueResource, episode: TEEpisode, errors: PackedStringArray) -> void:
+	var path := resource.resource_path if resource.resource_path != "" else "dialogue"
+	var reported: Dictionary = {}
+	for id: Variant in resource.lines:
+		var line: Dictionary = resource.lines[id]
+		var kind := String(line.get("type", ""))
+		var speaker := String(line.get("character", ""))
+		if kind == "dialogue" and speaker != "" and episode.cast.find(StringName(speaker)) == null and not reported.has(speaker):
+			reported[speaker] = true
+			errors.append("%s: speaker '%s' is not in the cast." % [path, speaker])
+		var responses: Array = line.get("responses", [])
+		if kind == "response" and responses.size() > TEBalloon.CHOICE_ACTIONS.size():
+			errors.append("%s: '%s' starts a choice of %d responses; only %d have buttons unless highlight-and-confirm is on." \
+				% [path, line.get("text", ""), responses.size(), TEBalloon.CHOICE_ACTIONS.size()])
+		for tag: String in line.get("tags", []):
+			var value := tag.get_slice("=", 1) if tag.contains("=") else ""
+			if tag.begins_with("timed="):
+				if not value.is_valid_float() or value.to_float() <= 0.0:
+					errors.append("%s: '%s' has #timed=%s; it needs a number of seconds above zero." % [path, line.get("text", ""), value])
+			elif tag.begins_with("clip="):
+				var who := StringName(value.get_slice(":", 0)) if value.contains(":") else StringName(speaker)
+				var clip := StringName(value.get_slice(":", 1) if value.contains(":") else value)
+				var problem := clip_problem(episode, who, clip)
+				if problem != "":
+					errors.append("%s: [#clip=%s] %s" % [path, value, problem])
+			elif tag.begins_with("look=") and value != "none" and value != "" and episode.cast.find(StringName(value)) == null:
+				# Marks are checked where the location is known; a cast id is checked here.
+				if not value.is_valid_identifier():
+					errors.append("%s: [#look=%s] is not a character, mark or none." % [path, value])
+
+## Empty if `clip` can be played on `who`; otherwise why not. A character
+## with no clip map accepts any name, since its scene may play real names.
+static func clip_problem(episode: TEEpisode, who: StringName, clip: StringName) -> String:
+	var character := episode.cast.find(who)
+	if character == null:
+		return "names unknown character '%s'." % who
+	if not character.clips.is_empty() and not character.clips.has(clip) and not character.clips.has(String(clip)):
+		return "'%s' has no clip '%s' in its clip map." % [who, clip]
+	return ""
 
 ## Item ids named by give/take/has_item/item_count must be declared.
 static func check_items(text: String, manifest: TEStoryManifest, where: String, errors: PackedStringArray) -> void:
@@ -244,11 +292,7 @@ static func _check_dialogue(resource: DialogueResource, cues: Array, episode: TE
 	for found in regex.search_all(text):
 		if not episode.manifest.has_option(found.get_string(1), found.get_string(2)):
 			errors.append("%s: dialogue logs undeclared choice '%s' / '%s'." % [resource.resource_path, found.get_string(1), found.get_string(2)])
-	regex.compile("^\\s*(\\w+):", )
-	for line in text.split("\n"):
-		var speaker := regex.search(line)
-		if speaker != null and not line.strip_edges().begins_with("-") and episode.cast.find(speaker.get_string(1)) == null:
-			errors.append("%s: speaker '%s' is not in the cast." % [resource.resource_path, speaker.get_string(1)])
+	_check_lines(resource, episode, errors)
 	var exits: Array = [TEBalloon.DEFAULT_EXIT]
 	regex.compile("\\bexit\\(\\s*\"([^\"]+)\"")
 	for found in regex.search_all(text):

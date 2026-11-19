@@ -68,4 +68,6 @@ static func kind_name(kind: int) -> String:
 			return "Card"
 		TEStep.Kind.CUTSCENE:
 			return "Cutscene"
+		TEStep.Kind.TIMELINE:
+			return "Timeline"
 	return "?"

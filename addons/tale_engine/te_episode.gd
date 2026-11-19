@@ -13,6 +13,8 @@ extends Resource
 ## Old step id -> new id. Add an entry when a patch renames a checkpoint step,
 ## so saves made before the patch resume at the right place.
 @export var renamed_steps: Dictionary = {}
+## Where the editor's graph panel last placed each step: id -> Vector2.
+@export var editor_positions: Dictionary = {}
 
 func find(step_id: StringName) -> TEStep:
 	for step in steps:
