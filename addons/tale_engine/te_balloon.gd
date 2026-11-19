@@ -131,6 +131,14 @@ func pick_option(option: String) -> bool:
 			return true
 	return false
 
+## True once the conversation has ended, by finishing or being cancelled.
+func is_finished() -> bool:
+	return _finished
+
+## The exit the conversation ended with (or will, if still running).
+func exit_name() -> StringName:
+	return _exit
+
 func choosing() -> bool:
 	return not _responses.is_empty()
 
@@ -207,7 +215,18 @@ func _refresh_choices(_using_pad: bool = false) -> void:
 		# Highlight mode has no per-response button, and a response past the
 		# fourth has none either.
 		var plain := Settings.choice_highlight or key == ""
-		_choices.get_child(i).text = _responses[i].text if plain else "[%s]  %s" % [key, _responses[i].text]
+		var button: Button = _choices.get_child(i)
+		# On a controller, show the button's icon where the game has one.
+		var icon := CADPrompt.icon(CHOICE_ACTIONS[i]) if not plain and CADInputDevice.using_pad else null
+		button.icon = icon
+		button.expand_icon = false
+		button.add_theme_constant_override(&"icon_max_width", 34)
+		if plain:
+			button.text = _responses[i].text
+		elif icon != null:
+			button.text = "  " + _responses[i].text
+		else:
+			button.text = "[%s]  %s" % [key, _responses[i].text]
 
 func _input(event: InputEvent) -> void:
 	if _cancelled or get_viewport().has_meta(CADDirector.VIEWPORT_OWNER):
@@ -227,10 +246,7 @@ func _input(event: InputEvent) -> void:
 
 func _voice_for(line: DialogueLine) -> AudioStream:
 	var character := cast.find(line.character) if cast != null else null
-	if character == null or character.voice_dir == "" or line.static_id == "":
+	if character == null or line.static_id == "":
 		return null
-	for extension: String in ["ogg", "wav", "mp3"]:
-		var path := "%s/%s.%s" % [character.voice_dir, line.static_id, extension]
-		if ResourceLoader.exists(path):
-			return load(path)
-	return null
+	var path := TEVoice.find(character.voice_dir, line.static_id)
+	return load(path) if path != "" else null

@@ -41,6 +41,10 @@ window/stretch/mode="canvas_items"
 
 enabled=PackedStringArray("res://addons/dialogue_manager/plugin.cfg", "res://addons/tale_engine/plugin.cfg")
 
+[gui]
+
+theme/custom="res://addons/tale_engine/ui/tale_theme.tres"
+
 [input]
 
 move_left={

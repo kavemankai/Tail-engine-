@@ -79,9 +79,11 @@ func device_prompts() -> void:
 	Flow.jump(&"stranger_talk")
 	var balloon: TEBalloon = await Flow.balloon_opened
 	await balloon.choices_shown
-	expect(balloon._choices.get_child(0).text.begins_with("[Y]"), "dialogue inherits the last input device")
+	var first: Button = balloon._choices.get_child(0)
+	expect(first.icon != null and first.icon.resource_path.ends_with("/y.svg") and not first.text.begins_with("["),
+		"dialogue inherits the last input device (the pad shows the Y button's icon)")
 	keyboard()
-	expect(balloon._choices.get_child(0).text.begins_with("[1]"), "visible dialogue prompts update on device switch")
+	expect(first.text.begins_with("[1]") and first.icon == null, "visible dialogue prompts update on device switch")
 	var drift := InputEventJoypadMotion.new()
 	drift.axis_value = 0.1
 	Input.parse_input_event(drift)

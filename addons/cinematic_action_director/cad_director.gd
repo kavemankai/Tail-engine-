@@ -217,6 +217,22 @@ func record() -> Dictionary:
 		records[String(id)] = detailed_results[id].to_dict()
 	return {"schema": 1, "results": records, "context": context.to_dict()}
 
+## Run counter; increases with every begin(). Stale callbacks compare it.
+func run_id() -> int:
+	return _run_id
+
+## Beat visit counter within the run.
+func visit() -> int:
+	return _visit
+
+## The beat playing now, or null.
+func current_beat() -> CADBeat:
+	return _beat
+
+## The stage this run plays on, or null.
+func stage() -> CADStage:
+	return _stage
+
 func input_suspended() -> bool:
 	return _suspended or get_tree().paused
 

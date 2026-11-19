@@ -194,11 +194,11 @@ func converse(resource: DialogueResource, cue: String, first_shot: StringName = 
 	_props.append(balloon)
 	cut(first_shot)
 	balloon_opened.emit(balloon)
-	if not balloon._finished:
+	if not balloon.is_finished():
 		balloon.start(resource, cue)
-	if not balloon._finished:
+	if not balloon.is_finished():
 		await balloon.finished
-	var exit_name := balloon._exit
+	var exit_name := balloon.exit_name()
 	for actor: TEActor in actors.values():
 		actor.speak(false)
 	_props.erase(balloon)

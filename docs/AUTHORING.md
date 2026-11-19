@@ -49,6 +49,16 @@ if Story.flag("stool_noticed")
 if Story.outcome("bar_fight") == "won"
 ```
 
+Items the player can carry are declared in `manifest.items`, id to the name shown, and used the same way:
+
+```
+do Story.give("brass_key")
+if Story.has_item("brass_key")
+do Story.take("brass_key")
+```
+
+`give` with an undeclared id is reported and does nothing. Items are saved with the story; an item removed in a patch is dropped from old saves. `Story.inventory()` lists the names held.
+
 `remember` with a third argument raises the notice banner. `choose` logs a choice for the recap card. `Story.outcome(step_id)` is how any step ended. `Story.result(step_id, beat_id)` is what the player did at one gate in an encounter: an option id or `timeout`.
 
 ## Conditions
@@ -73,6 +83,12 @@ Standard Dialogue Manager syntax, with these tags:
 | `[#shot=name]` | a line | Cuts to that camera in the location. |
 | `[#opt=name]` | a response | A stable name for tests and tools. |
 | `[ID:e0_001]` | a line | The line's id. Voice files are named after it. |
+| `[#emote=angry]` | a line | The speaker's emotion, held until the next one. |
+| `[#gesture=shrug]` | a line | A one-off gesture by the speaker. |
+| `[#clip=point]` | a line | A logical clip on the speaker, mapped through the character's `clips`. |
+| `[#look=bartender]` | a line | The speaker looks at a cast member or a mark; `none` stops looking. |
+
+`emote`, `gesture` and `clip` can name another character first: `[#clip=stranger:point]` on the player's line makes the stranger point. What an emotion, gesture or look does is up to the character's `TEActor` scene; the default plays clips named `emote_<name>` and `gesture_<name>` if the character maps them, and turns the body to look. The validator checks `#clip` names against a character's clip map, `#timed` values, and choices of more than four responses.
 
 Speaker names are character ids from the cast. To end a step with a named exit, call `do exit("paid")` before the conversation ends.
 
@@ -92,7 +108,14 @@ A location scene has a `TELocation` root. The engine finds everything by name:
 
 Floors and walls need collision or the player falls through.
 
-A `TEHotspot` has a verb `label`, a `radius`, and does one or both of: run a `cue` from the hub's dialogue file, and end the step with `exit`. `when` hides it behind a condition. `once` retires it after one use.
+A `TEHotspot` has a verb `label`, a `radius`, and does one or both of: run a `cue` from the hub's dialogue file, and end the step with `exit`. `when` hides it behind a condition. `once` retires it after one use. Optionally:
+
+- `facing_degrees` offers it only while the player faces it within that angle.
+- A child node named `Highlight` (a glow mesh, a decal) is shown while it is on offer.
+- `examine_scene` and `examine_text` show a model close up before the cue; the player turns it with movement and puts it down with advance.
+- `requires_item` locks it until the player holds that item; the prompt says what is needed. `consumes_item` takes the item when used, and `missing_item_cue` plays a line when it is locked.
+
+Movement in a hub follows the camera on screen. After a camera cut the player keeps walking the same way until the stick is released. The hub's follow camera eases after the player (`camera_smoothing`, 0 to snap) and moves in front of walls between it and the player (`camera_collision`, `camera_mask`). The player's actor gets `locomotion(moving)` as it starts and stops; the default plays the logical clips `walk` and `idle` if mapped.
 
 ## Encounters
 
@@ -342,20 +365,69 @@ friend: We need to go. [#shot=close, #blend=0.6, #shake=0.05]
 - `blend` (seconds) flies the camera there from the current view instead of cutting.
 - `shake` is an amplitude in metres that fades out over about half a second.
 
-A **Cutscene** step (`kind = 4`) plays a list of `TEShotCue` resources with no input: each cue has a `shot`, `blend`, `hold`, optional `shake`, a `speaker` (marks that actor as talking), a `caption`, and `clips` (character id to logical clip, played as the cue starts). It ends with the exit `end`. The validator checks that every cue's shot, speaker and character exist.
+A **Cutscene** step (`kind = 4`) plays a list of `TEShotCue` resources with no input: each cue has a `shot`, `blend`, `hold`, optional `shake`, a `speaker` (marks that actor as talking), a `caption`, `clips` (character id to logical clip, played as the cue starts) and `emotes`. A cue's `voice` is spoken by its speaker and the cue lasts at least as long as the recording; `sound` plays a one-shot; `wait_for_clip` holds the next cue until that character's clip finishes (at most ten seconds). It ends with the exit `end`. The validator checks that every cue's shot, speaker and character exist and that clips are mapped.
+
+A **Timeline** step (`kind = 5`) plays an animation you author in Godot's animation editor, on an `AnimationPlayer` in the location (`timeline_player`, `Timeline` by default; `timeline` names the animation). Animate cameras, props and lights with ordinary tracks. For story beats, add a `TETimelineCues` node to the location (call it `Cues`) and key its methods on a method track:
+
+| Method | Does |
+|---|---|
+| `shot(name, blend)` | cut, or blend over `blend` seconds |
+| `clip(character, clip)` | play a logical clip |
+| `voice(character, stream_or_path)` | speak a line; lip-sync follows |
+| `sound(stream_or_path)` | one-shot effect |
+| `caption(text)` | subtitle; `""` clears it |
+| `emote`, `gesture`, `look` | as the dialogue tags |
+| `shake(amount)`, `quiet()` | camera shake; stop all talking |
+
+The step ends with `end` when the animation does. If `skippable` is on, pressing advance shows "press again to skip"; a second press jumps to the last frame without firing the remaining cues. The validator checks the animation exists and that cue calls name real shots and characters.
 
 From code, `Flow.camera` (`TECamera`) offers `cut_to`, `blend_to` and `shake`.
 
 ## Editor tooling
 
-The Tale Engine plugin (enabled in `project.godot`) adds a **Tale Engine** panel at the bottom of the editor. Select an `episode.tres` and the panel shows its step graph: one node per step, one output per exit, and an END node. Clicking a node selects that step in the inspector. **Add step** appends a step of the chosen kind and saves the episode. **Validate** runs the same validator as `tests/validate.tscn` in a headless game process and lists the problems.
+The Tale Engine plugin (enabled in `project.godot`) adds a **Tale Engine** panel at the bottom of the editor. Select an `episode.tres` and the panel shows its step graph: one node per step, one output per exit (with its condition), and an END node. Clicking a node selects that step in the inspector.
+
+- Drag from an exit to a step to connect it; drag an exit's end away to disconnect it.
+- **+ exit** on a node adds an exit; select nodes and press Delete to remove steps. Exits left pointing at a deleted step show up in validation; they are not rerouted for you.
+- Drag nodes to arrange them; positions are saved in the episode (`editor_positions`).
+- The panel's **Undo** and **Redo** buttons cover every graph edit. The graph also listens for Ctrl+Z / Ctrl+Shift+Z, but the editor may take those keys for its own history first, so use the buttons. Changes to a step's fields in the inspector use the editor's own undo.
+- **Add step** appends a step of the chosen kind. **Validate** runs the same validator as `tests/validate.tscn` in a headless game process, on a background thread, and lists the problems.
 
 The same check from a terminal: `godot --headless --path . res://addons/tale_engine/editor/validate_cli.tscn -- res://path/to/episode.tres`.
 
 ## Voice and lip-sync
 
-Give a character a `voice_dir` and put recordings there named after the dialogue line id: `e0_007.ogg` (or `.wav`, `.mp3`) for `[ID:e0_007]`. Missing files are fine; the line just plays on its reading timer.
+Give a character a `voice_dir` and put recordings there named after the dialogue line id: `e0_007.ogg` (or `.wav`, `.mp3`) for `[ID:e0_007]`. Missing files are fine; the line just plays on its reading timer. A dubbed language goes in a subfolder named for its locale: `fr/e0_007.ogg`, or `pt_BR/e0_007.ogg` for a regional variant. The current language's folder is tried first, then the language without its region, then the base folder.
 
 - **Recording script:** `godot --headless --path . res://addons/tale_engine/editor/export_voice_cli.tscn -- res://path/episode.tres script.csv` writes one row per line (id, speaker, text, recorded yes/no, expected file).
 - **Coverage:** `TEVoice.coverage(episode)` returns `[recorded, total]`; `tests/validate.tscn` prints it.
-- **Lip-sync:** voice plays on a `Voice` audio bus. While a line plays, its speaker's `set_mouth_open(0..1)` is called every frame with the smoothed loudness. The default `TEActor` drives a mouth blend shape named `jawOpen`, `mouthOpen`, `mouth_open`, `viseme_aa` or similar on any mesh under the actor. Override `set_mouth_open` for jaw bones, texture swaps or sprite mouths.
+- **Lip-sync:** voice plays on a `Voice` audio bus. While a line plays, its speaker's `set_mouth_open(0..1)` is called every frame with the smoothed loudness. The speaker is whoever owns the voice playing now, so an action bark moves the barking character's mouth. The default `TEActor` drives a mouth blend shape named `jawOpen`, `mouthOpen`, `mouth_open`, `viseme_aa` or similar on any mesh under the actor; with none, it rotates a jaw bone (`jaw`, `Jaw`, `mixamorig:Jaw`, ... see `JAW_BONES`) by up to `jaw_open_degrees`. If an animation also keys the jaw, the two fight; override `set_mouth_open` for visemes, texture swaps or sprite mouths.
+
+## Music, ambience and effects
+
+The project ships `addons/tale_engine/default_bus_layout.tres`: **Music**, **SFX**, **Voice**, and **Ambience**, which feeds SFX so the Effects volume covers it.
+
+A step can start music and an ambience loop as it begins: set `music` and `ambience` on the step, with `audio_fade` seconds of crossfade. Leaving them empty keeps whatever is playing; `stop_music` and `stop_ambience` fade them out. Checkpoints remember what was playing, so Continue and Rewind bring it back. The episode ending, failing or being quit fades both out. `TETitleMenu.music` plays on the title screen.
+
+While the pause menu is open, music keeps playing about 10 dB quieter; ambience, effects and voice pause with the game.
+
+From dialogue or code:
+
+```
+do Audio.effect(load("res://sfx/glass.wav"))
+do Audio.effect_at(load("res://sfx/door.wav"), Vector3(2, 0, -3))
+do Audio.music(load("res://music/rain.ogg"), 2.0)
+```
+
+Effects come from pools of twelve flat and twelve positional players; when a pool is full the oldest effect is cut.
+
+## Action prompt assists
+
+Settings → Assistance offers two switches that apply to every encounter:
+
+- **Complete action prompts automatically:** prompts that test skill (one option, or a press, hold, timing, pattern, pressure or direction challenge) succeed by themselves a moment after they appear. Prompts that ask the player to choose between options still wait.
+- **Press once instead of holding:** hold prompts and pressure challenges latch on with one press and let go with the next.
+
+## Achievements and release
+
+`do Platform.unlock("paid_the_tab")` unlocks an achievement on Steam (with GodotSteam) or locally. Exports, the smoke run, the performance probe, Steam setup and crash reports are covered in [PLATFORM.md](PLATFORM.md).

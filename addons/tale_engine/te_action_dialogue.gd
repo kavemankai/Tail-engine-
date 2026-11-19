@@ -44,7 +44,7 @@ func _ready() -> void:
 	director.suspension_changed.connect(_suspend)
 
 func _on_bark(value: CADBark, visit: int) -> void:
-	if not director.active() or director._stage != stage or visit != director._visit:
+	if not director.active() or director.stage() != stage or visit != director.visit():
 		return
 	show_bark(value)
 

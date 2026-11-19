@@ -2,6 +2,8 @@ class_name TEVoice
 extends RefCounted
 ## Voice-over bookkeeping: which lines an episode has, who speaks them, and
 ## which recordings exist. Recordings are named <voice_dir>/<line id>.ogg|wav|mp3.
+## A dubbed language goes in a subfolder named for its locale, tried first:
+## <voice_dir>/fr/<line id>.ogg, or <voice_dir>/pt_BR/... for a regional one.
 
 const EXTENSIONS: PackedStringArray = ["ogg", "wav", "mp3"]
 
@@ -33,8 +35,29 @@ static func lines(episode: TEEpisode) -> Array[Dictionary]:
 	return result
 
 static func _recording(directory: String, line_id: String) -> String:
-	if directory == "":
+	return _in(directory, line_id)
+
+## The recording to play for a line in the current language: the full locale's
+## folder, then the language's, then the base folder. "" if none exists.
+static func find(directory: String, line_id: String, locale: String = "") -> String:
+	if directory == "" or line_id == "":
 		return ""
+	if locale == "":
+		locale = TranslationServer.get_locale()
+	var folders := PackedStringArray()
+	if locale != "":
+		folders.append("%s/%s" % [directory, locale])
+		var language := locale.get_slice("_", 0)
+		if language != locale:
+			folders.append("%s/%s" % [directory, language])
+	folders.append(directory)
+	for folder in folders:
+		var path := _in(folder, line_id)
+		if path != "":
+			return path
+	return ""
+
+static func _in(directory: String, line_id: String) -> String:
 	for extension in EXTENSIONS:
 		var path := "%s/%s.%s" % [directory, line_id, extension]
 		if ResourceLoader.exists(path):

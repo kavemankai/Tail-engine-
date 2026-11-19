@@ -1,0 +1,14 @@
+[gd_resource type="Theme" load_steps=4 format=3]
+
+[sub_resource type="SystemFont" id="SystemFont_scripts"]
+font_names = PackedStringArray("Noto Sans", "Noto Sans Arabic", "Noto Sans Hebrew", "Noto Sans Thai", "Noto Sans Devanagari", "Segoe UI", "Leelawadee UI", "Nirmala UI", "Tahoma", "DejaVu Sans")
+
+[sub_resource type="SystemFont" id="SystemFont_cjk"]
+font_names = PackedStringArray("Noto Sans CJK SC", "Noto Sans CJK JP", "Noto Sans CJK KR", "Source Han Sans", "Microsoft YaHei UI", "Yu Gothic UI", "Malgun Gothic", "PingFang SC", "Hiragino Sans", "WenQuanYi Micro Hei")
+
+[sub_resource type="FontVariation" id="FontVariation_ui"]
+fallbacks = Array[Font]([SubResource("SystemFont_scripts"), SubResource("SystemFont_cjk")])
+
+[resource]
+default_font = SubResource("FontVariation_ui")
+default_font_size = 20
