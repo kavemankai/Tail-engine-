@@ -14,6 +14,17 @@ var visit_id := 0
 var active := false
 var direction_forward := Vector2.UP
 var last_error := ""
+## Accessibility, set by the director before begin(): see CADDirector.
+var auto_complete := false
+var hold_toggle := false
+## Seconds after opening at which auto-complete succeeds, at most half the window.
+const AUTO_SECONDS := 0.35
+## Families that test skill rather than ask a question. Auto-complete passes
+## these; Choice, Target and Direction SELECT gates still wait for the player.
+const SKILL_FAMILIES: Array[CADInteractionSpec.Family] = [CADInteractionSpec.Family.GESTURE,
+	CADInteractionSpec.Family.TIMING, CADInteractionSpec.Family.PATTERN, CADInteractionSpec.Family.PRESSURE,
+	CADInteractionSpec.Family.DIRECTION]
+var _latched: Dictionary = {}
 var _input_snapshot: Callable
 var _beat: StringName
 var _gate: CADGate
@@ -63,6 +74,7 @@ func begin(gate: CADGate, offered: Array[CADOption], scale: float, run: int, vis
 	_beat = beat
 	_window = gate.window_seconds * scale
 	_last_tick = 0.0
+	_latched.clear()
 	last_result = null
 	clock.reset()
 	router.configure(_spec.input_actions(_options), _spec.controller_device)
@@ -101,7 +113,10 @@ func input(event: InputEvent, run: int, visit: int) -> void:
 	tick()
 	if not active:
 		return
-	for sample in router.route(event, clock.elapsed):
+	for routed in router.route(event, clock.elapsed):
+		var sample := _latch(routed)
+		if sample == null:
+			continue
 		var result := _handler.input(sample)
 		if not result.is_empty():
 			_complete(result)
@@ -114,6 +129,9 @@ func tick() -> void:
 	# Evaluate continuous progress up to the deadline before expiring. A held
 	# action that completed before a frame hitch still succeeds. Input edges at
 	# the deadline remain late. Passive's completion at the deadline is explicit.
+	if auto_complete and auto_completes() and elapsed >= minf(AUTO_SECONDS, _window * 0.5):
+		_complete(_auto_result())
+		return
 	var evaluation_time := minf(elapsed, _window - 0.0000001)
 	var result := _handler.tick(evaluation_time, maxf(0.0, evaluation_time - _last_tick))
 	_last_tick = evaluation_time
@@ -147,6 +165,35 @@ func suspend(value: bool) -> void:
 		router.configure(_spec.input_actions(_options), router.controller)
 		if _spec.family in [CADInteractionSpec.Family.DIRECTION, CADInteractionSpec.Family.TARGET]:
 			router.configure_direction(_spec, _input_snapshot)
+
+## True when auto-complete would pass this gate: a skill family with an
+## outcome that does not depend on which option the player picks.
+func auto_completes() -> bool:
+	if _spec == null or _spec.family not in SKILL_FAMILIES:
+		return false
+	if _spec.family == CADInteractionSpec.Family.DIRECTION and _spec.direction_mode == CADInteractionSpec.DirectionMode.SELECT:
+		return false
+	return _spec.uses_fixed_option() or _options.size() == 1
+
+func _auto_result() -> Dictionary:
+	var option := _spec.option_id if _spec.uses_fixed_option() else _options[0].id
+	return {"grade": &"success", "option_id": option, "progress": 1.0}
+
+## Hold-toggle: for hold gestures and pressure, a press latches the action on
+## and the next press lets it go. Releases are dropped.
+func _latch(sample: CADInputSample) -> CADInputSample:
+	if not hold_toggle or sample.kind != CADInputSample.Kind.EDGE:
+		return sample
+	var holds := _spec.family == CADInteractionSpec.Family.PRESSURE \
+		or (_spec.family == CADInteractionSpec.Family.GESTURE and _spec.gesture == CADInteractionSpec.Gesture.HOLD)
+	if not holds:
+		return sample
+	if not sample.pressed:
+		return null
+	var latched: bool = _latched.get(sample.action, false)
+	_latched[sample.action] = not latched
+	sample.pressed = not latched
+	return sample
 
 func cancel() -> void:
 	if active:

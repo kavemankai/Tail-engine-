@@ -11,12 +11,19 @@ config_version=5
 [application]
 
 config/name="Cinematic Action Director"
+config/version="0.2.0"
+config/icon="res://icon.svg"
 run/main_scene="res://examples/last_call/main.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility")
+
+[audio]
+
+buses/default_bus_layout="res://addons/tale_engine/default_bus_layout.tres"
 
 [autoload]
 
 InputDevice="*res://addons/cinematic_action_director/cad_input_device.gd"
+Platform="*res://addons/tale_engine/platform/te_platform.gd"
 Settings="*res://addons/tale_engine/te_settings.gd"
 Story="*res://addons/tale_engine/te_story.gd"
 Audio="*res://addons/tale_engine/te_audio.gd"
@@ -33,6 +40,10 @@ window/stretch/mode="canvas_items"
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/dialogue_manager/plugin.cfg", "res://addons/tale_engine/plugin.cfg")
+
+[gui]
+
+theme/custom="res://addons/tale_engine/ui/tale_theme.tres"
 
 [input]
 

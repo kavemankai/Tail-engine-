@@ -55,7 +55,7 @@ func audio_buses() -> void:
 		"music volume drives its own bus")
 	expect(AudioServer.get_bus_volume_db(AudioServer.get_bus_index(&"Voice")) < -60.0
 		and is_equal_approx(AudioServer.get_bus_volume_db(0), 0.0), "silencing voices leaves the master level alone")
-	expect(Audio._voice.bus == &"Voice" and Audio._music[0].bus == &"Music", "engine players use the matching buses")
+	expect(Audio._voice.bus == &"Voice" and Audio.music_player().bus == &"Music" and Audio.ambience_player().bus == &"Ambience", "engine players use the matching buses")
 	Settings.reset()
 
 func persistence() -> void:

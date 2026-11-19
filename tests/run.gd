@@ -2,7 +2,7 @@ extends Node
 ## Headless checks. Run: godot --headless --path . res://tests/run.tscn
 ## Pass suite names after "--" to run a subset: -- cad story
 
-const SUITES := ["cad", "story", "dialogue", "flow", "explore", "save", "validate", "lifecycle", "settings", "interaction", "qte_timing", "qte_direction", "compounds", "qte_pattern", "chains", "qte_target", "qte_pressure", "qte_cinematic", "action_dialogue", "qte_narrative", "qte_authoring", "season", "camera", "graph", "voice", "faults", "options", "narrative_ui", "localisation"]
+const SUITES := ["cad", "story", "dialogue", "flow", "explore", "save", "validate", "lifecycle", "settings", "interaction", "qte_timing", "qte_direction", "compounds", "qte_pattern", "chains", "qte_target", "qte_pressure", "qte_cinematic", "action_dialogue", "qte_narrative", "qte_authoring", "season", "camera", "graph", "voice", "faults", "options", "narrative_ui", "localisation", "audio", "direction", "exploration", "editor_tools", "platform", "polish"]
 
 func _ready() -> void:
 	run.call_deferred()

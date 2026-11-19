@@ -238,6 +238,37 @@ static func text_for(option: CADOption, pad: bool) -> String:
 	return "%s   [%s%s]" % [_t(option.label), verb, glyph(option.action, pad)]
 
 ## The name of the first key or pad button mapped to an action.
+## Controller positions -> icon file names in glyphs/<style>/.
+const ICON_KEYS := {
+	JOY_BUTTON_A: "a", JOY_BUTTON_B: "b", JOY_BUTTON_X: "x", JOY_BUTTON_Y: "y",
+	JOY_BUTTON_LEFT_SHOULDER: "lb", JOY_BUTTON_RIGHT_SHOULDER: "rb",
+	JOY_BUTTON_DPAD_UP: "dpad_up", JOY_BUTTON_DPAD_DOWN: "dpad_down",
+	JOY_BUTTON_DPAD_LEFT: "dpad_left", JOY_BUTTON_DPAD_RIGHT: "dpad_right",
+	JOY_BUTTON_START: "start", JOY_BUTTON_BACK: "back",
+	JOY_BUTTON_LEFT_STICK: "ls", JOY_BUTTON_RIGHT_STICK: "rs",
+}
+const ICON_AXES := {JOY_AXIS_TRIGGER_LEFT: "lt", JOY_AXIS_TRIGGER_RIGHT: "rt"}
+## Folder of icon sets, one subfolder per controller style. A game can point
+## this at its own licensed set with the same file names.
+static var icon_root := "res://addons/cinematic_action_director/glyphs"
+
+## Icon for the controller button bound to `action`, in the style of the
+## controller in use, or null when there is none (keyboard, unknown button).
+static func icon(action: StringName) -> Texture2D:
+	var style := String(CADInputDevice.style())
+	if style == "" or not DirAccess.dir_exists_absolute("%s/%s" % [icon_root, style]):
+		style = "xbox"
+	for event in InputMap.action_get_events(action):
+		var key := ""
+		if event is InputEventJoypadButton:
+			key = ICON_KEYS.get(event.button_index, "")
+		elif event is InputEventJoypadMotion:
+			key = ICON_AXES.get(event.axis, "")
+		var path := "%s/%s/%s.svg" % [icon_root, style, key]
+		if key != "" and ResourceLoader.exists(path):
+			return load(path)
+	return null
+
 static func glyph(action: StringName, pad: bool) -> String:
 	var fallback := ""
 	for event in InputMap.action_get_events(action):

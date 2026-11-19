@@ -36,10 +36,9 @@ func run() -> void:
 	expect(true, "an actor with no mouth shape ignores lip-sync")
 	bare.free()
 
-	Audio.mouth_target = null
 	expect(AudioServer.get_bus_index(&"Voice") >= 0, "voice plays on its own bus")
 
-func blend_shape_mesh(shape_name: String) -> ArrayMesh:
+static func blend_shape_mesh(shape_name: String) -> ArrayMesh:
 	var mesh := ArrayMesh.new()
 	mesh.add_blend_shape(shape_name)
 	var vertices := PackedVector3Array([Vector3(0, 0, 0), Vector3(1, 0, 0), Vector3(0, 1, 0)])

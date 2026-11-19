@@ -31,7 +31,7 @@ game; use Escape/Start or Resume to continue.
 | `addons/dialogue_manager` | Dialogue Manager 4.2.0 (MIT), with a documented editor lifecycle fix. |
 | `examples/last_call/episode_0` | The placeholder episode: step graph, dialogue, cast, two locations, two encounters. |
 | `tests` | Headless suites, the autoplayer, and scenes for validating and recording. |
-| `docs` | Authoring, asset swap, action-layer reference, and the earlier research. |
+| `docs` | Authoring, asset swap, action-layer reference, platform and release ([PLATFORM.md](docs/PLATFORM.md)), status, and the earlier research. |
 
 ## Start your own game
 
@@ -55,7 +55,8 @@ and the `humanoid_kit` and `narrative_characters` packs, which only Last Call's
 ## Check it
 
 ```bash
-python tools/verify.py                               # import, twenty-nine suites, episode validation, authoring audit
+python tools/verify.py                               # import, thirty-five suites, episode validation, authoring audit
+python tools/verify.py --export-linux                # also export Linux and play Episode 0 with the exported binary
 python tools/verify.py --suites lifecycle save        # a focused regression run
 ```
 

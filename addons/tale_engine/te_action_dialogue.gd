@@ -44,7 +44,7 @@ func _ready() -> void:
 	director.suspension_changed.connect(_suspend)
 
 func _on_bark(value: CADBark, visit: int) -> void:
-	if not director.active() or director._stage != stage or visit != director._visit:
+	if not director.active() or director.stage() != stage or visit != director.visit():
 		return
 	show_bark(value)
 
@@ -63,7 +63,7 @@ func show_bark(value: CADBark) -> bool:
 	_text.size.y = height * lines + 12
 	_panel.offset_top = _panel.offset_bottom - (40 + _text.size.y + 12)
 	_duration = cue.seconds
-	if cue.voice != null and Audio.request_voice(cue.voice, self, cue.priority):
+	if cue.voice != null and Audio.request_voice(cue.voice, self, cue.priority, actor):
 		_duration = minf(60.0, maxf(_duration, cue.voice.get_length()))
 	if actor != null:
 		actor.speak(true)

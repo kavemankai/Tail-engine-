@@ -39,7 +39,7 @@ func _process(_delta: float) -> void:
 		lines.append("chose %s: %s" % [key, Story.choices[key]])
 	var director := Flow.active_director()
 	if director != null:
-		lines.append("QTE run %s / visit %s: %s" % [director._run_id, director._visit, director._beat.id if director._beat != null else &"-"])
+		lines.append("QTE run %s / visit %s: %s" % [director.run_id(), director.visit(), director.current_beat().id if director.current_beat() != null else &"-"])
 		lines.append("Momentum %s/%s | Intent %s" % [director.context.momentum, director.context.limit, director.context.intent])
 		lines.append("Actors: " + str(director.context.to_dict().actors).left(100))
 		lines.append("Props: " + str(director.context.to_dict().props).left(100))

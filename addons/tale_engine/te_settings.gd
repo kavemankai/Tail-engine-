@@ -36,6 +36,8 @@ const DEFAULTS := {
 	"vsync": true,
 	"language": "",
 	"prompt_style": "",
+	"qte_auto_complete": false,
+	"qte_hold_toggle": false,
 }
 ## Volume setting -> audio bus. Missing buses are created, sending to Master.
 const BUSES := {
@@ -73,6 +75,10 @@ var vsync := true
 var language := ""
 ## Controller button names: "" detects from the pad, or "xbox", "playstation", "nintendo".
 var prompt_style := ""
+## Action prompts that test skill pass by themselves. Choices still wait.
+var qte_auto_complete := false
+## Hold prompts latch on one press instead of being held down.
+var qte_hold_toggle := false
 var _language_set := false
 
 func _ready() -> void:

@@ -112,6 +112,18 @@ func _distance() -> float:
 	return to.length()
 
 func _steer(direction: Vector3) -> void:
+	# Movement is camera-relative: turn the world direction into stick input.
+	var actor: Node = Flow.actors.get(Flow.episode.player) if Flow.episode != null else null
+	var controllers: Array[Node] = []
+	if is_instance_valid(actor):
+		controllers = actor.find_children("*", "TEPlayerController", false, false)
+	if not controllers.is_empty() and controllers[0].camera_relative and direction != Vector3.ZERO:
+		var controller: TEPlayerController = controllers[0]
+		if not Input.get_vector(&"move_left", &"move_right", &"move_forward", &"move_back").length() > 0.1:
+			var camera := get_viewport().get_camera_3d()
+			if camera != null:
+				controller.reference_yaw = TEPlayerController.camera_yaw(camera.global_basis)
+		direction = direction.rotated(Vector3.UP, -controller.reference_yaw)
 	var strengths := {&"move_right": direction.x, &"move_left": -direction.x, &"move_back": direction.z, &"move_forward": -direction.z}
 	for action: StringName in strengths:
 		if strengths[action] > 0.05:

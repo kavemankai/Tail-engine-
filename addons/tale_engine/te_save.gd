@@ -221,6 +221,14 @@ static func _repair_story(story: Dictionary, manifest: TEStoryManifest) -> void:
 		else:
 			_note("Choice '%s' no longer has option '%s' and was dropped." % [key, story["choices"][key]])
 	story["choices"] = choices
+	if story.has("items"):
+		var kept_items := {}
+		for key: Variant in story["items"]:
+			if manifest.has_item(StringName(key)):
+				kept_items[key] = int(story["items"][key])
+			else:
+				_note("Item '%s' no longer exists and was dropped." % key)
+		story["items"] = kept_items
 
 static func _note(text: String) -> void:
 	if text not in last_notes:
@@ -263,4 +271,11 @@ static func _story(story: Variant) -> bool:
 	for value: Variant in story["seen"].values():
 		if value is not bool:
 			return false
+	if story.has("items"):
+		if story["items"] is not Dictionary:
+			return false
+		for key: Variant in story["items"]:
+			var count: Variant = story["items"][key]
+			if not _text(key) or (count is not int and count is not float) or int(count) <= 0:
+				return false
 	return true

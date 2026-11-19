@@ -14,6 +14,8 @@ extends Control
 @export var window_title := "Tale Engine"
 ## Extra buttons: label -> scene path opened with change_scene_to_file.
 @export var extras: Dictionary = {}
+## Played while the menu is showing; an episode fades it out as it starts.
+@export var music: AudioStream
 
 var _box := VBoxContainer.new()
 var _locale := ""
@@ -35,12 +37,18 @@ func _ready() -> void:
 		if TranslationServer.get_locale() != _locale and visible:
 			_rebuild())
 	_rebuild()
+	_play_music()
+
+func _play_music() -> void:
+	if music != null and not Flow.running:
+		Audio.music(music, 1.0)
 
 func _process(_delta: float) -> void:
 	if visible == Flow.running:
 		visible = not Flow.running
 		if visible:
 			_rebuild()
+			_play_music()
 
 func _rebuild() -> void:
 	_clear()
@@ -55,7 +63,7 @@ func _rebuild() -> void:
 		_add(tr("Continue: %s") % _describe(save), Flow.resume)
 	_add(tr("New game"), _confirm.bind(tr("Start over? The save in slot %d will be replaced.") % (Flow.save_slot + 1), _new_game) if has_save else _new_game)
 	if slot_count > 1:
-		_add(tr("Save slot: %d") % (Flow.save_slot + 1), _cycle_slot)
+		_add(tr("Save slot: %d") % (Flow.save_slot + 1), _slots)
 	if has_save:
 		var list: Array = save["checkpoints"]
 		for i in list.size() - 1:
@@ -113,8 +121,39 @@ func _new_game() -> void:
 	else:
 		Flow.new_game(episode)
 
-func _cycle_slot() -> void:
-	Flow.save_slot = (Flow.save_slot + 1) % slot_count
+## Every slot with what is in it; choosing one makes it the current slot.
+func _slots() -> void:
+	_clear()
+	_heading(tr("Save slots"), 32)
+	for slot in slot_count:
+		var button := _add(_slot_text(slot), _choose_slot.bind(slot))
+		button.name = "slot_%d" % slot
+		if slot == Flow.save_slot:
+			button.add_theme_color_override(&"font_color", Color(1.0, 0.85, 0.45))
+	_add(tr("Back"), _rebuild)
+	_focus_first()
+
+## "1. Episode — checkpoint · date · time played", "1. Empty", or why it failed.
+func _slot_text(slot: int) -> String:
+	var info := TESave.info(slot)
+	var number := "%d." % (slot + 1)
+	match info.get("status", TESave.Status.NONE):
+		TESave.Status.NONE:
+			return "%s  %s" % [number, tr("Empty")]
+		TESave.Status.UNREADABLE:
+			return "%s  %s" % [number, tr("Could not be read")]
+	var parts := PackedStringArray([tr(String(info.get("episode_title", ""))), tr(String(info.get("checkpoint_title", "")))])
+	var saved_at := int(info.get("saved_at", 0))
+	if saved_at > 0:
+		var date := Time.get_datetime_dict_from_unix_time(saved_at + Time.get_time_zone_from_system()["bias"] * 60)
+		parts.append("%04d-%02d-%02d %02d:%02d" % [date["year"], date["month"], date["day"], date["hour"], date["minute"]])
+	var minutes := int(float(info.get("playtime", 0.0)) / 60.0)
+	if minutes > 0:
+		parts.append(tr("%d min played") % minutes)
+	return "%s  %s" % [number, "  ·  ".join(Array(parts).filter(func(part: String) -> bool: return part != ""))]
+
+func _choose_slot(slot: int) -> void:
+	Flow.save_slot = slot
 	_rebuild()
 
 func _rewind(index: int) -> void:
@@ -134,8 +173,14 @@ func _clear() -> void:
 func _focus_first() -> void:
 	for child in _box.get_children():
 		if child is Button:
-			child.grab_focus.call_deferred()
+			# The menu may be redrawn before this runs; focus only a live button.
+			_focus_later.call_deferred(child.get_instance_id())
 			return
+
+func _focus_later(id: int) -> void:
+	var button := instance_from_id(id) as Button
+	if button != null and button.is_inside_tree():
+		button.grab_focus()
 
 func _heading(text: String, size := 44) -> void:
 	var title := Label.new()

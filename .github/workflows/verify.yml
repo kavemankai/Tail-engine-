@@ -34,20 +34,20 @@ jobs:
         id: templates
         with:
           path: ~/.local/share/godot/export_templates/4.6.3.stable
-          key: godot-windows-templates-4.6.3
-      - name: Install Windows export templates
+          key: godot-windows-linux-templates-4.6.3
+      - name: Install Windows and Linux export templates
         if: github.event_name != 'pull_request' && steps.templates.outputs.cache-hit != 'true'
         run: |
           curl --fail --location --retry 3 -o /tmp/templates.tpz "https://github.com/godotengine/godot-builds/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
           mkdir -p "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
-          unzip -q -j /tmp/templates.tpz 'templates/windows_*' 'templates/version.txt' -d "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          unzip -q -j /tmp/templates.tpz 'templates/windows_*' 'templates/linux_*x86_64' 'templates/version.txt' -d "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
       - name: Import, test, validate, audit, and package
         run: |
           python -m unittest discover -s tools -p 'test_*.py'
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             python tools/verify.py
           else
-            python tools/verify.py --export-windows
+            python tools/verify.py --export-windows --export-linux
           fi
       - uses: actions/upload-artifact@v4
         if: github.event_name != 'pull_request'
@@ -56,7 +56,41 @@ jobs:
           path: build/LastCall-windows-greybox.zip
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
+        if: github.event_name != 'pull_request'
+        with:
+          name: LastCall-linux-greybox-${{ github.sha }}
+          path: build/LastCall-linux-greybox.zip
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: godot-check-logs
           path: build/logs/
+
+  # Launch the real Windows executable and play Episode 0 unattended. Headless:
+  # no GPU on the runner, so this checks the binary, pack and scripts, not drawing.
+  windows-smoke:
+    needs: verify
+    if: github.event_name != 'pull_request'
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: LastCall-windows-greybox-${{ github.sha }}
+      - name: Play Episode 0 with the exported executable
+        shell: pwsh
+        run: |
+          Expand-Archive LastCall-windows-greybox.zip -DestinationPath .
+          $log = Join-Path $PWD 'smoke.log'
+          $process = Start-Process -FilePath 'LastCall/LastCall.exe' -ArgumentList '--headless','--log-file',$log,'--','--te-smoke' -PassThru -Wait -NoNewWindow
+          if (Test-Path $log) { Get-Content $log | Select-String 'SMOKE' }
+          if ($process.ExitCode -ne 0) { throw "Smoke run exited with $($process.ExitCode)" }
+          if (-not (Select-String -Path $log -Pattern 'SMOKE OK' -Quiet)) { throw 'Smoke run did not finish the episode' }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-smoke-log
+          path: smoke.log
+          if-no-files-found: ignore
+

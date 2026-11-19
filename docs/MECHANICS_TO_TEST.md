@@ -5,11 +5,10 @@ Every mechanic a slice episode should exercise before the engine is called ready
 **Status** says whether you can author it today:
 
 - **Now** — works as described.
-- **Now, changes in P*n*** — works, but phase *n* of the plan changes how it behaves or is authored. Usable now; re-test after that phase.
-- **New in P*n*** — does not exist yet. Leave room for it; it is added in phase *n*.
-- **Now (PR #*n*)** — done, and available once that pull request is merged.
+- **Now, partly** — works, with the limit the row states.
+- **Now (P*n*: …)** — done in phase *n*; the note says what changed.
 
-Phases: P2 saves and failure handling, P3 UI/input/settings, P4 localisation, P5 audio, P6 direction, P7 exploration, P8 editor, P9 platform. This file is updated at the end of every phase.
+Phases: P2 saves and failure handling, P3 UI/input/settings, P4 localisation, P5 audio, P6 direction, P7 exploration, P8 editor, P9 platform. Phases 0 to 9 are done; ticking the Slice column is phase 10's job.
 
 Authoring reference: [AUTHORING.md](AUTHORING.md) for episodes, [INTEGRATION.md](INTEGRATION.md) for action sequences. Working examples: `examples/last_call/episode_0` and the Interaction lab (`examples/last_call/qte_lab`).
 
@@ -18,23 +17,23 @@ Authoring reference: [AUTHORING.md](AUTHORING.md) for episodes, [INTEGRATION.md]
 | # | Mechanic | How to author | Status | Slice |
 |---|---|---|---|---|
 | 1.1 | Title card step | `TEStep.kind = CARD`, `card = TITLE`, `heading`, `body` | Now | [ ] |
-| 1.2 | Recap card step | `kind = CARD`, `card = RECAP`; text from manifest recap sentences | Now (PR #15: waits for the player) | [ ] |
+| 1.2 | Recap card step | `kind = CARD`, `card = RECAP`; text from manifest recap sentences | Now (waits for the player) | [ ] |
 | 1.3 | Dialogue step | `kind = DIALOGUE`, `dialogue`, `cue`, optional `shot` | Now | [ ] |
-| 1.4 | Explore step | `kind = EXPLORE`, `hub` names `Hubs/<name>` | Now, changes in P7 | [ ] |
+| 1.4 | Explore step | `kind = EXPLORE`, `hub` names `Hubs/<name>` | Now (P7: camera-relative movement, follow camera with collision) | [ ] |
 | 1.5 | Encounter step with a sequence | `kind = ENCOUNTER`, `sequence`, `stage`, `roles` | Now | [ ] |
 | 1.6 | Encounter step with a compound template | `compound` instead of `sequence` | Now | [ ] |
-| 1.7 | Cutscene step (shot cues) | `kind = CUTSCENE`, `cues: Array[TEShotCue]` | Now, changes in P6 (voice, sfx, skip) | [ ] |
-| 1.8 | Timeline step (authored AnimationPlayer cutscene) | new step kind | New in P6 | [ ] |
+| 1.7 | Cutscene step (shot cues) | `kind = CUTSCENE`, `cues: Array[TEShotCue]` | Now (P6: voice, sound, emotes, wait for a clip) | [ ] |
+| 1.8 | Timeline step (authored AnimationPlayer cutscene) | `kind = TIMELINE`, `timeline_player`, `timeline`; method tracks call a `TETimelineCues` node | Now (P6) | [ ] |
 | 1.9 | Named exits | `TEExit.on` matches the step's exit name; `next` is a step id or `END` | Now | [ ] |
 | 1.10 | Conditional exit | `TEExit.when = "flag and not other"`; conditional exits listed before the catch-all | Now | [ ] |
-| 1.11 | Wildcard exit | `on = "*"` | Now (PR #12: `error`/`cancelled` no longer fall through it) | [ ] |
-| 1.12 | Location change with fade | `TEStep.location` set to a different scene | Now (PR #15: background load with indicator) | [ ] |
+| 1.11 | Wildcard exit | `on = "*"` | Now (`error`/`cancelled` no longer fall through it) | [ ] |
+| 1.12 | Location change with fade | `TEStep.location` set to a different scene | Now (background load with indicator) | [ ] |
 | 1.13 | Staying in the current location | `location` left empty | Now | [ ] |
 | 1.14 | Cast placement on marks | `TEStep.cast = {character_id: mark_name}` | Now | [ ] |
 | 1.15 | Actor left where it stands | empty mark name in `cast` | Now | [ ] |
 | 1.16 | Checkpoint | `TEStep.checkpoint = true`, `title` shown in the menu | Now | [ ] |
 | 1.17 | Episode end | exit with `next = END` | Now | [ ] |
-| 1.18 | Runtime fault shows an error, not an ending | missing step or unrouted exit; `Flow.episode_failed` | Now (PR #12) | [ ] |
+| 1.18 | Runtime fault shows an error, not an ending | missing step or unrouted exit; `Flow.episode_failed` | Now | [ ] |
 
 ## 2. Seasons
 
@@ -44,30 +43,30 @@ Authoring reference: [AUTHORING.md](AUTHORING.md) for episodes, [INTEGRATION.md]
 | 2.2 | Next episode from the menu | automatic when the season has another episode | Now | [ ] |
 | 2.3 | Carried variables | `TESeason.carry_variables`, declared in both manifests | Now | [ ] |
 | 2.4 | Reading an earlier episode's choice | `Story.prior("episode_1", "choice_id")` in dialogue or a condition | Now | [ ] |
-| 2.5 | Next episode still offered after quitting and relaunching | none (engine behaviour) | Now (PR #12) | [ ] |
-| 2.6 | Episode select | title menu, after reaching episode 2 | Now (PR #15) | [ ] |
+| 2.5 | Next episode still offered after quitting and relaunching | none (engine behaviour) | Now | [ ] |
+| 2.6 | Episode select | title menu, after reaching episode 2 | Now | [ ] |
 
 ## 3. Story state
 
 | # | Mechanic | How to author | Status | Slice |
 |---|---|---|---|---|
 | 3.1 | Declared variables with defaults | `manifest.tres` variables | Now | [ ] |
-| 3.2 | Set a variable | `do Story.put("name", value)` | Now (PR #12: undeclared names rejected) | [ ] |
+| 3.2 | Set a variable | `do Story.put("name", value)` | Now (undeclared names rejected) | [ ] |
 | 3.3 | Add to a number | `do Story.add("name", 1)` | Now | [ ] |
-| 3.4 | Remember with a notice | `do Story.remember("name", true, "They will remember that.")` | Now (PR #15: fades in and out) | [ ] |
+| 3.4 | Remember with a notice | `do Story.remember("name", true, "They will remember that.")` | Now (fades in and out) | [ ] |
 | 3.5 | Major choice for the recap | `do Story.choose("choice_id", "option_id")`, declared in the manifest | Now | [ ] |
 | 3.6 | Read a flag or value in dialogue | `if Story.flag("name")`, `Story.value("name")` | Now | [ ] |
 | 3.7 | Read how a step ended | `Story.outcome("step_id")` | Now | [ ] |
 | 3.8 | Read one gate's result | `Story.result("step_id", "beat_id")` | Now | [ ] |
 | 3.9 | Read action intent afterwards | `Story.intent("step_id")` | Now | [ ] |
-| 3.10 | Inventory item gained, held, used | manifest-declared items | New in P7 | [ ] |
+| 3.10 | Inventory item gained, held, used | `TEStoryManifest.items`; `do Story.give("key")`, `Story.take`, `has_item('key')` in conditions | Now (P7) | [ ] |
 
 ## 4. Dialogue
 
 | # | Mechanic | How to author | Status | Slice |
 |---|---|---|---|---|
 | 4.1 | Spoken line with a cast speaker | `character_id: text` | Now | [ ] |
-| 4.2 | Untimed choice, 2 to 4 responses | Dialogue Manager responses | Now (PR #14: optional highlight-and-confirm mode in Settings) | [ ] |
+| 4.2 | Untimed choice, 2 to 4 responses | Dialogue Manager responses | Now (optional highlight-and-confirm mode in Settings) | [ ] |
 | 4.3 | Timed choice | `[#timed=6]` on the line before the responses | Now | [ ] |
 | 4.4 | Silence as an answer | `[#silence]` on one response | Now | [ ] |
 | 4.5 | Timer with no silence option | timed line, no `#silence`; first response is taken | Now | [ ] |
@@ -77,30 +76,30 @@ Authoring reference: [AUTHORING.md](AUTHORING.md) for episodes, [INTEGRATION.md]
 | 4.9 | Camera cut on a line | `[#shot=name]` | Now | [ ] |
 | 4.10 | Camera blend on a line | `[#shot=name, #blend=0.6]` | Now | [ ] |
 | 4.11 | Camera shake on a line | `[#shake=0.05]` | Now | [ ] |
-| 4.12 | Emotion on a line | `[#emote=name]` | New in P6 | [ ] |
-| 4.13 | Gesture on a line | `[#gesture=name]` | New in P6 | [ ] |
-| 4.14 | Look-at on a line | `[#look=character_or_mark]` | New in P6 | [ ] |
-| 4.15 | Animation clip on a line | `[#clip=name]` | New in P6 | [ ] |
+| 4.12 | Emotion on a line | `[#emote=name]` or `[#emote=character:name]` | Now (P6) | [ ] |
+| 4.13 | Gesture on a line | `[#gesture=name]` | Now (P6) | [ ] |
+| 4.14 | Look-at on a line | `[#look=character_or_mark]`, `[#look=none]` | Now (P6) | [ ] |
+| 4.15 | Animation clip on a line | `[#clip=name]` or `[#clip=character:name]`; validator checks the clip map | Now (P6) | [ ] |
 | 4.16 | Skip the current line | advance input | Now | [ ] |
-| 4.17 | Auto-advance toggle (lines wait for a press when off) | Settings | Now (PR #15) | [ ] |
-| 4.18 | History of lines and responses | pause menu | Now (PR #15) | [ ] |
-| 4.19 | Rich text in subtitles | `[b]`, `[i]`, `[color]` in a line | Now (PR #15) | [ ] |
+| 4.17 | Auto-advance toggle (lines wait for a press when off) | Settings | Now | [ ] |
+| 4.18 | History of lines and responses | pause menu | Now | [ ] |
+| 4.19 | Rich text in subtitles | `[b]`, `[i]`, `[color]` in a line | Now | [ ] |
 
 ## 5. Exploration
 
 | # | Mechanic | How to author | Status | Slice |
 |---|---|---|---|---|
-| 5.1 | Walking in a hub | `TEHub` under `Hubs/`, player from `TEEpisode.player` | Now, changes in P7 (camera-relative, walk/idle clips) | [ ] |
-| 5.2 | Follow camera | `TEHub` default | Now, changes in P7 (smoothing, collision) | [ ] |
+| 5.1 | Walking in a hub | `TEHub` under `Hubs/`, player from `TEEpisode.player` | Now (P7: camera-relative, walk/idle through `TEActor.locomotion`) | [ ] |
+| 5.2 | Follow camera | `TEHub.camera_smoothing`, `camera_collision` | Now (P7) | [ ] |
 | 5.3 | Fixed camera zone | `TECameraZone` with a `Camera3D` child under `Zones/` | Now | [ ] |
 | 5.4 | Hotspot that runs a conversation | `TEHotspot.cue` | Now | [ ] |
 | 5.5 | Hotspot that ends the step | `TEHotspot.exit` | Now | [ ] |
 | 5.6 | Hotspot that does both | `cue` and `exit` | Now | [ ] |
 | 5.7 | Conditional hotspot | `TEHotspot.when` | Now | [ ] |
 | 5.8 | One-use hotspot | `TEHotspot.once` | Now | [ ] |
-| 5.9 | Hotspot highlight and facing check | none (engine behaviour) | New in P7 | [ ] |
-| 5.10 | Examine view | hotspot option | New in P7 | [ ] |
-| 5.11 | Hotspot that needs an item | `TEHotspot.requires_item` | New in P7 | [ ] |
+| 5.9 | Hotspot highlight and facing check | `TEHotspot.facing_degrees`; a child named `Highlight` | Now (P7) | [ ] |
+| 5.10 | Examine view | `TEHotspot.examine_scene`, `examine_text` | Now (P7) | [ ] |
+| 5.11 | Hotspot that needs an item | `TEHotspot.requires_item`, `consumes_item`, `missing_item_cue` | Now (P7) | [ ] |
 | 5.12 | Something noticed in a hub changes a later fight | hotspot sets a flag; `CADOption.requires` reads it | Now | [ ] |
 
 ## 6. Action sequences
@@ -142,8 +141,8 @@ Interaction families are set on `CADGate.interaction` (`CADInteractionSpec`). Ea
 | 6.31 | Non-interactive action cutscene | sequence with no gates | Now | [ ] |
 | 6.32 | Missing a prompt fails forward | timeout route to a recovery beat | Now | [ ] |
 | 6.33 | Longer windows assist | Settings: extended action prompts | Now | [ ] |
-| 6.34 | Auto-complete and hold-toggle assists | Settings | New in P6 | [ ] |
-| 6.35 | Controller unplugged mid-prompt pauses | none (engine behaviour) | Now (PR #12) | [ ] |
+| 6.34 | Auto-complete and hold-toggle assists | Settings, Assistance | Now (P6: choices are never auto-picked) | [ ] |
+| 6.35 | Controller unplugged mid-prompt pauses | none (engine behaviour) | Now | [ ] |
 
 ## 7. Camera and performance
 
@@ -154,10 +153,10 @@ Interaction families are set on `CADGate.interaction` (`CADInteractionSpec`). Ea
 | 7.3 | Cutscene cue: cut, blend, hold, shake | `TEShotCue` fields | Now | [ ] |
 | 7.4 | Cutscene cue: caption and speaker | `TEShotCue.caption`, `speaker` | Now | [ ] |
 | 7.5 | Cutscene cue: character clips | `TEShotCue.clips` | Now | [ ] |
-| 7.6 | Cutscene cue: voice line and sound | new cue fields | New in P6 | [ ] |
-| 7.7 | Skipping a cutscene | hold input | New in P6 | [ ] |
+| 7.6 | Cutscene cue: voice line and sound | `TEShotCue.voice`, `sound` | Now (P6) | [ ] |
+| 7.7 | Skipping a cutscene | Timeline steps: advance pressed twice (`skippable`) | Now (P6; shot-cue cutscenes are not skippable) | [ ] |
 | 7.8 | Own character rig | scene extending `TEActor`, `TECharacter.actor_scene` and `clips` map | Now | [ ] |
-| 7.9 | Lip movement from voice | `set_mouth_open` on the actor; blend shape named `jawOpen` or similar | Now, changes in P6 (jaw-bone fallback) | [ ] |
+| 7.9 | Lip movement from voice | `set_mouth_open` on the actor; `jawOpen`-style blend shape, else a jaw bone | Now (P6) | [ ] |
 
 ## 8. Audio
 
@@ -166,58 +165,58 @@ Interaction families are set on `CADGate.interaction` (`CADInteractionSpec`). Ea
 | 8.1 | Voiced line | `TECharacter.voice_dir`, file named after `[ID:...]` | Now | [ ] |
 | 8.2 | Unvoiced line on a reading timer | no file present | Now | [ ] |
 | 8.3 | Recording script export | `export_voice_cli.tscn` | Now | [ ] |
-| 8.4 | Music | `do Audio.music(load("res://path.ogg"))` from dialogue | Now, changes in P5 (per-step field, restored on resume) | [ ] |
-| 8.5 | Ambience per location or step | step field | New in P5 | [ ] |
-| 8.6 | Sound effect | `do Audio.effect(load("res://path.wav"))` | Now, changes in P5 (SFX bus, positional) | [ ] |
-| 8.7 | Separate Music / Effects / Voice volume | Settings | Now (PR #14) | [ ] |
+| 8.4 | Music | `TEStep.music` (or `do Audio.music(...)`); restored on resume and rewind | Now (P5) | [ ] |
+| 8.5 | Ambience per location or step | `TEStep.ambience`, `stop_ambience` | Now (P5) | [ ] |
+| 8.6 | Sound effect | `do Audio.effect(load("res://path.wav"))`, `Audio.effect_at(stream, position)` | Now (P5: pooled, SFX bus, positional) | [ ] |
+| 8.7 | Separate Music / Effects / Voice volume | Settings | Now | [ ] |
 
 ## 9. Saving
 
 | # | Mechanic | How to test | Status | Slice |
 |---|---|---|---|---|
 | 9.1 | Continue | quit at any point after a checkpoint, relaunch, Continue | Now | [ ] |
-| 9.2 | Rewind to an earlier checkpoint | title menu | Now (PR #12: asks first) | [ ] |
+| 9.2 | Rewind to an earlier checkpoint | title menu | Now (asks first) | [ ] |
 | 9.3 | Several save slots | title menu slot button | Now; slot screen with details still to come in P3 | [ ] |
-| 9.4 | New game over an existing save asks first | title menu | Now (PR #12) | [ ] |
-| 9.5 | Save survives a content patch | rename a step or variable (add it to `renamed_steps` / `renamed_variables`), then Continue | Now (PR #12) | [ ] |
-| 9.6 | Damaged save is reported, backup used | corrupt the file in `user://saves` | Now (PR #12) | [ ] |
+| 9.4 | New game over an existing save asks first | title menu | Now | [ ] |
+| 9.5 | Save survives a content patch | rename a step or variable (add it to `renamed_steps` / `renamed_variables`), then Continue | Now | [ ] |
+| 9.6 | Damaged save is reported, backup used | corrupt the file in `user://saves` | Now | [ ] |
 | 9.7 | Story state restored exactly | make choices, Continue, check later branches | Now | [ ] |
 
 ## 10. Menus, settings and input
 
 | # | Mechanic | How to test | Status | Slice |
 |---|---|---|---|---|
-| 10.1 | Title menu | `TETitleMenu` scene with `episode` or `season` | Now, changes in P3 (themed scene) | [ ] |
+| 10.1 | Title menu | `TETitleMenu` scene with `episode` or `season`; Save slot opens a slot list with each slot's details | Now | [ ] |
 | 10.2 | Pause and resume | Escape / Start | Now | [ ] |
 | 10.3 | Pause on focus loss | alt-tab | Now | [ ] |
 | 10.4 | Subtitle size | Settings | Now | [ ] |
 | 10.5 | Reading time | Settings | Now | [ ] |
 | 10.6 | Untimed choices | Settings | Now | [ ] |
 | 10.7 | Master volume | Settings | Now | [ ] |
-| 10.8 | Fullscreen, 3D resolution, vsync | Settings | Now (PR #14) | [ ] |
-| 10.9 | Subtitles on/off and background | Settings | Now (PR #14) | [ ] |
-| 10.10 | Language | Settings, once a translation is loaded | Now (PR #16) | [ ] |
-| 10.11 | Keyboard and controller rebinding | Settings, Controls | Now (PR #14) | [ ] |
-| 10.12 | Prompts follow the last-used device | switch between keyboard and pad | Now (PR #14: Xbox, PlayStation and Nintendo button names; icons still to come) | [ ] |
-| 10.13 | Whole game playable on a controller alone | play without touching the keyboard | Now, changes in P3 | [ ] |
-| 10.14 | Own UI look | swap the theme | New in P3 | [ ] |
-| 10.15 | End-of-episode choices screen | a Recap card as the last step | Now (PR #15) | [ ] |
-| 10.16 | Credits | Card step with `card = CREDITS` | Now (PR #15) | [ ] |
-| 10.17 | Loading indicator between locations | automatic | Now (PR #15) | [ ] |
-| 10.18 | Translated text everywhere | export a template with `export_strings_cli.tscn`, load a `.po`, switch language | Now (PR #16) | [ ] |
+| 10.8 | Fullscreen, 3D resolution, vsync | Settings | Now | [ ] |
+| 10.9 | Subtitles on/off and background | Settings | Now | [ ] |
+| 10.10 | Language | Settings, once a translation is loaded | Now | [ ] |
+| 10.11 | Keyboard and controller rebinding | Settings, Controls | Now | [ ] |
+| 10.12 | Prompts follow the last-used device | switch between keyboard and pad | Now (P3 leftover done: response buttons show controller icons) | [ ] |
+| 10.13 | Whole game playable on a controller alone | play without touching the keyboard | Now | [ ] |
+| 10.14 | Own UI look | point `gui/theme/custom` at your own theme (fonts, buttons, panels); layout sizes are still set in code | Now, partly | [ ] |
+| 10.15 | End-of-episode choices screen | a Recap card as the last step | Now | [ ] |
+| 10.16 | Credits | Card step with `card = CREDITS` | Now | [ ] |
+| 10.17 | Loading indicator between locations | automatic | Now | [ ] |
+| 10.18 | Translated text everywhere | export a template with `export_strings_cli.tscn`, load a `.po`, switch language | Now | [ ] |
 
 ## 11. Tools
 
 | # | Mechanic | How to test | Status | Slice |
 |---|---|---|---|---|
-| 11.1 | New project from the template | `python tools/new_project.py ../my_game "Title"` | Now, changes in P1 | [ ] |
-| 11.2 | Episode validation | `tests/validate.tscn` or the editor panel's Validate | Now, changes in P8 | [ ] |
-| 11.3 | Step graph panel | select `episode.tres` in the editor | Now, changes in P8 (edit exits, delete, layout) | [ ] |
+| 11.1 | New project from the template | `python tools/new_project.py ../my_game "Title"` (own save folder, icon) | Now | [ ] |
+| 11.2 | Episode validation | `tests/validate.tscn` or the editor panel's Validate (runs in the background) | Now (P8) | [ ] |
+| 11.3 | Step graph panel | select `episode.tres` in the editor; drag exits, Delete, + exit, Undo/Redo | Now (P8) | [ ] |
 | 11.4 | Encounter authoring audit | `tools/authoring.tscn -- res://path/episode.tres` | Now | [ ] |
 | 11.5 | Debug panel | F3 in a debug build: force exit, jump to step | Now | [ ] |
 | 11.6 | Autoplayer route test | policy in `tests/autoplay.gd`, see `tests/test_flow.gd` | Now | [ ] |
-| 11.7 | Windows export | `python tools/verify.py --export-windows` | Now, changes in P9 | [ ] |
-| 11.8 | Steam Deck / Linux export | export preset | New in P9 | [ ] |
+| 11.7 | Windows export | `python tools/verify.py --export-windows`; CI runs the `.exe` headless | Now (P9) | [ ] |
+| 11.8 | Steam Deck / Linux export | `python tools/verify.py --export-linux` plays the exported build | Now (P9) | [ ] |
 
 ## Hardware sign-off
 
@@ -228,3 +227,7 @@ Not tickable from the editor. Done on real machines at the end (see [WINDOWS_SMO
 - [ ] Physical PlayStation controller
 - [ ] Steam Deck
 - [ ] Frame rate within budget in the heaviest scene
+| 11.9 | Unattended play-through of an exported build | `<game> --headless -- --te-smoke` | Now (P9) | [ ] |
+| 11.10 | Frame-time measurement on target hardware | `<game> -- --te-smoke --te-perf` | Now (P9; no Deck figures yet) | [ ] |
+| 11.11 | Achievements | `do Platform.unlock("id")`; Steam with GodotSteam, otherwise local | Now (P9; Steam backend untested against real Steam) | [ ] |
+| 11.12 | Crash reports | automatic, in `crash_reports/` in the save folder | Now (P9) | [ ] |

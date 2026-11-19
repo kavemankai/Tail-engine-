@@ -35,6 +35,7 @@ def project_settings(title):
     text = (ROOT / "project.godot").read_text(encoding="utf-8")
     text = re.sub(r'config/name="[^"]*"', f'config/name="{title}"', text)
     text = re.sub(r'run/main_scene="[^"]*"', 'run/main_scene="res://game/main.tscn"', text)
+    text = re.sub(r'config/version="[^"]*"', 'config/version="0.1.0"', text)
     text = re.sub(r"; Keep the original application ID[^\n]*\n; The window[^\n]*\n", "", text)
     # Keep translation-template generation, pointed at the new game's dialogue.
     text = re.sub(r"locale/translations_pot_files=[^\n]*",
@@ -55,6 +56,7 @@ def create(target, title):
     for name in DOCS:
         shutil.copy2(ROOT / "docs" / name, target / "docs" / name)
     shutil.copy2(ROOT / "LICENSE", target / "TALE_ENGINE_LICENSE")
+    shutil.copy2(ROOT / "icon.svg", target / "icon.svg")
     shutil.copy2(ROOT / "docs/ASSET_AND_LICENSE_REGISTRY.md", target / "docs/THIRD_PARTY.md")
     (target / "project.godot").write_text(project_settings(title), encoding="utf-8")
     for path in target.rglob("*"):
